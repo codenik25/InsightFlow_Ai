@@ -1,0 +1,4 @@
+transaction_id,date,region,category,product,units_sold,unit_price,total_revenue
+TXN-1001,2026-01-05,North America,Electronics,Wireless Headphones,15,89.99,1349.85
+TXN-1002,2026-01-06,Europe,Software,Analytics Suite Enterprise,2,1200.00,2400.00
+TXN-1003,2026-01-08,Asia-Pacific,Hardware,Ergonomic Keyboard,45,49.50,2227.50

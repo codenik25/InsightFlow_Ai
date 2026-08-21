@@ -1,0 +1,20 @@
+transaction_id,date,product,category,region,units_sold,unit_price,total_revenue
+1001,2026-08-01,Laptop A,Electronics,Jaipur,2,55000,110000
+1002,2026-08-02,Laptop B,Electronics,Delhi,1,65000,65000
+1003,2026-08-03,Monitor A,Electronics,Jaipur,3,15000,45000
+1004,2026-08-04,Keyboard A,Accessories,Mumbai,5,2500,12500
+1005,2026-08-05,Mouse A,Accessories,Delhi,10,1200,12000
+1006,2026-08-06,Laptop A,Electronics,Jaipur,1,55000,55000
+1007,2026-08-07,Laptop C,Electronics,Mumbai,2,72000,144000
+1008,2026-08-08,Monitor B,Electronics,Delhi,4,18000,72000
+1009,2026-08-09,Keyboard B,Accessories,Jaipur,6,3000,18000
+1010,2026-08-10,Mouse B,Accessories,Mumbai,8,1500,12000
+1011,2026-08-11,Laptop B,Electronics,Delhi,2,65000,130000
+1012,2026-08-12,Monitor A,Electronics,Jaipur,2,15000,30000
+1013,2026-08-13,Laptop C,Electronics,Mumbai,1,72000,72000
+1014,2026-08-14,Keyboard A,Accessories,Mumbai,4,2500,10000
+1015,2026-08-15,Mouse A,Accessories,Delhi,12,1200,14400
+1015,2026-08-15,Mouse A,Accessories,Delhi,12,1200,14400
+1016,2026-08-16,Laptop D,Electronics,Jaipur,,58000,
+1017,2026-08-17,Laptop E,Electronics,,2,60000,120000
+1018,2026-08-18,Monitor C,Electronics,Delhi,3,,45000
