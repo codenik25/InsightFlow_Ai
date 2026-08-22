@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_BYTES: int = 52_428_800  # 50 MB default max upload size
     UPLOAD_DIR: str = "data/raw"
     PROCESSED_DIR: str = "data/processed"
+    MODELS_DIR: str = "data/models"
 
     @property
     def upload_dir_path(self) -> Path:
@@ -60,6 +61,16 @@ class Settings(BaseSettings):
             path = Path(__file__).resolve().parents[3] / self.PROCESSED_DIR
         path.mkdir(parents=True, exist_ok=True)
         return path
+
+    @property
+    def models_dir_path(self) -> Path:
+        """Returns resolved Path object for trained ML model artifact storage."""
+        path = Path(self.MODELS_DIR)
+        if not path.is_absolute():
+            path = Path(__file__).resolve().parents[3] / self.MODELS_DIR
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

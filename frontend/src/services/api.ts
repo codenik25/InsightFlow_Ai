@@ -13,6 +13,9 @@ import {
   RelationshipMetric,
   InsightResponse,
   ExecutiveReport,
+  MLTaskDiscoveryResponse,
+  MLAnalysisResponse,
+  PredictionResponse,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -305,6 +308,99 @@ export function getReportMarkdownExportUrl(datasetId: string): string {
 export function getReportJsonExportUrl(datasetId: string): string {
   return `${API_BASE_URL}/api/v1/datasets/${datasetId}/reports/export/json`;
 }
+
+// Phase 6 Predictive Analytics & ML APIs
+
+export async function fetchMLTasks(datasetId: string): Promise<MLTaskDiscoveryResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/ml/tasks`, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Unable to discover ML tasks (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function runMLAnalysis(
+  datasetId: string,
+  taskType?: string,
+  targetColumn?: string
+): Promise<MLAnalysisResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/ml/analyze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({
+      task_type: taskType || null,
+      target_column: targetColumn || null,
+    }),
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to run ML analysis (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchMLAnalyses(datasetId: string): Promise<MLAnalysisResponse[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/ml`, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unable to fetch ML analyses (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchMLAnalysisById(datasetId: string, analysisId: string): Promise<MLAnalysisResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/ml/${analysisId}`, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unable to fetch ML analysis details (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function runMLPrediction(
+  datasetId: string,
+  analysisId: string,
+  inputs: Record<string, any>[]
+): Promise<PredictionResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/ml/${analysisId}/predict`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({ inputs }),
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Prediction failed with status ${response.status}`);
+  }
+
+  return await response.json();
+}
+
 
 
 

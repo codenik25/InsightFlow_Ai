@@ -14,6 +14,17 @@ from app.schemas.profile import (
 from app.schemas.kpi import ColumnRoleInfo, KPIMetric, DatasetOverviewKPIs
 from app.schemas.eda import EDAResponse, CategoryBreakdown, TrendMetric, RelationshipMetric, DistributionStats
 from app.schemas.insight import Insight, InsightEvidence, InsightSummary, InsightResponse
+from app.schemas.ml import (
+    MLTaskCandidate,
+    MLTaskDiscoveryResponse,
+    MLFeatureInfo,
+    MLModelCandidate,
+    MLModelMetrics,
+    MLAnalysisRequest,
+    MLAnalysisResponse,
+    PredictionRequest,
+    PredictionResponse,
+)
 
 __all__ = [
     "HealthCheckResponse",
@@ -41,4 +52,14 @@ __all__ = [
     "InsightEvidence",
     "InsightSummary",
     "InsightResponse",
+    "MLTaskCandidate",
+    "MLTaskDiscoveryResponse",
+    "MLFeatureInfo",
+    "MLModelCandidate",
+    "MLModelMetrics",
+    "MLAnalysisRequest",
+    "MLAnalysisResponse",
+    "PredictionRequest",
+    "PredictionResponse",
 ]
+

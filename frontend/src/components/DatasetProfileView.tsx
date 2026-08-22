@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ArrowLeft, Download, RefreshCw, Sparkles, Layers, Lightbulb, FileText } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw, Sparkles, Layers, Lightbulb, FileText, BrainCircuit } from 'lucide-react';
 import { DatasetProfileData, DatasetQualityResponse, TransformationLogItem } from '../types';
 import { ColumnProfileTable } from './ColumnProfileTable';
 import { DataQualityCard } from './DataQualityCard';
@@ -9,6 +9,7 @@ import { TransformationHistory } from './TransformationHistory';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { InsightsDashboard } from './InsightsDashboard';
 import { ExecutiveSummaryDashboard } from './ExecutiveSummaryDashboard';
+import { MLInsightsDashboard } from './MLInsightsDashboard';
 import { fetchDatasetQuality, fetchTransformationHistory, getDownloadUrl } from '../services/api';
 
 interface DatasetProfileViewProps {
@@ -19,7 +20,7 @@ interface DatasetProfileViewProps {
 export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile, onBack }) => {
   const { overview, quality, columns } = profile;
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'analytics' | 'insights' | 'executive'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'analytics' | 'insights' | 'executive' | 'ml'>('profile');
   const [qualityData, setQualityData] = useState<DatasetQualityResponse | null>(null);
   const [transformationLogs, setTransformationLogs] = useState<TransformationLogItem[]>([]);
   const [isLoadingQuality, setIsLoadingQuality] = useState<boolean>(true);
@@ -127,6 +128,18 @@ export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile,
               <FileText className="w-3.5 h-3.5 text-amber-200" />
               <span>Executive Summary</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('ml')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                activeTab === 'ml'
+                  ? 'bg-purple-600 text-white shadow-md font-semibold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <BrainCircuit className="w-3.5 h-3.5 text-purple-300" />
+              <span>Predictive Analytics</span>
+            </button>
           </div>
 
           <a
@@ -140,13 +153,16 @@ export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile,
         </div>
       </div>
 
-      {activeTab === 'executive' ? (
+      {activeTab === 'ml' ? (
+        <MLInsightsDashboard datasetId={profile.dataset_id} />
+      ) : activeTab === 'executive' ? (
         <ExecutiveSummaryDashboard datasetId={profile.dataset_id} />
       ) : activeTab === 'insights' ? (
         <InsightsDashboard datasetId={profile.dataset_id} />
       ) : activeTab === 'analytics' ? (
         <AnalyticsDashboard datasetId={profile.dataset_id} />
       ) : (
+
         <div className="space-y-6">
           {/* 1. DATASET OVERVIEW (Phase 1 KPI Cards) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

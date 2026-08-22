@@ -422,6 +422,72 @@ export interface ExecutiveReport {
   total_insights_analyzed: number;
 }
 
+// Phase 6 Predictive Analytics & ML Types
+
+export interface MLTaskCandidate {
+  task_type: 'regression' | 'classification' | 'time_series_forecasting' | 'anomaly_detection' | string;
+  target_column?: string | null;
+  suitability_score: number;
+  reasons: string[];
+  warnings: string[];
+  required_conditions: string[];
+}
+
+export interface MLTaskDiscoveryResponse {
+  dataset_id: string;
+  is_processed: boolean;
+  candidate_tasks: MLTaskCandidate[];
+  message?: string | null;
+}
+
+export interface MLFeatureInfo {
+  name: string;
+  role: string;
+  status: 'included' | 'excluded' | string;
+  reason: string;
+}
+
+export interface MLModelCandidate {
+  model_name: string;
+  metrics: Record<string, number | null | undefined>;
+  is_selected: boolean;
+  selection_reason: string;
+}
+
+export interface MLAnalysisResponse {
+  id: string;
+  dataset_id: string;
+  task_type: string;
+  target_column?: string | null;
+  feature_summary: MLFeatureInfo[];
+  feature_columns: string[];
+  model_name: string;
+  model_version: string;
+  training_row_count: number;
+  test_row_count: number;
+  metrics: Record<string, number | null | undefined>;
+  candidate_models: MLModelCandidate[];
+  status: string;
+  selection_reason: string;
+  data_warnings: string[];
+  model_artifact_path?: string | null;
+  created_at: string;
+}
+
+export interface PredictionRequest {
+  inputs: Record<string, any>[];
+}
+
+export interface PredictionResponse {
+  analysis_id: string;
+  task_type: string;
+  target_column?: string | null;
+  predictions: any[];
+  probabilities?: Record<string, number>[] | null;
+  explanation: string;
+}
+
+
 
 
 

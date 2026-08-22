@@ -63,3 +63,9 @@ htmlcov/
 # Runtime / generated datasets
 data/raw/*
 data/processed/*
+
+# ML model artifacts
+data/models/
+
+# Local verification scripts
+scratch/
