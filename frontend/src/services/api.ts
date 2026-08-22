@@ -7,6 +7,12 @@ import {
   CleaningPreviewResponse,
   CleaningApplyResponse,
   TransformationHistoryResponse,
+  EDAResponse,
+  KPIMetric,
+  TrendMetric,
+  RelationshipMetric,
+  InsightResponse,
+  ExecutiveReport,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -167,4 +173,140 @@ export async function fetchTransformationHistory(
 export function getDownloadUrl(datasetId: string, version: 'raw' | 'processed' = 'raw'): string {
   return `${API_BASE_URL}/api/v1/datasets/${datasetId}/download?version=${version}`;
 }
+
+// Phase 3 EDA APIs
+
+export async function generateEDA(datasetId: string): Promise<EDAResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/eda`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to generate EDA analysis (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchEDA(datasetId: string): Promise<EDAResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/eda`, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unable to fetch EDA analysis (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchKPIs(datasetId: string): Promise<KPIMetric[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/kpis`, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unable to fetch KPIs (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchTrends(datasetId: string): Promise<TrendMetric[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/trends`, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unable to fetch trends (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchRelationships(datasetId: string): Promise<RelationshipMetric[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/relationships`, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unable to fetch relationships (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+// Phase 4 Business Insights APIs
+
+export async function fetchInsights(datasetId: string): Promise<InsightResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/insights`, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Unable to fetch business insights (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function generateInsights(datasetId: string): Promise<InsightResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/insights/generate`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to generate business insights (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+// Phase 5 Executive Report & Export APIs
+
+export async function fetchExecutiveReport(datasetId: string): Promise<ExecutiveReport> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/reports/executive`, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to fetch executive report (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export function getReportMarkdownExportUrl(datasetId: string): string {
+  return `${API_BASE_URL}/api/v1/datasets/${datasetId}/reports/export`;
+}
+
+export function getReportJsonExportUrl(datasetId: string): string {
+  return `${API_BASE_URL}/api/v1/datasets/${datasetId}/reports/export/json`;
+}
+
+
+
+
 

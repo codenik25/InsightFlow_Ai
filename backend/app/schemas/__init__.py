@@ -11,6 +11,10 @@ from app.schemas.profile import (
     DatasetProfileResponse,
 )
 
+from app.schemas.kpi import ColumnRoleInfo, KPIMetric, DatasetOverviewKPIs
+from app.schemas.eda import EDAResponse, CategoryBreakdown, TrendMetric, RelationshipMetric, DistributionStats
+from app.schemas.insight import Insight, InsightEvidence, InsightSummary, InsightResponse
+
 __all__ = [
     "HealthCheckResponse",
     "DatasetBase",
@@ -25,4 +29,16 @@ __all__ = [
     "QualitySummary",
     "DatasetOverview",
     "DatasetProfileResponse",
+    "ColumnRoleInfo",
+    "KPIMetric",
+    "DatasetOverviewKPIs",
+    "EDAResponse",
+    "CategoryBreakdown",
+    "TrendMetric",
+    "RelationshipMetric",
+    "DistributionStats",
+    "Insight",
+    "InsightEvidence",
+    "InsightSummary",
+    "InsightResponse",
 ]

@@ -1,1 +1,6 @@
 # Keep directory structure for raw uploaded datasets
+# Runtime / generated datasets
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep

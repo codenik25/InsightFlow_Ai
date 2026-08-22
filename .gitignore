@@ -59,3 +59,7 @@ htmlcov/
 # Database / Docker volumes local state
 *.sqlite3
 *.db
+
+# Runtime / generated datasets
+data/raw/*
+data/processed/*

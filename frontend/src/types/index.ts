@@ -223,3 +223,205 @@ export interface TransformationHistoryResponse {
   items: TransformationLogItem[];
 }
 
+// Phase 3 Types
+
+export interface ColumnRoleInfo {
+  column: string;
+  role: 'identifier' | 'measure' | 'categorical_dimension' | 'datetime_dimension' | 'text' | 'boolean' | string;
+  reason: string;
+  inferred_type: string;
+}
+
+export interface KPIMetric {
+  name: string;
+  value: number | string | any;
+  metric_type: 'sum' | 'mean' | 'median' | 'min' | 'max' | 'std' | 'count' | 'unique' | string;
+  source_column?: string | null;
+  format?: 'currency' | 'percentage' | 'number' | 'integer' | string;
+  reason?: string | null;
+}
+
+export interface DatasetOverviewKPIs {
+  total_rows: number;
+  total_columns: number;
+  measure_count: number;
+  dimension_count: number;
+  datetime_count: number;
+  total_missing_cells: number;
+  duplicate_rows: number;
+}
+
+export interface GroupedCategoryValue {
+  category_value: string;
+  metric_value: number;
+  contribution_pct: number;
+}
+
+export interface CategoryBreakdown {
+  dimension: string;
+  measure: string;
+  total_measure_value: number;
+  aggregation_method?: 'sum' | 'mean' | string;
+  top_category?: GroupedCategoryValue | null;
+  bottom_category?: GroupedCategoryValue | null;
+  top_5: GroupedCategoryValue[];
+  bottom_5: GroupedCategoryValue[];
+  grouped_data: GroupedCategoryValue[];
+}
+
+export interface TimeSeriesPoint {
+  period: string;
+  value: number;
+  count: number;
+}
+
+export interface TrendMetric {
+  measure: string;
+  datetime_column: string;
+  granularity: 'daily' | 'weekly' | 'monthly' | string;
+  trend_direction: 'increasing' | 'decreasing' | 'stable' | 'insufficient_data' | string;
+  slope: number;
+  pct_change: number;
+  first_period_value?: number | null;
+  latest_period_value?: number | null;
+  time_series: TimeSeriesPoint[];
+}
+
+export interface RelationshipMetric {
+  column_a: string;
+  column_b: string;
+  correlation: number;
+  strength: 'strong_positive' | 'moderate_positive' | 'neutral' | 'moderate_negative' | 'strong_negative' | string;
+}
+
+export interface DistributionStats {
+  column: string;
+  min: number;
+  max: number;
+  mean: number;
+  median: number;
+  std: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  iqr: number;
+  skewness: number;
+  zero_count: number;
+  is_constant: boolean;
+}
+
+export interface EDAResponse {
+  id: string;
+  dataset_id: string;
+  created_at: string;
+  column_roles: ColumnRoleInfo[];
+  overview_kpis: DatasetOverviewKPIs;
+  discovered_kpis: KPIMetric[];
+  category_breakdowns: CategoryBreakdown[];
+  trends: TrendMetric[];
+  relationships: RelationshipMetric[];
+  distributions: DistributionStats[];
+}
+
+// Phase 4 Business Insight Types
+
+export interface InsightEvidence {
+  dimension?: string | null;
+  metric?: string | null;
+  top_value?: any;
+  total_value?: any;
+  contribution_percent?: number | null;
+  second_best_value?: any;
+  comparison_diff?: number | null;
+  correlation?: number | null;
+  sample_size?: number | null;
+  quality_score_before?: number | null;
+  quality_score_after?: number | null;
+  details?: Record<string, any> | null;
+}
+
+export interface Insight {
+  id: string;
+  dataset_id: string;
+  category: 'KPI' | 'PERFORMANCE' | 'TREND' | 'COMPARISON' | 'CORRELATION' | 'DATA_QUALITY' | 'ANOMALY' | 'OPPORTUNITY' | string;
+  severity: 'INFO' | 'POSITIVE' | 'WARNING' | 'CRITICAL' | string;
+  title: string;
+  observation: string;
+  evidence: InsightEvidence;
+  explanation?: string | null;
+  recommendation?: string | null;
+  priority_score: number;
+  confidence: number;
+  source_column?: string | null;
+  dimension?: string | null;
+  metric_value?: number | null;
+  comparison_value?: number | null;
+  percentage_change?: number | null;
+  created_at: string;
+}
+
+export interface InsightSummary {
+  total: number;
+  critical_count: number;
+  warning_count: number;
+  positive_count: number;
+  info_count: number;
+  opportunity_count: number;
+}
+
+export interface InsightResponse {
+  dataset_id: string;
+  summary: InsightSummary;
+  insights: Insight[];
+}
+
+export interface ExecutiveKPINode {
+  name: string;
+  value: number;
+  formatted_value: string;
+  aggregation: string;
+  nature: string;
+  unit?: string | null;
+  reason?: string | null;
+}
+
+export interface ExecutiveHighlight {
+  id: string;
+  highlight_type: 'ACHIEVEMENT' | 'RISK' | 'OPPORTUNITY';
+  title: string;
+  summary: string;
+  source_insight_id?: string | null;
+  priority_score: number;
+  evidence?: Record<string, any> | null;
+}
+
+export interface StrategicAction {
+  priority: number;
+  title: string;
+  recommendation: string;
+  target_metric?: string | null;
+  target_dimension?: string | null;
+  source_insight_id?: string | null;
+}
+
+export interface ExecutiveReport {
+  dataset_id: string;
+  raw_dataset_id?: string | null;
+  dataset_name: string;
+  source_dataset_name?: string | null;
+  generated_at: string;
+  quality_score: number;
+  total_rows: number;
+  total_columns: number;
+  key_kpis: ExecutiveKPINode[];
+  executive_narrative: string;
+  key_achievements: ExecutiveHighlight[];
+  critical_risks: ExecutiveHighlight[];
+  key_opportunities: ExecutiveHighlight[];
+  strategic_actions: StrategicAction[];
+  total_insights_analyzed: number;
+}
+
+
+
+
