@@ -57,7 +57,7 @@ export const App: React.FC = () => {
                 Automated Analytics & Decision Intelligence Platform
               </h2>
               <p className="text-sm text-slate-300 leading-relaxed">
-                InsightFlow AI is engineered to streamline raw dataset validation, cleaning, automated analytics, KPI generation, anomaly detection, and natural language query execution. Phase 0 establishes the production-grade project architecture, clean API routing, and database ORM layer.
+                InsightFlow AI is engineered to streamline raw dataset validation, cleaning, automated analytics, KPI generation, predictive analytics, decision optimization, guardrail auditing, decision command center aggregation, AI decision briefs, and real-world outcome tracking across Phase 1 through Phase 7.7.
               </p>
             </div>
           </section>
@@ -88,14 +88,14 @@ export const App: React.FC = () => {
       <footer className="bg-slate-900 border-t border-slate-800 py-4 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
           <div>
-            <span className="font-semibold text-slate-300">InsightFlow AI</span> — Phase 0 Production Foundation
+            <span className="font-semibold text-slate-300">InsightFlow AI</span> — Phase 1–7.7 Decision Intelligence Platform
           </div>
           <div className="flex items-center gap-4 text-slate-400 font-mono">
             <span>FastAPI v0.110+</span>
             <span>•</span>
             <span>React 18 + TS</span>
             <span>•</span>
-            <span>SQLAlchemy 2.0 (psycopg 3)</span>
+            <span>SQLAlchemy 2.0</span>
           </div>
         </div>
       </footer>

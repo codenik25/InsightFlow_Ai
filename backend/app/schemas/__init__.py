@@ -25,6 +25,57 @@ from app.schemas.ml import (
     PredictionRequest,
     PredictionResponse,
 )
+from app.schemas.decision import (
+    ScenarioCreateRequest,
+    ScenarioResponse,
+    DecisionRecommendationResponse,
+    DecisionSummaryResponse,
+)
+from app.schemas.optimization import (
+    OptimizationObjective,
+    ControllableFeatureInfo,
+    FeatureConstraint,
+    OptimizationConstraints,
+    OptimizationRequest,
+    OptimizationOptionResponse,
+    OptimizationScenario,
+    OptimizationResponse,
+)
+from app.schemas.recommendation import (
+    RecommendationRequest,
+    RecommendationEvidence,
+    DecisionRecommendation,
+    RecommendationResponse,
+)
+from app.schemas.guardrail import (
+    GuardrailResult,
+    DecisionGuardrailResponse,
+    GuardrailBatchResponse,
+)
+from app.schemas.command_center import (
+    DecisionSnapshot,
+    DecisionRecommendationSummary,
+    EvidenceNode,
+    EvidenceChain,
+    DecisionComparison,
+    RiskSummary,
+    DecisionCommandCenterResponse,
+)
+from app.schemas.decision_brief import (
+    ClaimEvidenceRef,
+    ClaimEvidenceItem,
+    DecisionBriefSection,
+    DecisionBriefRequest,
+    DecisionBriefResponse,
+)
+from app.schemas.outcome import (
+    DecisionOutcomeCreate,
+    OutcomeEvaluation,
+    DecisionOutcomeResponse,
+    DecisionMemoryItem,
+    DecisionMemoryResponse,
+    DecisionPerformanceSummary,
+)
 
 __all__ = [
     "HealthCheckResponse",
@@ -61,5 +112,46 @@ __all__ = [
     "MLAnalysisResponse",
     "PredictionRequest",
     "PredictionResponse",
+    "ScenarioCreateRequest",
+    "ScenarioResponse",
+    "DecisionRecommendationResponse",
+    "DecisionSummaryResponse",
+    "OptimizationObjective",
+    "ControllableFeatureInfo",
+    "FeatureConstraint",
+    "OptimizationConstraints",
+    "OptimizationRequest",
+    "OptimizationOptionResponse",
+    "OptimizationScenario",
+    "OptimizationResponse",
+    "RecommendationRequest",
+    "RecommendationEvidence",
+    "DecisionRecommendation",
+    "RecommendationResponse",
+    "GuardrailResult",
+    "DecisionGuardrailResponse",
+    "GuardrailBatchResponse",
+    "DecisionSnapshot",
+    "DecisionRecommendationSummary",
+    "EvidenceNode",
+    "EvidenceChain",
+    "DecisionComparison",
+    "RiskSummary",
+    "DecisionCommandCenterResponse",
+    "ClaimEvidenceRef",
+    "ClaimEvidenceItem",
+    "DecisionBriefSection",
+    "DecisionBriefRequest",
+    "DecisionBriefResponse",
+    "DecisionOutcomeCreate",
+    "OutcomeEvaluation",
+    "DecisionOutcomeResponse",
+    "DecisionMemoryItem",
+    "DecisionMemoryResponse",
+    "DecisionPerformanceSummary",
 ]
+
+
+
+
 

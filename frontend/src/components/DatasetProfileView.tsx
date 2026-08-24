@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ArrowLeft, Download, RefreshCw, Sparkles, Layers, Lightbulb, FileText, BrainCircuit } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw, Sparkles, Layers, Lightbulb, FileText, BrainCircuit, Compass, ShieldCheck } from 'lucide-react';
 import { DatasetProfileData, DatasetQualityResponse, TransformationLogItem } from '../types';
 import { ColumnProfileTable } from './ColumnProfileTable';
 import { DataQualityCard } from './DataQualityCard';
@@ -10,6 +10,8 @@ import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { InsightsDashboard } from './InsightsDashboard';
 import { ExecutiveSummaryDashboard } from './ExecutiveSummaryDashboard';
 import { MLInsightsDashboard } from './MLInsightsDashboard';
+import { DecisionIntelligenceView } from './DecisionIntelligenceView';
+import { DecisionCommandCenter } from './DecisionCommandCenter';
 import { fetchDatasetQuality, fetchTransformationHistory, getDownloadUrl } from '../services/api';
 
 interface DatasetProfileViewProps {
@@ -20,7 +22,7 @@ interface DatasetProfileViewProps {
 export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile, onBack }) => {
   const { overview, quality, columns } = profile;
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'analytics' | 'insights' | 'executive' | 'ml'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'analytics' | 'insights' | 'executive' | 'ml' | 'decision' | 'command_center'>('profile');
   const [qualityData, setQualityData] = useState<DatasetQualityResponse | null>(null);
   const [transformationLogs, setTransformationLogs] = useState<TransformationLogItem[]>([]);
   const [isLoadingQuality, setIsLoadingQuality] = useState<boolean>(true);
@@ -80,7 +82,7 @@ export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile,
 
         {/* Tab Buttons & Download */}
         <div className="flex items-center gap-3">
-          <div className="bg-slate-900 border border-slate-800 p-1 rounded-xl flex items-center gap-1 text-xs font-medium">
+          <div className="bg-slate-900 border border-slate-800 p-1 rounded-xl flex items-center gap-1 text-xs font-medium flex-wrap">
             <button
               onClick={() => setActiveTab('profile')}
               className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
@@ -140,6 +142,30 @@ export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile,
               <BrainCircuit className="w-3.5 h-3.5 text-purple-300" />
               <span>Predictive Analytics</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('decision')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                activeTab === 'decision'
+                  ? 'bg-indigo-600 text-white shadow-md font-semibold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5 text-indigo-300" />
+              <span>Decision Optimization</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('command_center')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                activeTab === 'command_center'
+                  ? 'bg-sky-600 text-white shadow-md font-semibold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-sky-300" />
+              <span>Command Center</span>
+            </button>
           </div>
 
           <a
@@ -153,7 +179,11 @@ export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile,
         </div>
       </div>
 
-      {activeTab === 'ml' ? (
+      {activeTab === 'command_center' ? (
+        <DecisionCommandCenter datasetId={profile.dataset_id} isProcessed={overview.duplicate_rows === 0 || transformationLogs.length > 0} />
+      ) : activeTab === 'decision' ? (
+        <DecisionIntelligenceView datasetId={profile.dataset_id} isProcessed={overview.duplicate_rows === 0 || transformationLogs.length > 0} />
+      ) : activeTab === 'ml' ? (
         <MLInsightsDashboard datasetId={profile.dataset_id} />
       ) : activeTab === 'executive' ? (
         <ExecutiveSummaryDashboard datasetId={profile.dataset_id} />
@@ -234,3 +264,4 @@ export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile,
     </div>
   );
 };
+

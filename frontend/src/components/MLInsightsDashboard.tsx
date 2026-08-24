@@ -481,25 +481,62 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
             )}
 
             {predictionResult && (
-              <div className="bg-purple-950/40 border border-purple-800/80 rounded-xl p-4 space-y-2">
-                <div className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>Prediction Engine Output</span>
+              <div className="bg-purple-950/40 border border-purple-800/80 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>Prediction Output ({predictionResult.task_type.toUpperCase()})</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-900 text-purple-200 font-mono">
+                    Model Inference Complete
+                  </span>
                 </div>
 
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 font-mono text-sm text-emerald-400">
+                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 font-mono text-sm text-emerald-400 space-y-2">
                   {predictionResult.predictions.map((p, idx) => (
                     <div key={idx} className="flex items-center justify-between">
                       <span className="text-slate-400 text-xs">
-                        {activeAnalysis.target_column ? `Predicted ${activeAnalysis.target_column}` : 'Output'}:
+                        {activeAnalysis.target_column ? `Predicted Target (${activeAnalysis.target_column})` : 'Predicted Outcome'}:
                       </span>
-                      <span className="font-bold text-white">{typeof p === 'number' ? p.toLocaleString() : String(p)}</span>
+                      <span className="font-bold text-white font-mono">{typeof p === 'number' ? p.toLocaleString() : String(p)}</span>
                     </div>
                   ))}
                 </div>
 
-                <p className="text-xs text-slate-400 italic">
-                  {predictionResult.explanation}
+                {/* Classification Probabilities */}
+                {predictionResult.probabilities && predictionResult.probabilities.length > 0 && (
+                  <div className="bg-slate-950/80 p-3 rounded-lg border border-slate-800 space-y-2">
+                    <div className="text-xs font-bold text-slate-300 uppercase tracking-wider font-mono">
+                      Class Probabilities Breakdown
+                    </div>
+                    <div className="space-y-1.5 font-mono text-xs">
+                      {predictionResult.probabilities.map((probObj, recordIdx) => (
+                        <div key={recordIdx} className="space-y-1">
+                          {Object.entries(probObj).map(([cls, probVal]) => {
+                            const pct = (probVal * 100).toFixed(1);
+                            return (
+                              <div key={cls} className="space-y-1">
+                                <div className="flex justify-between items-center text-[11px] text-slate-300">
+                                  <span>Class: <strong className="text-white">{cls}</strong></span>
+                                  <span className="text-emerald-400 font-bold">{pct}%</span>
+                                </div>
+                                <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                                  <div
+                                    className="bg-emerald-500 h-1.5 rounded-full transition-all duration-300"
+                                    style={{ width: `${Math.max(Number(pct), 3)}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs text-slate-300 italic bg-slate-950/50 p-2.5 rounded border border-slate-800">
+                  💡 {predictionResult.explanation}
                 </p>
               </div>
             )}

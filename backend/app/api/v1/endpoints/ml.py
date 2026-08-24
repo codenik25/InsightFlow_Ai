@@ -9,11 +9,14 @@ from app.schemas.ml import (
     PredictionRequest,
     PredictionResponse,
 )
+from app.schemas.decision import MLExplanationResponse
 from app.services.eda_service import EDAService
 from app.services.dataset_service import DatasetService
 from app.services.ml_task_service import MLTaskService
+from app.services.decision_service import DecisionService
 
 router = APIRouter()
+
 
 
 @router.get("/{dataset_id}/ml/tasks", response_model=MLTaskDiscoveryResponse)
@@ -88,3 +91,14 @@ def run_ml_prediction(
     return MLTaskService.predict(
         db=db, dataset_id=dataset_id, analysis_id=analysis_id, inputs=payload.inputs
     )
+
+
+@router.get("/{dataset_id}/ml/{analysis_id}/explain", response_model=MLExplanationResponse)
+def explain_ml_model(
+    dataset_id: str,
+    analysis_id: str,
+    db: Session = Depends(get_db),
+) -> MLExplanationResponse:
+    """Retrieve model feature importances and structural explanation for a trained ML analysis."""
+    return DecisionService.explain_ml_model(db=db, dataset_id=dataset_id, analysis_id=analysis_id)
+

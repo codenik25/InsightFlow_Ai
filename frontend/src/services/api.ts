@@ -16,13 +16,30 @@ import {
   MLTaskDiscoveryResponse,
   MLAnalysisResponse,
   PredictionResponse,
+  OptimizationOptionResponse,
+  OptimizationRequest,
+  OptimizationResponse,
+  DecisionRecommendation,
+  RecommendationResponse,
+  DecisionGuardrailResponse,
+  GuardrailBatchResponse,
+  DecisionCommandCenterResponse,
+  DecisionBriefResponse,
+  DecisionOutcome,
+  DecisionMemoryResponse,
+  DecisionPerformanceSummary,
+  ScenarioCreateRequest,
+  ScenarioResponse,
+  ScenarioComparisonResponse,
+  DecisionSummaryResponse,
+  MLExplanationResponse,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export async function fetchHealthStatus(): Promise<HealthStatus> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/health`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/health`, {
       headers: {
         'Accept': 'application/json',
       },
@@ -400,6 +417,396 @@ export async function runMLPrediction(
 
   return await response.json();
 }
+
+export async function explainMLModel(
+  datasetId: string,
+  analysisId: string
+): Promise<MLExplanationResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/ml/${analysisId}/explain`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to explain ML model (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+// Phase 7.0 - 7.1 Decision Intelligence & Scenario Simulation APIs
+
+export async function fetchDecisionSummary(datasetId: string): Promise<DecisionSummaryResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to fetch decision summary (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function evaluateWhatIfScenario(
+  datasetId: string,
+  payload: ScenarioCreateRequest
+): Promise<ScenarioResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/scenarios`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to evaluate scenario (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchWhatIfScenarios(datasetId: string): Promise<ScenarioResponse[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/scenarios`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch scenarios (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function compareWhatIfScenario(
+  datasetId: string,
+  scenarioId: string
+): Promise<ScenarioComparisonResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/scenarios/${scenarioId}/compare`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to compare scenario (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+// Phase 7.2 Decision Optimization APIs
+
+export async function fetchOptimizationOptions(
+  datasetId: string,
+  analysisId?: string
+): Promise<OptimizationOptionResponse> {
+  const url = analysisId
+    ? `${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/optimization/options?analysis_id=${encodeURIComponent(analysisId)}`
+    : `${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/optimization/options`;
+
+  const response = await fetch(url, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to fetch optimization options (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function runOptimization(
+  datasetId: string,
+  payload: OptimizationRequest
+): Promise<OptimizationResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/optimize`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Optimization execution failed (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchOptimizations(datasetId: string): Promise<OptimizationResponse[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/optimizations`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch optimizations (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchOptimizationById(datasetId: string, optimizationId: string): Promise<OptimizationResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/optimizations/${optimizationId}`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch optimization details (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function generateRecommendations(
+  datasetId: string,
+  optimizationId: string,
+  maxRecommendations: number = 3
+): Promise<RecommendationResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/recommendations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({
+      optimization_id: optimizationId,
+      max_recommendations: maxRecommendations,
+    }),
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Recommendation generation failed (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchRecommendations(datasetId: string): Promise<DecisionRecommendation[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/recommendations`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch recommendations (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchRecommendationById(datasetId: string, recommendationId: string): Promise<DecisionRecommendation> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/recommendations/${recommendationId}`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch recommendation (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+// Phase 7.4 Decision Guardrails APIs
+
+export async function evaluateGuardrailsForRecommendation(
+  datasetId: string,
+  recommendationId: string
+): Promise<DecisionGuardrailResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/recommendations/${recommendationId}/guardrails`, {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Guardrail evaluation failed (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function evaluateAllGuardrails(datasetId: string): Promise<GuardrailBatchResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/guardrails`, {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Batch guardrail evaluation failed (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchGuardrailsForDataset(datasetId: string): Promise<DecisionGuardrailResponse[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/guardrails`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch dataset guardrails (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function getGuardrailByRecommendationId(
+  datasetId: string,
+  recommendationId: string
+): Promise<DecisionGuardrailResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/recommendations/${recommendationId}/guardrails`,
+    {
+      headers: { 'Accept': 'application/json' },
+    }
+  );
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to fetch recommendation guardrails (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+// Phase 7.5 Decision Command Center API
+
+export async function fetchDecisionCommandCenter(datasetId: string): Promise<DecisionCommandCenterResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/command-center`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Command center aggregation failed (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+// Phase 7.6 AI Decision Brief Engine APIs
+
+export async function generateDecisionBrief(
+  datasetId: string,
+  recommendationId?: string
+): Promise<DecisionBriefResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/brief`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({ recommendation_id: recommendationId || null }),
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Brief generation failed (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchDecisionBrief(datasetId: string): Promise<DecisionBriefResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/brief`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch AI decision brief (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+// Phase 7.7 Decision Memory & Outcome Feedback APIs
+
+export async function recordDecisionOutcome(
+  datasetId: string,
+  payload: {
+    recommendation_id: string;
+    actual_metric: string;
+    actual_value: number;
+    notes?: string;
+  }
+): Promise<DecisionOutcome> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/outcomes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Recording outcome failed (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchDecisionOutcomes(datasetId: string): Promise<DecisionOutcome[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/outcomes`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch dataset outcomes (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchDecisionOutcomeById(datasetId: string, outcomeId: string): Promise<DecisionOutcome> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/outcomes/${outcomeId}`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch decision outcome (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchDecisionMemory(datasetId: string): Promise<DecisionMemoryResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/memory`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to fetch decision memory (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchDecisionPerformance(datasetId: string): Promise<DecisionPerformanceSummary> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/performance`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to fetch decision performance (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+
 
 
 

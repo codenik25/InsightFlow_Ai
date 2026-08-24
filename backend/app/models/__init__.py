@@ -4,7 +4,26 @@ from app.models.transformation_log import TransformationLog
 from app.models.eda_result import EDAAnalysis
 from app.models.insight import DatasetInsight
 from app.models.ml_analysis import MLAnalysis
+from app.models.scenario import Scenario
+from app.models.decision_recommendation import DecisionRecommendation
+from app.models.decision_optimization import DecisionOptimization
+from app.models.decision_recommendation_evaluation import DecisionRecommendationEvaluation
+from app.models.decision_guardrail import DecisionGuardrailEvaluation
+from app.models.decision_brief import DecisionBrief
+from app.models.decision_outcome import DecisionOutcome
 
-__all__ = ["Base", "Dataset", "TransformationLog", "EDAAnalysis", "DatasetInsight", "MLAnalysis"]
-
-
+__all__ = [
+    "Base",
+    "Dataset",
+    "TransformationLog",
+    "EDAAnalysis",
+    "DatasetInsight",
+    "MLAnalysis",
+    "Scenario",
+    "DecisionRecommendation",
+    "DecisionOptimization",
+    "DecisionRecommendationEvaluation",
+    "DecisionGuardrailEvaluation",
+    "DecisionBrief",
+    "DecisionOutcome",
+]
