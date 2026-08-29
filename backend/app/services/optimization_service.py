@@ -23,10 +23,58 @@ from app.services.eda_service import EDAService
 from app.services.type_detector import TypeDetector
 from app.services.decision_service import DecisionService
 from app.services.ml_task_service import MLTaskService
+from app.services.quality_service import QualityService
 
 
 class OptimizationService:
     """Service for Decision Optimization foundation, controllable feature discovery, and scenario generation."""
+
+    @classmethod
+    def _get_valid_numeric_series(cls, series: pd.Series, col_name: str) -> pd.Series:
+        """
+        Parses numeric series and filters out invalid observations failing SEMANTIC_RANGE_RULES.
+        Returns a pandas Series containing only valid numeric observations.
+        """
+        cleaned_s = MLTaskService._clean_numeric_series(series)
+        valid_s = cleaned_s.dropna()
+        valid_s = valid_s[np.isfinite(valid_s)]
+
+        if valid_s.empty:
+            return valid_s
+
+        col_lower = str(col_name).lower().replace('-', '_')
+
+        matched_min: Optional[float] = None
+        matched_max: Optional[float] = None
+
+        # 1. Match against QualityService.SEMANTIC_RANGE_RULES
+        for rule in QualityService.SEMANTIC_RANGE_RULES:
+            if any(kw == col_lower or kw in col_lower for kw in rule["keywords"]):
+                r_min = rule.get("min")
+                r_max = rule.get("max")
+                if r_min is not None:
+                    matched_min = float(r_min) if matched_min is None else max(matched_min, float(r_min))
+                if r_max is not None:
+                    matched_max = float(r_max) if matched_max is None else min(matched_max, float(r_max))
+
+        # 2. General domain fallback rules if not explicitly matched above
+        if matched_min is None and matched_max is None:
+            if any(col_lower.endswith(suf) for suf in ['_rate', '_ratio', '_pct']):
+                if not any(kw in col_lower for kw in ['satisfaction', 'score', 'discount']):
+                    matched_min = 0.0
+                    matched_max = 1.0
+            elif 'satisfaction' in col_lower:
+                matched_min = 0.0
+                matched_max = 100.0
+            elif any(kw in col_lower for kw in ['bill', 'cost', 'price', 'revenue', 'expense', 'profit', 'income', 'amount', 'salary', 'sales', 'visits', 'count', 'units', 'fee']):
+                matched_min = 0.0
+
+        if matched_min is not None:
+            valid_s = valid_s[valid_s >= matched_min]
+        if matched_max is not None:
+            valid_s = valid_s[valid_s <= matched_max]
+
+        return valid_s
 
     @classmethod
     def discover_controllable_features(
@@ -112,7 +160,7 @@ class OptimizationService:
             non_null_count = len(clean_s)
             missing_ratio = (total_rows - non_null_count) / total_rows if total_rows > 0 else 1.0
             inferred_type = TypeDetector.detect_column_type(series, col_name)
-            col_name_lower = col_name.lower()
+            col_name_lower = col_name.lower().replace('-', '_')
             imp_val = round(float(feature_importances.get(col_name, 0.0)), 4)
 
             # Rule 1: Target Column Exclusion
@@ -130,10 +178,39 @@ class OptimizationService:
                 )
                 continue
 
-            # Rule 2: Identifier Column Exclusion
+            # Rule 2: Free-Text Column Exclusion
+            col_tokens = set(col_name_lower.split('_'))
+            if inferred_type == "text" or any(kw in col_tokens for kw in TypeDetector.FREE_TEXT_KEYWORDS):
+                controllable_features.append(
+                    ControllableFeatureInfo(
+                        column=col_name,
+                        data_type="text",
+                        role="text",
+                        importance=imp_val,
+                        allowed=False,
+                        exclusion_reason="Free-text narrative column is not supported as a controllable optimization variable.",
+                        optimization_supported=False,
+                    )
+                )
+                continue
+
+            # Rule 3: Identifier Column Exclusion
+            # Only classify as identifier if it matches an explicit identifier pattern (is_id_name) AND has high uniqueness (>= 80%),
+            # or if explicitly inferred as identifier by TypeDetector.
+            # Numeric business measures (average_bill, operating_cost, etc.) MUST NOT be classified as identifiers merely due to high cardinality.
             is_id_name = TypeDetector.is_identifier_candidate_name(col_name)
             uniqueness_ratio = clean_s.nunique() / non_null_count if non_null_count > 0 else 0.0
-            if is_id_name or inferred_type == "identifier" or (uniqueness_ratio >= 0.80 and not pd.api.types.is_numeric_dtype(series)):
+
+            valid_numeric_s = cls._get_valid_numeric_series(series, col_name)
+            is_numeric_measure = (inferred_type == "numeric" or pd.api.types.is_numeric_dtype(series) or not valid_numeric_s.empty)
+
+            is_true_identifier = (
+                inferred_type == "identifier"
+                or (is_id_name and uniqueness_ratio >= 0.80)
+                or (uniqueness_ratio >= 0.90 and not is_numeric_measure)
+            )
+
+            if is_true_identifier:
                 controllable_features.append(
                     ControllableFeatureInfo(
                         column=col_name,
@@ -147,7 +224,7 @@ class OptimizationService:
                 )
                 continue
 
-            # Rule 3: Temporal / Date Column Exclusion
+            # Rule 4: Temporal / Date Column Exclusion
             if inferred_type == "datetime" or any(kw in col_name_lower for kw in ["date", "time", "timestamp", "created", "updated", "dt"]):
                 controllable_features.append(
                     ControllableFeatureInfo(
@@ -162,8 +239,9 @@ class OptimizationService:
                 )
                 continue
 
-            # Rule 4: Zero Variance Exclusion
-            if clean_s.nunique() <= 1:
+            # Rule 5: Zero Variance Exclusion (derived from valid observations for numeric or clean_s for non-numeric)
+            obs_nunique = valid_numeric_s.nunique() if is_numeric_measure else clean_s.nunique()
+            if obs_nunique <= 1:
                 controllable_features.append(
                     ControllableFeatureInfo(
                         column=col_name,
@@ -177,13 +255,13 @@ class OptimizationService:
                 )
                 continue
 
-            # Rule 5: High Missingness Exclusion (> 30%)
+            # Rule 6: High Missingness Exclusion (> 30%)
             if missing_ratio > 0.30:
                 controllable_features.append(
                     ControllableFeatureInfo(
                         column=col_name,
                         data_type=inferred_type,
-                        role="measure" if pd.api.types.is_numeric_dtype(series) else "dimension",
+                        role="measure" if is_numeric_measure else "dimension",
                         importance=imp_val,
                         allowed=False,
                         exclusion_reason=f"Feature exceeds missingness safety threshold ({round(missing_ratio * 100, 1)}% missing).",
@@ -192,8 +270,8 @@ class OptimizationService:
                 )
                 continue
 
-            # Rule 6: High-Cardinality Categorical Column Exclusion (> 10 unique distinct values)
-            if inferred_type in ["categorical", "text"] and clean_s.nunique() > 10:
+            # Rule 7: High-Cardinality Categorical Column Exclusion (> 10 unique distinct values)
+            if not is_numeric_measure and inferred_type in ["categorical", "text"] and clean_s.nunique() > 10:
                 controllable_features.append(
                     ControllableFeatureInfo(
                         column=col_name,
@@ -207,26 +285,39 @@ class OptimizationService:
                 )
                 continue
 
-            # Rule 7: Valid Controllable Feature
-            if pd.api.types.is_numeric_dtype(series):
-                c_val = round(float(clean_s.mean()), 4) if not clean_s.empty else 0.0
-                min_v = round(float(clean_s.min()), 4) if not clean_s.empty else 0.0
-                max_v = round(float(clean_s.max()), 4) if not clean_s.empty else 0.0
-
-                controllable_features.append(
-                    ControllableFeatureInfo(
-                        column=col_name,
-                        data_type="numeric",
-                        role="measure",
-                        current_value=c_val,
-                        min_value=min_v,
-                        max_value=max_v,
-                        importance=imp_val,
-                        allowed=True,
-                        exclusion_reason=None,
-                        optimization_supported=True,
+            # Rule 8: Valid Controllable Feature
+            if is_numeric_measure:
+                if valid_numeric_s.empty:
+                    controllable_features.append(
+                        ControllableFeatureInfo(
+                            column=col_name,
+                            data_type="numeric",
+                            role="measure",
+                            importance=imp_val,
+                            allowed=False,
+                            exclusion_reason="No valid numeric observations available for optimization.",
+                            optimization_supported=False,
+                        )
                     )
-                )
+                else:
+                    c_val = round(float(valid_numeric_s.mean()), 4)
+                    min_v = round(float(valid_numeric_s.min()), 4)
+                    max_v = round(float(valid_numeric_s.max()), 4)
+
+                    controllable_features.append(
+                        ControllableFeatureInfo(
+                            column=col_name,
+                            data_type="numeric",
+                            role="measure",
+                            current_value=c_val,
+                            min_value=min_v,
+                            max_value=max_v,
+                            importance=imp_val,
+                            allowed=True,
+                            exclusion_reason=None,
+                            optimization_supported=True,
+                        )
+                    )
             else:
                 c_val = str(clean_s.mode().iloc[0]) if not clean_s.empty else "unknown"
                 cats = sorted([str(v) for v in clean_s.unique()])
@@ -304,19 +395,26 @@ class OptimizationService:
         feature_cols = analysis.feature_columns or []
         target_col = analysis.target_column or "target"
 
-        # 4. Construct & Validate Baseline Inputs
-        if payload.baseline_inputs:
-            baseline_record = payload.baseline_inputs.copy()
-        else:
-            baseline_record = {}
-            for col in feature_cols:
-                series = df[col].dropna()
-                if pd.api.types.is_numeric_dtype(series):
-                    baseline_record[col] = round(float(series.mean()), 4) if not series.empty else 0.0
-                else:
-                    baseline_record[col] = str(series.mode().iloc[0]) if not series.empty else "unknown"
+        # 4. Construct & Validate Complete Baseline Inputs for All Required Model Features
+        baseline_record: Dict[str, Any] = {}
+        user_baseline = payload.baseline_inputs or {}
 
-        # 5. Validate User Feature Constraints Against Historical Bounds
+        # Validate unknown features in user-supplied baseline_inputs
+        unknown_baseline_cols = [k for k in user_baseline.keys() if k not in feature_cols]
+        if unknown_baseline_cols:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Baseline inputs contain unknown feature columns: {sorted(unknown_baseline_cols)}.",
+            )
+
+        baseline_record = DecisionService.construct_canonical_baseline_record(
+            df=df,
+            feature_cols=feature_cols,
+            user_baseline=user_baseline,
+        )
+
+        # 5. Validate User Feature Constraints Strictly Before Scenario Generation
+        validated_constraints: Dict[str, Tuple[Optional[float], Optional[float]]] = {}
         if payload.feature_constraints:
             for feat, constraint in payload.feature_constraints.items():
                 if feat not in controllable_map:
@@ -324,42 +422,96 @@ class OptimizationService:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"Feature '{feat}' is not a controllable optimization feature.",
                     )
-                series = df[feat].dropna()
-                if pd.api.types.is_numeric_dtype(series):
-                    obs_min = float(series.min())
-                    obs_max = float(series.max())
-                    if constraint.min is not None and constraint.min < obs_min:
+                
+                raw_min = constraint.min
+                raw_max = constraint.max
+
+                parsed_bounds: Dict[str, Optional[float]] = {"min": None, "max": None}
+                for b_name, b_val in [("min", raw_min), ("max", raw_max)]:
+                    if b_val is not None:
+                        if isinstance(b_val, bool):
+                            raise HTTPException(
+                                status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Invalid constraint for feature '{feat}': {b_name} bound must be a number, got boolean '{b_val}'.",
+                            )
+                        if not isinstance(b_val, (int, float)):
+                            if isinstance(b_val, str):
+                                try:
+                                    fval = float(b_val)
+                                except (ValueError, TypeError):
+                                    raise HTTPException(
+                                        status_code=status.HTTP_400_BAD_REQUEST,
+                                        detail=f"Invalid constraint for feature '{feat}': {b_name} bound must be a valid number, got '{b_val}'.",
+                                    )
+                            else:
+                                raise HTTPException(
+                                    status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail=f"Invalid constraint for feature '{feat}': {b_name} bound must be a number.",
+                                )
+                        else:
+                            fval = float(b_val)
+
+                        if not np.isfinite(fval):
+                            raise HTTPException(
+                                status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Invalid constraint for feature '{feat}': {b_name} bound must be a finite number, got '{fval}'.",
+                            )
+                        parsed_bounds[b_name] = fval
+
+                p_min = parsed_bounds["min"]
+                p_max = parsed_bounds["max"]
+
+                if p_min is not None and p_max is not None:
+                    if p_min > p_max:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Constraint for {feat} exceeds the observed dataset range.",
+                            detail=f"Invalid constraint for feature '{feat}': minimum bound ({p_min}) cannot exceed maximum bound ({p_max}).",
                         )
-                    if constraint.max is not None and constraint.max > obs_max:
+
+                valid_numeric_s = cls._get_valid_numeric_series(df[feat], feat)
+                if not valid_numeric_s.empty:
+                    obs_min = float(valid_numeric_s.min())
+                    obs_max = float(valid_numeric_s.max())
+                    if p_min is not None and p_min < obs_min:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Constraint for {feat} exceeds the observed dataset range.",
+                            detail=f"Constraint for feature '{feat}': min bound ({p_min}) exceeds the observed dataset range [{obs_min}, {obs_max}].",
                         )
+                    if p_max is not None and p_max > obs_max:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Constraint for feature '{feat}': max bound ({p_max}) exceeds the observed dataset range [{obs_min}, {obs_max}].",
+                        )
+                validated_constraints[feat] = (p_min, p_max)
 
         # 6. Generate Deterministic Candidate Feature Values
         candidate_values: Dict[str, List[Any]] = {}
         for feat, feat_info in controllable_map.items():
-            series = df[feat].dropna()
-            user_constraint = payload.feature_constraints.get(feat) if payload.feature_constraints else None
+            series = df[feat]
+            user_bounds = validated_constraints.get(feat, (None, None))
+            u_min, u_max = user_bounds[0], user_bounds[1]
 
-            if pd.api.types.is_numeric_dtype(series):
-                obs_min = float(series.min())
-                obs_max = float(series.max())
-                low = max(obs_min, user_constraint.min) if (user_constraint and user_constraint.min is not None) else obs_min
-                high = min(obs_max, user_constraint.max) if (user_constraint and user_constraint.max is not None) else obs_max
+            if feat_info.data_type == "numeric":
+                valid_s = cls._get_valid_numeric_series(series, feat)
+                if valid_s.empty:
+                    clean_s = series.dropna()
+                    valid_s = clean_s
 
-                p25 = float(series.quantile(0.25))
-                p50 = float(series.quantile(0.50))
-                p75 = float(series.quantile(0.75))
+                obs_min = float(valid_s.min()) if not valid_s.empty else 0.0
+                obs_max = float(valid_s.max()) if not valid_s.empty else 0.0
+                low = max(obs_min, u_min) if u_min is not None else obs_min
+                high = min(obs_max, u_max) if u_max is not None else obs_max
+
+                p25 = float(valid_s.quantile(0.25)) if not valid_s.empty else low
+                p50 = float(valid_s.quantile(0.50)) if not valid_s.empty else low
+                p75 = float(valid_s.quantile(0.75)) if not valid_s.empty else high
 
                 raw_vals = [low, p25, p50, p75, high]
                 valid_vals = sorted(list(set([round(v, 4) for v in raw_vals if low <= v <= high])))
                 candidate_values[feat] = valid_vals
             else:
-                candidate_values[feat] = sorted([str(v) for v in series.unique()])
+                clean_s = series.dropna()
+                candidate_values[feat] = sorted([str(v) for v in clean_s.unique()])
 
         # 7. Generate Deterministic Scenario Combinations
         raw_scenarios: List[Tuple[Dict[str, Any], Dict[str, Any]]] = []  # (changes, inputs)

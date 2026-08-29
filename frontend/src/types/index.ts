@@ -892,6 +892,97 @@ export interface DecisionPerformanceSummary {
   limited_history_warning?: string | null;
 }
 
+// Demand Forecasting Types
+export interface ForecastPoint {
+  date: string;
+  predicted_value: number;
+  lower_bound?: number | null;
+  upper_bound?: number | null;
+}
+
+export interface ForecastMetrics {
+  mae: number;
+  rmse: number;
+  r2?: number | null;
+  mape?: number | null;
+}
+
+export interface ForecastTaskCandidate {
+  task_type: string;
+  target_column: string;
+  time_column: string;
+  suitability_score: number;
+  reasons: string[];
+  warnings: string[];
+}
+
+export interface ForecastTaskDiscoveryResponse {
+  dataset_id: string;
+  candidate_tasks: ForecastTaskCandidate[];
+  message: string;
+}
+
+export interface ForecastAnalysisResponse {
+  forecast_id: string;
+  dataset_id: string;
+  target_column: string;
+  time_column: string;
+  horizon: number;
+  confidence: 'EXPLORATORY' | 'LIMITED' | 'STANDARD' | string;
+  sample_size: number;
+  metrics: ForecastMetrics;
+  forecast: ForecastPoint[];
+  historical?: Array<{ date: string; value: number }>;
+  insights?: {
+    summary: string;
+    historical_mean: number;
+    forecast_mean: number;
+    percentage_change: number;
+    peak_period: { date: string; predicted_value: number };
+    lowest_period: { date: string; predicted_value: number };
+    non_causal_statement: string;
+  } | null;
+  warnings: string[];
+  created_at?: string;
+}
+
+// Anomaly Intelligence Types
+export interface AnomalyFeatureDeviation {
+  feature: string;
+  observed_value: any;
+  expected_mean: number;
+  std_dev: number;
+  deviation_zscore: number;
+  description: string;
+}
+
+export interface AnomalyItem {
+  row_id: number;
+  anomaly_score: number;
+  status: 'ANOMALOUS' | 'NORMAL' | string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | string;
+  explanation: string;
+  feature_deviations: AnomalyFeatureDeviation[];
+  raw_values?: Record<string, any>;
+}
+
+export interface AnomalyAnalysisResponse {
+  anomaly_id: string;
+  dataset_id: string;
+  total_observations: number;
+  anomaly_count: number;
+  anomaly_rate: number;
+  high_severity_count: number;
+  confidence: 'EXPLORATORY' | 'LIMITED' | 'STANDARD' | string;
+  sample_size: number;
+  feature_columns: string[];
+  anomalies: AnomalyItem[];
+  warnings: string[];
+  score_distribution: Record<string, number>;
+  created_at?: string;
+}
+
+
 
 
 

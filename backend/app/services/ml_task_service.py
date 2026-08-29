@@ -17,8 +17,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.dummy import DummyRegressor, DummyClassifier
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, IsolationForest
+from sklearn.preprocessing import LabelEncoder
+
+try:
+    from xgboost import XGBRegressor, XGBClassifier
+    HAS_XGBOOST = True
+except ImportError:
+    HAS_XGBOOST = False
 
 from app.core.config import settings
+
 from app.models.dataset import Dataset
 from app.models.ml_analysis import MLAnalysis
 from app.schemas.ml import (
@@ -73,7 +81,47 @@ class TimeSeriesMovingAverageModel:
         return np.full(shape=(len(X),), fill_value=self.ma_value)
 
 
+class XGBClassifierWrapper:
+    """Wrapper around XGBClassifier to handle string target labels and maintain sklearn Pipeline API compatibility."""
+    def __init__(self, n_estimators: int = 50, random_state: int = 42):
+        self.n_estimators = n_estimators
+        self.random_state = random_state
+        if HAS_XGBOOST:
+            self.clf = XGBClassifier(
+                n_estimators=self.n_estimators,
+                random_state=self.random_state,
+                eval_metric="logloss",
+            )
+        else:
+            self.clf = None
+        self.le = LabelEncoder()
+        self.classes_ = None
+        self.feature_importances_ = None
+
+    def fit(self, X, y):
+        if not HAS_XGBOOST or self.clf is None:
+            raise RuntimeError("XGBoost is not available in the current environment.")
+        y_num = self.le.fit_transform(y)
+        self.classes_ = self.le.classes_
+        self.clf.fit(X, y_num)
+        if hasattr(self.clf, "feature_importances_"):
+            self.feature_importances_ = self.clf.feature_importances_
+        return self
+
+    def predict(self, X):
+        if not HAS_XGBOOST or self.clf is None:
+            raise RuntimeError("XGBoost is not available in the current environment.")
+        preds_num = self.clf.predict(X)
+        return self.le.inverse_transform(preds_num)
+
+    def predict_proba(self, X):
+        if not HAS_XGBOOST or self.clf is None:
+            raise RuntimeError("XGBoost is not available in the current environment.")
+        return self.clf.predict_proba(X)
+
+
 class MLTaskService:
+
     """Orchestrator for ML Task Discovery, Baseline Model Training, Evaluation, Artifact Persistence, and Prediction."""
 
     @classmethod
@@ -90,7 +138,7 @@ class MLTaskService:
         # 1. Regression Candidates
         for measure in numeric_measures:
             col_name = measure.column
-            series = df[col_name].dropna()
+            series = cls._clean_numeric_series(df[col_name]).dropna()
             if len(series) < 10:
                 continue
 
@@ -224,18 +272,113 @@ class MLTaskService:
         )
 
     @classmethod
+    def _clean_numeric_series(cls, series: pd.Series) -> pd.Series:
+        """Coerce a series to numeric floats, stripping currency symbols, commas, and null-like strings."""
+        if series is None or len(series) == 0:
+            return pd.Series(dtype=float)
+        if pd.api.types.is_numeric_dtype(series.dtype):
+            return pd.to_numeric(series, errors="coerce")
+
+        s_str = series.astype(str).str.strip()
+        cleaned = (
+            s_str.str.replace(r"[$,€£]", "", regex=True)
+            .str.replace(",", "", regex=False)
+        )
+        mask_null = cleaned.str.lower().isin(TypeDetector.NULL_LIKE_STRINGS)
+        cleaned_series = cleaned.copy()
+        cleaned_series[mask_null] = np.nan
+        return pd.to_numeric(cleaned_series, errors="coerce")
+
+    @classmethod
+    def _clean_dataframe_features(
+        cls, df: pd.DataFrame, features: List[str], roles: List[ColumnRoleInfo]
+    ) -> pd.DataFrame:
+        """Clean feature columns in DataFrame to ensure numeric, datetime, and categorical types are properly represented."""
+        role_map = {r.column: r for r in roles} if roles else {}
+        X = pd.DataFrame(index=df.index)
+
+        for col in features:
+            if col not in df.columns:
+                continue
+            series = df[col]
+            role_info = role_map.get(col)
+            inferred = role_info.inferred_type if role_info else TypeDetector.detect_column_type(series, col)
+
+            if inferred == "text":
+                continue
+            elif inferred == "numeric" or pd.api.types.is_numeric_dtype(series.dtype):
+                X[col] = cls._clean_numeric_series(series)
+            elif inferred == "datetime" or pd.api.types.is_datetime64_any_dtype(series.dtype):
+                dt_parsed = pd.to_datetime(series, errors="coerce")
+                ts_series = pd.Series(np.nan, index=df.index, dtype=float)
+                valid_mask = dt_parsed.notna()
+                if valid_mask.any():
+                    ts_series[valid_mask] = (dt_parsed[valid_mask].astype("int64") // 10**9).astype(float)
+                X[col] = ts_series
+            else:
+                s_str = series.astype(str).str.strip()
+                mask_null = s_str.str.lower().isin(TypeDetector.NULL_LIKE_STRINGS) | (s_str == "nan") | (s_str == "")
+                s_clean = s_str.copy()
+                s_clean[mask_null] = np.nan
+                X[col] = s_clean
+
+        return X
+
+    @staticmethod
+    def _sanitize_metric(val: Any, decimals: int = 4) -> Optional[float]:
+        if val is None:
+            return None
+        try:
+            fval = float(val)
+            if np.isfinite(fval):
+                return round(fval, decimals)
+            return None
+        except (ValueError, TypeError):
+            return None
+
+    @classmethod
     def run_analysis(
         cls,
         db: Session,
         dataset_id: str,
         task_type: Optional[str] = None,
-        target_column: Optional[str] = None
+        target_column: Optional[str] = None,
+        datetime_column: Optional[str] = None,
     ) -> MLAnalysisResponse:
         """Run model analysis pipeline, evaluate baseline candidates, persist model artifact, and record result."""
 
         target_dataset = EDAService.resolve_target_dataset(db=db, dataset_id=dataset_id)
         df = DatasetService.load_dataset_dataframe(target_dataset)
         roles = MetricDiscoveryService.discover_column_roles(df)
+
+        valid_task_types = {"regression", "classification", "time_series_forecasting", "anomaly_detection"}
+        if task_type and task_type not in valid_task_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported task_type '{task_type}'. Must be one of: {sorted(valid_task_types)}.",
+            )
+
+        if target_column and task_type != "anomaly_detection":
+            if target_column not in df.columns:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Target column '{target_column}' does not exist in dataset.",
+                )
+
+        if datetime_column:
+            if datetime_column not in df.columns:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Datetime column '{datetime_column}' does not exist in dataset.",
+                )
+
+        # Sort chronologically by datetime column if specified/present to prevent temporal leakage
+        datetime_dims = [r.column for r in roles if r.role == "datetime_dimension"]
+        dt_col = datetime_column or (datetime_dims[0] if datetime_dims else None)
+        if dt_col and dt_col in df.columns:
+            parsed_dt = pd.to_datetime(df[dt_col], errors="coerce")
+            if parsed_dt.notna().any():
+                df = df.assign(_sort_dt=parsed_dt).sort_values(by="_sort_dt", na_position="first").drop(columns=["_sort_dt"]).reset_index(drop=True)
 
         # If task_type not provided, auto-discover and select top candidate
         discovery_resp = cls.discover_tasks(df)
@@ -278,11 +421,11 @@ class MLTaskService:
         # Separate pipeline execution based on task_type
         if task_type == "regression":
             response = cls._run_regression_pipeline(
-                df, target_column, included_features, feature_info_list, analysis_id, target_dataset.id, artifact_full_path, artifact_rel_path, data_warnings
+                df, target_column, included_features, feature_info_list, analysis_id, target_dataset.id, artifact_full_path, artifact_rel_path, data_warnings, roles
             )
         elif task_type == "classification":
             response = cls._run_classification_pipeline(
-                df, target_column, included_features, feature_info_list, analysis_id, target_dataset.id, artifact_full_path, artifact_rel_path, data_warnings
+                df, target_column, included_features, feature_info_list, analysis_id, target_dataset.id, artifact_full_path, artifact_rel_path, data_warnings, roles
             )
         elif task_type == "time_series_forecasting":
             response = cls._run_time_series_pipeline(
@@ -290,7 +433,7 @@ class MLTaskService:
             )
         elif task_type == "anomaly_detection":
             response = cls._run_anomaly_pipeline(
-                df, included_features, feature_info_list, analysis_id, target_dataset.id, artifact_full_path, artifact_rel_path, data_warnings
+                df, included_features, feature_info_list, analysis_id, target_dataset.id, artifact_full_path, artifact_rel_path, data_warnings, roles
             )
         else:
             raise HTTPException(
@@ -357,9 +500,19 @@ class MLTaskService:
         artifact_full_path: str,
         artifact_rel_path: str,
         data_warnings: List[str],
+        roles: List[ColumnRoleInfo],
     ) -> MLAnalysisResponse:
-        clean_df = df.dropna(subset=[target_col]).copy()
-        X = clean_df[features]
+        clean_df = df.copy()
+        clean_df[target_col] = cls._clean_numeric_series(clean_df[target_col])
+        clean_df = clean_df.dropna(subset=[target_col]).reset_index(drop=True)
+
+        if len(clean_df) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Target column '{target_col}' contains insufficient valid numeric observations ({len(clean_df)} rows) for regression analysis.",
+            )
+
+        X = cls._clean_dataframe_features(clean_df, features, roles)
         y = clean_df[target_col]
 
         test_size = 0.2 if len(clean_df) >= 10 else 0.1
@@ -374,6 +527,10 @@ class MLTaskService:
             ("Linear Regression", LinearRegression()),
             ("Random Forest Regressor", RandomForestRegressor(n_estimators=50, random_state=42)),
         ]
+        if HAS_XGBOOST:
+            candidate_models.append(
+                ("XGBoost Regressor", XGBRegressor(n_estimators=50, random_state=42, learning_rate=0.1, max_depth=3))
+            )
 
         evaluated_candidates: List[MLModelCandidate] = []
         fitted_pipelines = {}
@@ -393,11 +550,11 @@ class MLTaskService:
 
             mae = float(np.mean(np.abs(y_test - y_pred)))
             rmse = float(np.sqrt(np.mean((y_test - y_pred) ** 2)))
-            
+
             # R2
-            y_mean = np.mean(y_test)
-            ss_tot = np.sum((y_test - y_mean) ** 2)
-            ss_res = np.sum((y_test - y_pred) ** 2)
+            y_mean = float(np.mean(y_test))
+            ss_tot = float(np.sum((y_test - y_mean) ** 2))
+            ss_res = float(np.sum((y_test - y_pred) ** 2))
             r2 = float(1.0 - (ss_res / ss_tot)) if ss_tot > 0 else 0.0
 
             # Safe MAPE
@@ -407,16 +564,17 @@ class MLTaskService:
                 mape = None
 
             metrics_dict = {
-                "mae": round(mae, 4),
-                "rmse": round(rmse, 4),
-                "r2": round(r2, 4),
-                "mape": round(mape, 2) if mape is not None else None,
+                "mae": cls._sanitize_metric(mae, 4),
+                "rmse": cls._sanitize_metric(rmse, 4),
+                "r2": cls._sanitize_metric(r2, 4),
+                "mape": cls._sanitize_metric(mape, 2),
             }
 
             fitted_pipelines[name] = pipe
 
-            if rmse < best_rmse:
-                best_rmse = rmse
+            effective_rmse = rmse if np.isfinite(rmse) else float("inf")
+            if effective_rmse < best_rmse:
+                best_rmse = effective_rmse
                 best_name = name
                 best_metrics = metrics_dict
                 best_pipeline = pipe
@@ -428,22 +586,24 @@ class MLTaskService:
             rmse = float(np.sqrt(np.mean((y_test - y_pred) ** 2)))
             is_best = (name == best_name)
 
+            s_rmse = cls._sanitize_metric(rmse, 4)
+            s_mae = cls._sanitize_metric(mae, 4)
+
             reason = (
-                f"{name} selected because it achieved the lowest validation RMSE ({round(rmse, 4)}) among evaluated candidates."
+                f"{name} selected because it achieved the lowest validation RMSE ({s_rmse}) among evaluated candidates."
                 if is_best
-                else f"Evaluated candidate with validation RMSE ({round(rmse, 4)})."
+                else f"Evaluated candidate with validation RMSE ({s_rmse})."
             )
 
             evaluated_candidates.append(
                 MLModelCandidate(
                     model_name=name,
-                    metrics={"rmse": round(rmse, 4), "mae": round(mae, 4)},
+                    metrics={"rmse": s_rmse, "mae": s_mae},
                     is_selected=is_best,
                     selection_reason=reason,
                 )
             )
 
-        # Save selected model artifact
         joblib.dump(best_pipeline, artifact_full_path)
 
         selection_explanation = f"{best_name} selected because it achieved the lowest validation RMSE ({best_metrics.get('rmse')}) among evaluated candidate models."
@@ -480,10 +640,21 @@ class MLTaskService:
         artifact_full_path: str,
         artifact_rel_path: str,
         data_warnings: List[str],
+        roles: List[ColumnRoleInfo],
     ) -> MLAnalysisResponse:
-        clean_df = df.dropna(subset=[target_col]).copy()
-        X = clean_df[features]
-        y = clean_df[target_col].astype(str)
+        clean_df = df.copy()
+        s_target = clean_df[target_col].astype(str).str.strip()
+        mask_null = s_target.str.lower().isin(TypeDetector.NULL_LIKE_STRINGS) | (s_target == "nan") | (s_target == "")
+        clean_df = clean_df[~mask_null].reset_index(drop=True)
+        y = clean_df[target_col].astype(str).str.strip()
+
+        if len(y.unique()) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Target column '{target_col}' contains fewer than 2 unique classes after cleaning.",
+            )
+
+        X = cls._clean_dataframe_features(clean_df, features, roles)
 
         # Check stratification capability
         class_counts = y.value_counts()
@@ -502,6 +673,10 @@ class MLTaskService:
             ("Logistic Regression", LogisticRegression(max_iter=1000, random_state=42)),
             ("Random Forest Classifier", RandomForestClassifier(n_estimators=50, random_state=42)),
         ]
+        if HAS_XGBOOST:
+            candidate_models.append(
+                ("XGBoost Classifier", XGBClassifierWrapper(n_estimators=50, random_state=42))
+            )
 
         evaluated_candidates: List[MLModelCandidate] = []
         fitted_pipelines = {}
@@ -520,21 +695,18 @@ class MLTaskService:
             y_pred = pipe.predict(X_test)
 
             acc = float(np.mean(y_test == y_pred))
-            
-            # Simple weighted precision, recall, F1 calculation
+
             classes = np.unique(y_test)
-            f1s = []
-            precs = []
-            recs = []
+            f1s, precs, recs = [], [], []
             for c in classes:
                 tp = np.sum((y_test == c) & (y_pred == c))
                 fp = np.sum((y_test != c) & (y_pred == c))
                 fn = np.sum((y_test == c) & (y_pred != c))
-                
+
                 prec = tp / (tp + fp) if (tp + fp) > 0 else 0.0
                 rec = tp / (tp + fn) if (tp + fn) > 0 else 0.0
                 f1 = (2 * prec * rec) / (prec + rec) if (prec + rec) > 0 else 0.0
-                
+
                 weight = np.sum(y_test == c) / len(y_test)
                 f1s.append(f1 * weight)
                 precs.append(prec * weight)
@@ -545,16 +717,17 @@ class MLTaskService:
             macro_rec = float(np.sum(recs))
 
             metrics_dict = {
-                "accuracy": round(acc, 4),
-                "precision": round(macro_prec, 4),
-                "recall": round(macro_rec, 4),
-                "f1": round(macro_f1, 4),
+                "accuracy": cls._sanitize_metric(acc, 4),
+                "precision": cls._sanitize_metric(macro_prec, 4),
+                "recall": cls._sanitize_metric(macro_rec, 4),
+                "f1": cls._sanitize_metric(macro_f1, 4),
             }
 
             fitted_pipelines[name] = pipe
 
-            if macro_f1 > best_f1:
-                best_f1 = macro_f1
+            effective_f1 = macro_f1 if np.isfinite(macro_f1) else -1.0
+            if effective_f1 > best_f1:
+                best_f1 = effective_f1
                 best_name = name
                 best_metrics = metrics_dict
                 best_pipeline = pipe
@@ -565,16 +738,17 @@ class MLTaskService:
             acc = float(np.mean(y_test == y_pred))
             is_best = (name == best_name)
 
+            s_acc = cls._sanitize_metric(acc, 4)
             reason = (
                 f"{name} selected because it achieved the highest validation F1 score ({best_metrics.get('f1')}) among evaluated candidates."
                 if is_best
-                else f"Evaluated candidate with validation Accuracy ({round(acc, 4)})."
+                else f"Evaluated candidate with validation Accuracy ({s_acc})."
             )
 
             evaluated_candidates.append(
                 MLModelCandidate(
                     model_name=name,
-                    metrics={"accuracy": round(acc, 4)},
+                    metrics={"accuracy": s_acc},
                     is_selected=is_best,
                     selection_reason=reason,
                 )
@@ -618,13 +792,20 @@ class MLTaskService:
         data_warnings: List[str],
         roles: List[ColumnRoleInfo],
     ) -> MLAnalysisResponse:
-        # Find datetime column
+        clean_df = df.copy()
+        clean_df[target_col] = cls._clean_numeric_series(clean_df[target_col])
+        clean_df = clean_df.dropna(subset=[target_col]).reset_index(drop=True)
+
+        if len(clean_df) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Target column '{target_col}' contains insufficient valid numeric observations ({len(clean_df)} rows) for time-series forecasting.",
+            )
+
         dt_cols = [r.column for r in roles if r.role == "datetime_dimension"]
-        clean_df = df.dropna(subset=[target_col]).copy()
-        
-        if dt_cols:
-            clean_df[dt_cols[0]] = pd.to_datetime(clean_df[dt_cols[0]], errors="coerce")
-            clean_df = clean_df.sort_values(by=dt_cols[0]).reset_index(drop=True)
+        if dt_cols and dt_cols[0] in clean_df.columns:
+            clean_df["_dt_parsed"] = pd.to_datetime(clean_df[dt_cols[0]], errors="coerce")
+            clean_df = clean_df.sort_values(by="_dt_parsed", na_position="first").drop(columns=["_dt_parsed"]).reset_index(drop=True)
 
         total_n = len(clean_df)
         train_n = max(int(total_n * 0.8), total_n - 3)
@@ -636,9 +817,9 @@ class MLTaskService:
         if len(test_df) == 0:
             test_df = clean_df.iloc[-1:]
 
-        X_train = train_df[features]
+        X_train = cls._clean_dataframe_features(train_df, features, roles)
         y_train = train_df[target_col]
-        X_test = test_df[features]
+        X_test = cls._clean_dataframe_features(test_df, features, roles)
         y_test = test_df[target_col]
 
         candidate_models = [
@@ -659,13 +840,17 @@ class MLTaskService:
             mae = float(np.mean(np.abs(y_test - y_pred)))
             rmse = float(np.sqrt(np.mean((y_test - y_pred) ** 2)))
 
+            s_mae = cls._sanitize_metric(mae, 4)
+            s_rmse = cls._sanitize_metric(rmse, 4)
+
             metrics_dict = {
-                "mae": round(mae, 4),
-                "rmse": round(rmse, 4),
+                "mae": s_mae,
+                "rmse": s_rmse,
             }
 
-            if rmse < best_rmse:
-                best_rmse = rmse
+            effective_rmse = rmse if np.isfinite(rmse) else float("inf")
+            if effective_rmse < best_rmse:
+                best_rmse = effective_rmse
                 best_name = name
                 best_metrics = metrics_dict
                 best_pipeline = model
@@ -673,9 +858,9 @@ class MLTaskService:
             evaluated_candidates.append(
                 MLModelCandidate(
                     model_name=name,
-                    metrics={"rmse": round(rmse, 4), "mae": round(mae, 4)},
+                    metrics={"rmse": s_rmse, "mae": s_mae},
                     is_selected=False,
-                    selection_reason=f"Chronological test set RMSE: {round(rmse, 4)}",
+                    selection_reason=f"Chronological test set RMSE: {s_rmse}",
                 )
             )
 
@@ -719,8 +904,9 @@ class MLTaskService:
         artifact_full_path: str,
         artifact_rel_path: str,
         data_warnings: List[str],
+        roles: List[ColumnRoleInfo],
     ) -> MLAnalysisResponse:
-        X = df[features]
+        X = cls._clean_dataframe_features(df, features, roles)
         preprocessor = cls._build_preprocessor(X)
 
         model = IsolationForest(random_state=42, contamination="auto")
@@ -736,7 +922,7 @@ class MLTaskService:
 
         metrics_dict = {
             "anomaly_count": int(anomalies),
-            "anomaly_percentage": round(float(anomaly_pct), 2),
+            "anomaly_percentage": cls._sanitize_metric(anomaly_pct, 2),
         }
 
         joblib.dump(pipe, artifact_full_path)
@@ -745,7 +931,7 @@ class MLTaskService:
             model_name="Isolation Forest",
             metrics=metrics_dict,
             is_selected=True,
-            selection_reason=f"Isolation Forest identified {anomalies} anomalies ({round(anomaly_pct, 2)}% of dataset).",
+            selection_reason=f"Isolation Forest identified {anomalies} anomalies ({cls._sanitize_metric(anomaly_pct, 2)}% of dataset).",
         )
 
         selection_explanation = f"Isolation Forest selected as standard unsupervised statistical anomaly detection model."
@@ -920,7 +1106,16 @@ class MLTaskService:
                             )
 
         input_df = pd.DataFrame(inputs)
-        X_input = input_df[record.feature_columns]
+        target_dataset = DatasetService.get_dataset_by_id(db=db, dataset_id=dataset_id)
+        roles = []
+        if target_dataset:
+            try:
+                ds_df = DatasetService.load_dataset_dataframe(target_dataset)
+                roles = MetricDiscoveryService.discover_column_roles(ds_df)
+            except Exception:
+                roles = []
+
+        X_input = cls._clean_dataframe_features(input_df, record.feature_columns, roles)
 
         # Execute prediction using loaded artifact without refitting
         try:

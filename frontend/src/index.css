@@ -2,22 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-slate-950 text-slate-100 font-sans;
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white;
+  }
+
+  /* Custom scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(51, 65, 85, 0.8);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.8);
+  }
 }
 
 .card-panel {
-  @apply bg-slate-900/90 border border-slate-800 rounded-xl p-6 shadow-sm hover:border-slate-700 transition-colors;
+  @apply bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-xl hover:border-slate-700/80 transition-all duration-300;
+}
+
+.glass-panel {
+  @apply bg-slate-900/60 backdrop-blur-lg border border-slate-800/60 rounded-2xl shadow-2xl;
+}
+
+.glass-panel-interactive {
+  @apply bg-slate-900/60 backdrop-blur-lg border border-slate-800/60 hover:border-indigo-500/40 rounded-2xl shadow-xl hover:shadow-indigo-500/10 transition-all duration-300;
+}
+
+.text-gradient-primary {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400;
+}
+
+.text-gradient-emerald {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400;
+}
+
+.text-gradient-amber {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-orange-400 to-amber-500;
 }
 
 .badge-success {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
+  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
 }
 
 .badge-warning {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20;
+  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20;
 }
 
 .badge-error {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20;
+  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono bg-rose-500/10 text-rose-400 border border-rose-500/20;
+}
+
+.badge-info {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono bg-sky-500/10 text-sky-400 border border-sky-500/20;
+}
+
+.badge-indigo {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono bg-indigo-500/10 text-indigo-300 border border-indigo-500/20;
+}
+
+/* Accessibility: respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

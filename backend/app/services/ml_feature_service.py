@@ -58,10 +58,34 @@ class MLFeatureService:
                 )
                 continue
 
-            # 3. Identifier Exclusion
+            # 3. Free Text Exclusion
+            if inferred_type == "text" or (role_info and role_info.role == "text"):
+                feature_info_list.append(
+                    MLFeatureInfo(
+                        name=col_name,
+                        role="text",
+                        status="excluded",
+                        reason=f"Unstructured free text column excluded from tabular model features ({clean_s.nunique()} unique values)",
+                    )
+                )
+                continue
+
+            # 4. Datetime Column Exclusion
+            if inferred_type == "datetime" or (role_info and role_info.role == "datetime_dimension"):
+                feature_info_list.append(
+                    MLFeatureInfo(
+                        name=col_name,
+                        role="datetime",
+                        status="excluded",
+                        reason="Datetime dimension column excluded from tabular predictor features",
+                    )
+                )
+                continue
+
+            # 5. Identifier Exclusion
             is_id_name = TypeDetector.is_identifier_candidate_name(col_name)
             uniqueness_ratio = clean_s.nunique() / non_null_count if non_null_count > 0 else 0.0
-            if (role_info and role_info.role == "identifier") or is_id_name or (uniqueness_ratio >= 0.85 and inferred_type != "numeric"):
+            if (role_info and role_info.role == "identifier") or is_id_name or (uniqueness_ratio >= 0.85 and inferred_type not in ["numeric", "datetime", "text"]):
                 feature_info_list.append(
                     MLFeatureInfo(
                         name=col_name,
@@ -72,7 +96,7 @@ class MLFeatureService:
                 )
                 continue
 
-            # 4. Zero Variance (Constant Value) Exclusion
+            # 5. Zero Variance (Constant Value) Exclusion
             if clean_s.nunique() <= 1:
                 feature_info_list.append(
                     MLFeatureInfo(
@@ -80,18 +104,6 @@ class MLFeatureService:
                         role=inferred_type,
                         status="excluded",
                         reason="Constant single-value feature with 0 variance",
-                    )
-                )
-                continue
-
-            # 5. High Cardinality Text Exclusion (> 50 unique string values and non-categorical)
-            if inferred_type == "text" and clean_s.nunique() > 50:
-                feature_info_list.append(
-                    MLFeatureInfo(
-                        name=col_name,
-                        role="text",
-                        status="excluded",
-                        reason=f"Unstructured free text string with high cardinality ({clean_s.nunique()} unique values)",
                     )
                 )
                 continue

@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 
 class ScenarioCreateRequest(BaseModel):
-    name: str = Field(..., description="Human-readable scenario name")
+    name: Optional[str] = Field(None, description="Human-readable scenario name")
     description: Optional[str] = Field(None, description="Optional description of simulation context")
     ml_analysis_id: Optional[str] = Field(None, description="Target ML analysis ID (auto-selected if omitted)")
     feature_changes: Dict[str, Any] = Field(

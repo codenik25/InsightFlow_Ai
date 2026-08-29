@@ -136,3 +136,88 @@ def test_optimization_engine_end_to_end_and_safety():
     get_opt_res = client.get(f"/api/v1/datasets/{proc_id}/decision/optimizations/{opt_id}")
     assert get_opt_res.status_code == 200
     assert get_opt_res.json()["optimization_id"] == opt_id
+
+
+def test_optimization_constraint_validation_rules():
+    """Verify strict constraint validation rules: min < max, min = max, min > max, NaN, Infinity, non-numeric, bool."""
+    csv_content = """patient_visits,staff_count,total_revenue
+500,20,750000
+520,21,806000
+510,19,754800
+530,22,848000
+490,18,710500
+    """
+    upload_res = client.post(
+        "/api/v1/datasets/upload",
+        files={"file": ("test_hospital_opt.csv", io.BytesIO(csv_content.strip().encode("utf-8")), "text/csv")},
+    )
+    assert upload_res.status_code == 201
+    raw_id = upload_res.json()["dataset_id"]
+
+    c_res = client.post(
+        f"/api/v1/datasets/{raw_id}/clean/apply",
+        json={"dataset_id": raw_id, "operations": [{"type": "remove_duplicates"}]},
+    )
+    assert c_res.status_code == 200
+    proc_id = c_res.json()["output_dataset_id"]
+
+    ml_res = client.post(
+        f"/api/v1/datasets/{proc_id}/ml/analyze",
+        json={"task_type": "regression", "target_column": "total_revenue"},
+    )
+    assert ml_res.status_code == 200
+    ml_id = ml_res.json()["id"]
+
+    # a. min < max -> Accepted (200)
+    res_a = client.post(
+        f"/api/v1/datasets/{proc_id}/decision/optimize",
+        json={"analysis_id": ml_id, "feature_constraints": {"patient_visits": {"min": 500, "max": 520}}},
+    )
+    assert res_a.status_code == 200
+
+    # b. min = max -> Accepted (200)
+    res_b = client.post(
+        f"/api/v1/datasets/{proc_id}/decision/optimize",
+        json={"analysis_id": ml_id, "feature_constraints": {"patient_visits": {"min": 510, "max": 510}}},
+    )
+    assert res_b.status_code == 200
+
+    # c. min > max -> Rejected with HTTP 400
+    res_c = client.post(
+        f"/api/v1/datasets/{proc_id}/decision/optimize",
+        json={"analysis_id": ml_id, "feature_constraints": {"patient_visits": {"min": 530, "max": 490}}},
+    )
+    assert res_c.status_code == 400
+    assert "cannot exceed maximum bound" in res_c.json()["detail"]
+
+    # d. NaN -> Rejected with HTTP 400
+    res_d = client.post(
+        f"/api/v1/datasets/{proc_id}/decision/optimize",
+        json={"analysis_id": ml_id, "feature_constraints": {"patient_visits": {"min": "NaN", "max": 520}}},
+    )
+    assert res_d.status_code == 400
+    assert "must be a finite number" in res_d.json()["detail"]
+
+    # e. Infinity -> Rejected with HTTP 400
+    res_e = client.post(
+        f"/api/v1/datasets/{proc_id}/decision/optimize",
+        json={"analysis_id": ml_id, "feature_constraints": {"patient_visits": {"min": 490, "max": "Infinity"}}},
+    )
+    assert res_e.status_code == 400
+    assert "must be a finite number" in res_e.json()["detail"]
+
+    # f. non-numeric bound -> Rejected with HTTP 400
+    res_f = client.post(
+        f"/api/v1/datasets/{proc_id}/decision/optimize",
+        json={"analysis_id": ml_id, "feature_constraints": {"patient_visits": {"min": "invalid_bound", "max": 520}}},
+    )
+    assert res_f.status_code == 400
+    assert "must be a valid number" in res_f.json()["detail"]
+
+    # g. boolean bound -> Rejected with HTTP 400
+    res_g = client.post(
+        f"/api/v1/datasets/{proc_id}/decision/optimize",
+        json={"analysis_id": ml_id, "feature_constraints": {"patient_visits": {"min": True, "max": 520}}},
+    )
+    assert res_g.status_code == 400
+    assert "got boolean" in res_g.json()["detail"]

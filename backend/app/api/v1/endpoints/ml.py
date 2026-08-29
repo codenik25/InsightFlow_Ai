@@ -46,9 +46,10 @@ def run_ml_analysis(
     """
     task_type = payload.task_type if payload else None
     target_column = payload.target_column if payload else None
+    datetime_column = payload.datetime_column if payload else None
 
     return MLTaskService.run_analysis(
-        db=db, dataset_id=dataset_id, task_type=task_type, target_column=target_column
+        db=db, dataset_id=dataset_id, task_type=task_type, target_column=target_column, datetime_column=datetime_column
     )
 
 

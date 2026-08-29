@@ -11,7 +11,7 @@ class DecisionBrief(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     dataset_id = Column(String(36), ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False, index=True)
-    recommendation_id = Column(String(36), ForeignKey("decision_recommendation_evaluations.id", ondelete="CASCADE"), nullable=False, index=True)
+    recommendation_id = Column(String(36), nullable=False, index=True)
     provider_name = Column(String(50), nullable=False, default="deterministic_fallback")
     model_name = Column(String(100), nullable=False, default="rule_template_v1")
     generation_mode = Column(String(50), nullable=False, default="deterministic_fallback")
@@ -34,4 +34,4 @@ class DecisionBrief(Base):
     )
 
     dataset = relationship("Dataset", backref="decision_briefs")
-    recommendation = relationship("DecisionRecommendationEvaluation", backref="decision_briefs")
+

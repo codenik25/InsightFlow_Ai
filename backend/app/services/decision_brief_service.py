@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from app.models.decision_brief import DecisionBrief
+from app.models.decision_recommendation import DecisionRecommendation
 from app.models.decision_recommendation_evaluation import DecisionRecommendationEvaluation
 from app.schemas.decision_brief import (
     DecisionBriefSection,
@@ -46,30 +47,56 @@ class DecisionBriefService:
                 detail="AI Decision Brief generation requires a processed dataset. Raw datasets are protected.",
             )
 
-        # 2. Retrieve Command Center evidence payload
-        cc_response = DecisionCommandCenterService.get_command_center(db=db, dataset_id=target_dataset.id)
-        cc_dict = cc_response.model_dump(mode="json")
-
-        primary_rec = cc_dict.get("primary_recommendation")
-        if not primary_rec:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No recommendations found for dataset '{dataset_id}'. Please run recommendations first.",
+        # 2. Verify recommendation ID existence and ownership across both tables
+        target_rec_id = recommendation_id
+        if target_rec_id:
+            # Check DecisionRecommendation first
+            stmt_rec1 = select(DecisionRecommendation).where(
+                DecisionRecommendation.id == target_rec_id,
+                DecisionRecommendation.dataset_id == target_dataset.id,
             )
+            rec_record = db.scalars(stmt_rec1).first()
 
-        target_rec_id = recommendation_id or primary_rec["recommendation_id"]
+            if not rec_record:
+                # Check DecisionRecommendationEvaluation next
+                stmt_rec2 = select(DecisionRecommendationEvaluation).where(
+                    DecisionRecommendationEvaluation.id == target_rec_id,
+                    DecisionRecommendationEvaluation.dataset_id == target_dataset.id,
+                )
+                rec_record = db.scalars(stmt_rec2).first()
 
-        # 3. Verify recommendation ID exists for this dataset
-        stmt_rec = select(DecisionRecommendationEvaluation).where(
-            DecisionRecommendationEvaluation.id == target_rec_id,
-            DecisionRecommendationEvaluation.dataset_id == target_dataset.id,
+            if not rec_record:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Recommendation '{target_rec_id}' not found for dataset '{dataset_id}'.",
+                )
+        else:
+            # Pick primary recommendation from dataset
+            stmt_recs1 = select(DecisionRecommendation).where(
+                DecisionRecommendation.dataset_id == target_dataset.id
+            ).order_by(DecisionRecommendation.created_at.desc())
+            rec_record = db.scalars(stmt_recs1).first()
+
+            if not rec_record:
+                stmt_recs2 = select(DecisionRecommendationEvaluation).where(
+                    DecisionRecommendationEvaluation.dataset_id == target_dataset.id
+                ).order_by(DecisionRecommendationEvaluation.priority.asc(), DecisionRecommendationEvaluation.created_at.desc())
+                rec_record = db.scalars(stmt_recs2).first()
+
+            if not rec_record:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Required decision recommendations do not exist for dataset '{dataset_id}'. Please run recommendations first.",
+                )
+            target_rec_id = rec_record.id
+
+        # 3. Retrieve Command Center evidence payload targeting the verified recommendation
+        cc_response = DecisionCommandCenterService.get_command_center(
+            db=db,
+            dataset_id=target_dataset.id,
+            target_recommendation_id=target_rec_id,
         )
-        rec_record = db.scalars(stmt_rec).first()
-        if not rec_record:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Recommendation '{target_rec_id}' not found for dataset '{dataset_id}'.",
-            )
+        cc_dict = cc_response.model_dump(mode="json")
 
         # 4. Prompt Boundary Hardening
         cc_dict["_prompt_safety_notice"] = cls.PROMPT_BOUNDARY_INSTRUCTION

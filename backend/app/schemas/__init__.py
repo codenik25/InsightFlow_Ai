@@ -76,6 +76,21 @@ from app.schemas.outcome import (
     DecisionMemoryResponse,
     DecisionPerformanceSummary,
 )
+from app.schemas.forecast import (
+    ForecastPoint,
+    ForecastMetrics,
+    ForecastTaskCandidate,
+    ForecastTaskDiscoveryResponse,
+    ForecastAnalyzeRequest,
+    ForecastPredictRequest,
+    ForecastAnalysisResponse,
+)
+from app.schemas.anomaly import (
+    AnomalyFeatureDeviation,
+    AnomalyItem,
+    AnomalyAnalyzeRequest,
+    AnomalyAnalysisResponse,
+)
 
 __all__ = [
     "HealthCheckResponse",
@@ -149,7 +164,19 @@ __all__ = [
     "DecisionMemoryItem",
     "DecisionMemoryResponse",
     "DecisionPerformanceSummary",
+    "ForecastPoint",
+    "ForecastMetrics",
+    "ForecastTaskCandidate",
+    "ForecastTaskDiscoveryResponse",
+    "ForecastAnalyzeRequest",
+    "ForecastPredictRequest",
+    "ForecastAnalysisResponse",
+    "AnomalyFeatureDeviation",
+    "AnomalyItem",
+    "AnomalyAnalyzeRequest",
+    "AnomalyAnalysisResponse",
 ]
+
 
 
 

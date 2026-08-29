@@ -11,10 +11,10 @@ class DecisionOutcome(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     dataset_id = Column(String(36), ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False, index=True)
-    recommendation_id = Column(String(36), ForeignKey("decision_recommendation_evaluations.id", ondelete="CASCADE"), nullable=False, index=True)
-    optimization_id = Column(String(36), ForeignKey("decision_optimizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    recommendation_id = Column(String(36), nullable=False, index=True)
+    optimization_id = Column(String(36), ForeignKey("decision_optimizations.id", ondelete="CASCADE"), nullable=True, index=True)
     scenario_id = Column(String(255), nullable=True, index=True)
-    ml_analysis_id = Column(String(36), ForeignKey("ml_analyses.id", ondelete="CASCADE"), nullable=False)
+    ml_analysis_id = Column(String(36), ForeignKey("ml_analyses.id", ondelete="CASCADE"), nullable=True)
 
     expected_metric = Column(String(255), nullable=False)
     expected_value = Column(Float, nullable=False)
@@ -41,6 +41,5 @@ class DecisionOutcome(Base):
     )
 
     dataset = relationship("Dataset", backref="decision_outcomes")
-    recommendation = relationship("DecisionRecommendationEvaluation", backref="decision_outcomes")
     optimization = relationship("DecisionOptimization", backref="decision_outcomes")
     ml_analysis = relationship("MLAnalysis", backref="decision_outcomes")

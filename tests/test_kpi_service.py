@@ -70,12 +70,12 @@ def test_grouped_analysis_metric_suitability():
     breakdowns = KPIService.discover_category_breakdowns(df, roles)
     breakdown_map = {b.measure: b for b in breakdowns}
 
-    # Price breakdown must use 'mean' aggregation and set contribution_pct to 0.0
+    # Price breakdown must use 'mean' aggregation and set contribution_pct to None (omitted/null)
     price_bd = breakdown_map["unit_price"]
     assert price_bd.aggregation_method == "mean"
     assert price_bd.top_category.category_value == "B"
     assert price_bd.top_category.metric_value == 150.0  # Average of 100 & 200
-    assert price_bd.top_category.contribution_pct == 0.0
+    assert price_bd.top_category.contribution_pct is None
 
     # Revenue breakdown must use 'sum' aggregation and compute real contribution_pct
     rev_bd = breakdown_map["total_revenue"]

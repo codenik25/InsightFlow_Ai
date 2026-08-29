@@ -105,7 +105,16 @@ class MLExplainabilityService:
         total_delta = scenario_pred - baseline_pred
 
         # Identify which feature columns were changed in scenario
-        changed_features = [col for col in feature_columns if col in scenario_changes and scenario_changes[col] != baseline_record.get(col)]
+        changed_features = []
+        for col in feature_columns:
+            if col in scenario_changes and scenario_changes[col] is not None:
+                scen_v = scenario_changes[col]
+                base_v = baseline_record.get(col)
+                if isinstance(scen_v, (int, float)) and isinstance(base_v, (int, float)):
+                    if abs(float(scen_v) - float(base_v)) > 1e-6:
+                        changed_features.append(col)
+                elif str(scen_v) != str(base_v):
+                    changed_features.append(col)
 
         if not changed_features:
             for col in feature_columns:

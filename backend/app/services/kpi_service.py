@@ -15,33 +15,65 @@ class KPIService:
         return clean.title()
 
     @classmethod
+    def filter_valid_numeric_series(cls, series: pd.Series, col_name: str) -> pd.Series:
+        """
+        Converts input Series to numeric, drops NaN, and filters out semantically invalid range values
+        defined in QualityService.SEMANTIC_RANGE_RULES (e.g. occupancy_rate > 1.0, average_bill < 0, etc.).
+        """
+        from app.services.quality_service import QualityService
+        clean_s = pd.to_numeric(series, errors="coerce").dropna()
+        if len(clean_s) == 0:
+            return clean_s
+
+        col_lower = str(col_name).lower().replace("-", "_")
+        for rule in QualityService.SEMANTIC_RANGE_RULES:
+            if any(kw == col_lower or kw in col_lower for kw in rule["keywords"]):
+                if rule.get("min") is not None:
+                    clean_s = clean_s[clean_s >= rule["min"]]
+                if rule.get("max") is not None:
+                    clean_s = clean_s[clean_s <= rule["max"]]
+
+        return clean_s
+
+    @classmethod
     def classify_measure_nature(cls, col_name: str, series: pd.Series) -> str:
         """
         Deterministically classifies a numeric measure column into one of 3 analytical natures:
-        - 'price_rate': Unit price, rate, unit cost, ratio, score, percentage (SUM is misleading and excluded).
-        - 'quantity_count': Count, quantity, volume, items, clicks, impressions (SUM represents total volume).
-        - 'amount_value': Revenue, total amount, spend, salary, profit, value (SUM represents aggregate value).
+        - 'price_rate': Unit price, rate, unit cost, ratio, score, percentage, average, satisfaction, occupancy (SUM is misleading and excluded as primary).
+        - 'quantity_count': Count, quantity, volume, items, clicks, impressions, visits, staff (SUM represents total volume).
+        - 'amount_value': Revenue, sales, operating cost, expense, profit, loss, budget, salary, spend, amount (SUM represents aggregate value).
         """
-        col_lower = col_name.lower().replace("-", "_")
+        col_lower = str(col_name).lower().replace("-", "_")
 
-        # 1. Explicit price/rate signals (unit price, rate, cost per unit, ratio, score, etc.)
-        if any(kw in col_lower for kw in ["unit_price", "unit_cost", "rate", "fee_per_unit", "cost_per_unit", "ratio", "margin", "pct", "percent", "percentage", "score", "rating", "cpr", "cpc", "cpm"]):
-            return "price_rate"
-
-        # Check if 'price' or 'cost' appears without 'total' or 'amount'
-        if ("price" in col_lower or "cost" in col_lower) and not any(kw in col_lower for kw in ["total", "amount", "spend", "sum", "aggregate"]):
-            return "price_rate"
-
-        # 2. Explicit count/quantity signals
-        if any(kw in col_lower for kw in ["units", "quantity", "qty", "count", "items", "clicks", "impressions", "conversions", "downloads", "views", "sessions"]):
-            return "quantity_count"
-
-        # 3. Explicit amount/value signals
-        if any(kw in col_lower for kw in ["revenue", "sales", "salary", "spend", "budget", "amount", "profit", "loss", "income", "value", "val"]):
+        # 1. Explicit monetary/value signals take precedence for total monetary fields
+        if any(kw in col_lower for kw in [
+            "operating_cost", "total_cost", "total_revenue", "revenue", "sales",
+            "salary", "spend", "budget", "profit", "loss", "income", "expense", "amount"
+        ]) and not any(kw in col_lower for kw in ["unit_price", "unit_cost", "cost_per_unit", "fee_per_unit", "average", "avg", "rate", "pct", "percent", "ratio"]):
             return "amount_value"
 
-        # 4. Fallback based on data type
-        is_int = pd.api.types.is_integer_dtype(series.dtype)
+        # 2. Explicit price/rate/score/average signals
+        if any(kw in col_lower for kw in [
+            "unit_price", "unit_cost", "rate", "fee_per_unit", "cost_per_unit",
+            "ratio", "margin", "pct", "percent", "percentage", "score", "rating",
+            "cpr", "cpc", "cpm", "average", "avg", "satisfaction", "occupancy", "readmission"
+        ]):
+            return "price_rate"
+
+        # Check for average bill / unit bill vs general bill
+        if "average" in col_lower or "avg" in col_lower:
+            return "price_rate"
+
+        # 3. Explicit count/quantity signals
+        if any(kw in col_lower for kw in ["units", "quantity", "qty", "count", "items", "clicks", "impressions", "conversions", "downloads", "views", "sessions", "visits"]):
+            return "quantity_count"
+
+        # 4. Explicit amount/value signals fallback
+        if any(kw in col_lower for kw in ["cost", "price", "value", "val"]):
+            return "amount_value"
+
+        # 5. Fallback based on data type
+        is_int = pd.api.types.is_integer_dtype(series.dtype) if hasattr(series, "dtype") else False
         if is_int:
             return "quantity_count"
 
@@ -89,7 +121,7 @@ class KPIService:
 
         for r in measure_roles:
             col = r.column
-            series = pd.to_numeric(df[col], errors="coerce").dropna()
+            series = cls.filter_valid_numeric_series(df[col], col)
             if len(series) == 0:
                 continue
 
@@ -214,9 +246,20 @@ class KPIService:
                 if len(clean_df) == 0:
                     continue
 
-                clean_df[m] = pd.to_numeric(clean_df[m], errors="coerce")
-                clean_df = clean_df.dropna(subset=[m])
-                if len(clean_df) == 0:
+                # Filter out null-like category values (Unknown, N/A, NA, null, None, missing, blank, etc.)
+                clean_df[dim] = clean_df[dim].astype(str).str.strip()
+                null_mask = clean_df[dim].str.lower().isin(["unknown", "n/a", "na", "null", "none", "missing", "blank", "n.a.", "nan", "", "-", "undefined"])
+                clean_df = clean_df[~null_mask]
+
+                if len(clean_df) < 2:
+                    continue
+
+                # Filter valid numeric measure observations (excluding semantic range violations & malformed numerics)
+                valid_m = cls.filter_valid_numeric_series(clean_df[m], m)
+                clean_df = clean_df.loc[valid_m.index].copy()
+                clean_df[m] = valid_m
+
+                if len(clean_df) < 2:
                     continue
 
                 nature = cls.classify_measure_nature(m, clean_df[m])
@@ -242,7 +285,7 @@ class KPIService:
                 grouped_items: List[GroupedCategoryValue] = []
                 for _, row in grouped.iterrows():
                     val = float(row[m])
-                    pct = round((val / denom) * 100.0, 2) if denom > 0 else 0.0
+                    pct = round((val / denom) * 100.0, 2) if (agg_method == "sum" and denom > 0) else None
                     grouped_items.append(
                         GroupedCategoryValue(
                             category_value=str(row[dim]),

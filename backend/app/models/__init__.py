@@ -11,6 +11,8 @@ from app.models.decision_recommendation_evaluation import DecisionRecommendation
 from app.models.decision_guardrail import DecisionGuardrailEvaluation
 from app.models.decision_brief import DecisionBrief
 from app.models.decision_outcome import DecisionOutcome
+from app.models.forecast_analysis import ForecastAnalysis
+from app.models.anomaly_analysis import AnomalyAnalysis
 
 __all__ = [
     "Base",
@@ -26,4 +28,7 @@ __all__ = [
     "DecisionGuardrailEvaluation",
     "DecisionBrief",
     "DecisionOutcome",
+    "ForecastAnalysis",
+    "AnomalyAnalysis",
 ]
+

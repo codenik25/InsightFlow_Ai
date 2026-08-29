@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Database, Upload, FileSpreadsheet, HardDrive, Filter, Eye, RefreshCw } from 'lucide-react';
+import { Database, Upload, FileSpreadsheet, HardDrive, Search, Eye, RefreshCw } from 'lucide-react';
+
 import { DatasetListResponse, DatasetProfileData, DatasetItem } from '../types';
 import { DatasetUploadModal } from './DatasetUploadModal';
 import { DatasetProfileView } from './DatasetProfileView';
@@ -14,6 +15,7 @@ export const DatasetSection: React.FC<DatasetSectionProps> = ({ datasets, onRefr
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [activeProfile, setActiveProfile] = useState<DatasetProfileData | null>(null);
   const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const handleDatasetClick = async (item: DatasetItem) => {
     if (item.profile_data) {
@@ -46,105 +48,132 @@ export const DatasetSection: React.FC<DatasetSectionProps> = ({ datasets, onRefr
     );
   }
 
-  const items = datasets?.items || [];
+  const rawItems = datasets?.items || [];
+  const filteredItems = rawItems.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.status && item.status.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      item.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const formatBytes = (bytes?: number | null) => {
+    if (!bytes) return 'N/A';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1048576).toFixed(2)} MB`;
+  };
 
   return (
-    <div className="card-panel space-y-5">
+    <div className="card-panel space-y-6">
       {/* Header & Upload Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <Database className="w-5 h-5 text-sky-400" />
-            <h2 className="text-base font-semibold text-white">Dataset Registry & Ingestion Pipeline</h2>
-            <span className="text-xs px-2 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800 font-mono">
-              Phase 1 Active
-            </span>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-white tracking-tight">Dataset Registry & Ingestion Pipeline</h2>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
+                  Live Registry
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Ingest CSV datasets to trigger automated column profiling, quality scoring, EDA, predictive analytics, and decision optimization.
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Upload CSV datasets to trigger automated column profiling, missing value detection, and metric extraction.
-          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>Upload CSV Dataset</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-sky-500/20 transition-all shrink-0"
+        >
+          <Upload className="w-4 h-4" />
+          <span>Ingest CSV Dataset</span>
+        </button>
       </div>
 
-      {/* Dataset Filter & Search Bar */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-400 flex items-center gap-2">
-          <Filter className="w-3.5 h-3.5 text-slate-500" />
-          <span>Filter registered datasets by name, status or path...</span>
+      {/* Dataset Search Bar & Counter */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="flex-1 bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-300 flex items-center gap-2.5 focus-within:border-indigo-500/50 transition-colors">
+          <Search className="w-4 h-4 text-slate-500 shrink-0" />
+          <input
+            type="text"
+            placeholder="Search registered datasets by filename, status or ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-transparent border-none text-xs text-white placeholder-slate-500 focus:outline-none font-mono"
+          />
         </div>
-        <div className="text-xs text-slate-400 font-mono">
-          Total: <span className="text-white font-semibold">{items.length}</span>
+        <div className="text-xs font-mono text-slate-400 bg-slate-950/80 border border-slate-800 px-3.5 py-2 rounded-xl flex items-center justify-between sm:justify-start gap-2">
+          <span>Registered Datasets:</span>
+          <span className="text-white font-bold">{filteredItems.length} / {rawItems.length}</span>
         </div>
       </div>
 
       {/* Dataset Metadata Table */}
-      <div className="overflow-x-auto border border-slate-800 rounded-lg">
+      <div className="overflow-x-auto border border-slate-800/80 rounded-2xl bg-slate-950/40">
         <table className="w-full text-left text-xs text-slate-300">
-          <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider text-[11px] border-b border-slate-800">
+          <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider text-[11px] font-mono border-b border-slate-800/80">
             <tr>
-              <th className="px-4 py-3 font-semibold">Dataset Name</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Rows / Cols</th>
-              <th className="px-4 py-3 font-semibold">Size</th>
-              <th className="px-4 py-3 font-semibold">Registered At</th>
-              <th className="px-4 py-3 font-semibold text-right">Action</th>
+              <th className="px-4 py-3.5 font-bold">Dataset Name</th>
+              <th className="px-4 py-3.5 font-bold">Status</th>
+              <th className="px-4 py-3.5 font-bold">Rows × Cols</th>
+              <th className="px-4 py-3.5 font-bold">Size</th>
+              <th className="px-4 py-3.5 font-bold">Ingested Date</th>
+              <th className="px-4 py-3.5 font-bold text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 bg-slate-900/50">
-            {items.length === 0 ? (
+          <tbody className="divide-y divide-slate-800/50 bg-slate-900/30">
+            {filteredItems.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-xs">
-                  No datasets ingested yet. Click <strong className="text-sky-400">"Upload CSV Dataset"</strong> to profile your first CSV file.
+                <td colSpan={6} className="px-4 py-12 text-center text-slate-400 text-xs font-mono">
+                  No datasets matching filter. Click <strong className="text-sky-400 font-semibold">"Ingest CSV Dataset"</strong> to profile your first CSV file.
                 </td>
               </tr>
             ) : (
-              items.map((item) => (
+              filteredItems.map((item) => (
                 <tr
                   key={item.id}
                   onClick={() => handleDatasetClick(item)}
-                  className="hover:bg-slate-800/40 transition-colors cursor-pointer"
+                  className="hover:bg-slate-800/50 transition-colors cursor-pointer group"
                 >
-                  <td className="px-4 py-3 font-medium text-white flex items-center gap-2">
-                    <FileSpreadsheet className="w-4 h-4 text-sky-400 shrink-0" />
-                    <span className="font-mono text-xs">{item.name}</span>
+                  <td className="px-4 py-3.5 font-semibold text-white flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 group-hover:scale-105 transition-transform">
+                      <FileSpreadsheet className="w-4 h-4" />
+                    </div>
+                    <span className="font-mono text-xs text-white group-hover:text-sky-300 transition-colors">{item.name}</span>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 capitalize">
+                  <td className="px-4 py-3.5">
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 capitalize">
                       {item.status || 'profiled'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-mono text-slate-300">
-                    {item.row_count ?? 'N/A'} rows × {item.column_count ?? 'N/A'} cols
+                  <td className="px-4 py-3.5 font-mono text-slate-300">
+                    <span className="text-white font-semibold">{item.row_count?.toLocaleString() ?? 'N/A'}</span> rows × <span className="text-white font-semibold">{item.column_count ?? 'N/A'}</span> cols
                   </td>
-                  <td className="px-4 py-3 font-mono text-slate-300">
-                    {item.file_size_bytes ? `${item.file_size_bytes} B` : 'N/A'}
+                  <td className="px-4 py-3.5 font-mono text-slate-400">
+                    {formatBytes(item.file_size_bytes)}
                   </td>
-                  <td className="px-4 py-3 font-mono text-slate-400">
+                  <td className="px-4 py-3.5 font-mono text-slate-400">
                     {new Date(item.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3.5 text-right">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDatasetClick(item);
                       }}
-                      className="inline-flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 font-medium"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-sky-600 text-sky-300 hover:text-white border border-slate-700 text-xs font-semibold transition-all shadow-sm"
                     >
                       {loadingProfileId === item.id ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin text-sky-400" />
                       ) : (
                         <>
-                          <Eye className="w-3.5 h-3.5" /> View Profile
+                          <Eye className="w-3.5 h-3.5 text-sky-400 group-hover:text-white" />
+                          <span>Open Workspace</span>
                         </>
                       )}
                     </button>
@@ -156,13 +185,13 @@ export const DatasetSection: React.FC<DatasetSectionProps> = ({ datasets, onRefr
         </table>
       </div>
 
-      {/* Footer info */}
-      <div className="bg-slate-950/60 rounded-lg p-3.5 border border-slate-800 flex items-start gap-3">
+      {/* Pipeline Info Footer Banner */}
+      <div className="bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 flex items-start gap-3 text-xs">
         <HardDrive className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-        <div className="text-xs text-slate-400">
-          <p className="font-medium text-slate-300">Phase 1 Ingestion Pipeline</p>
-          <p className="mt-0.5">
-            Uploaded CSV files are validated, stored securely in <code className="text-sky-300 bg-slate-900 px-1 rounded">data/raw/</code> with UUID keys, and profiled for column data types, missing ratios, and statistical distributions.
+        <div className="text-slate-400 space-y-0.5 font-sans">
+          <p className="font-semibold text-slate-200 font-mono">Phase 1 Secure Storage & Profiling Pipeline</p>
+          <p className="leading-relaxed">
+            CSV datasets are stored in <code className="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 font-mono text-[11px]">data/raw/</code>, assigned immutable UUID keys, and automatically profiled for missing ratios, categorical distributions, measure roles, and data types.
           </p>
         </div>
       </div>

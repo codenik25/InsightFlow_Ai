@@ -17,6 +17,33 @@ from app.schemas.quality import (
 class QualityService:
     """Deterministic, explainable data quality and health engine."""
 
+    SEMANTIC_RANGE_RULES = [
+        {
+            "keywords": ["occupancy_rate", "occupancy_pct", "occupancy_ratio"],
+            "min": 0.0,
+            "max": 1.0,
+            "description": "Occupancy rate ratio must be between 0.0 and 1.0 (0% - 100%).",
+        },
+        {
+            "keywords": ["readmission_rate", "readmission_pct", "readmission_ratio"],
+            "min": 0.0,
+            "max": 1.0,
+            "description": "Readmission rate ratio must be between 0.0 and 1.0 (0% - 100%).",
+        },
+        {
+            "keywords": ["patient_satisfaction", "satisfaction_score", "satisfaction_pct"],
+            "min": 0.0,
+            "max": 100.0,
+            "description": "Patient satisfaction score must be between 0 and 100.",
+        },
+        {
+            "keywords": ["average_bill", "unit_price", "total_revenue", "operating_cost", "patient_visits", "staff_count", "cost", "expense", "price", "revenue", "sales", "salary", "profit"],
+            "min": 0.0,
+            "max": None,
+            "description": "Business measure value cannot be negative.",
+        },
+    ]
+
     @classmethod
     def evaluate_quality(cls, df: pd.DataFrame, dataset_id: str) -> DatasetQualityResponse:
         total_rows = len(df)
@@ -111,17 +138,51 @@ class QualityService:
             # Type validity checking
             if inferred_type == 'numeric':
                 converted = pd.to_numeric(clean_s, errors='coerce')
-                invalid_cnt = int(converted.isna().sum())
-                if invalid_cnt > 0:
-                    invalid_by_col[col_name] = invalid_cnt
-                    total_invalid_cells += invalid_cnt
+                parse_invalid_cnt = int(converted.isna().sum())
+                if parse_invalid_cnt > 0:
+                    invalid_by_col[col_name] = invalid_by_col.get(col_name, 0) + parse_invalid_cnt
+                    total_invalid_cells += parse_invalid_cnt
                     issues.append(IssueDetail(
                         category="validity",
                         severity="critical",
-                        description=f"Column '{col_name}' has {invalid_cnt} values failing numeric parsing.",
+                        description=f"Column '{col_name}' has {parse_invalid_cnt} values failing numeric parsing.",
                         column=col_name,
-                        count=invalid_cnt,
+                        count=parse_invalid_cnt,
                     ))
+
+                # Semantic / Domain range validation for valid numeric values
+                valid_num_s = converted.dropna()
+                col_lower = col_name.lower().replace('-', '_')
+
+                for rule in cls.SEMANTIC_RANGE_RULES:
+                    if any(kw == col_lower or kw in col_lower for kw in rule["keywords"]):
+                        domain_invalid_cnt = 0
+                        invalid_samples = []
+
+                        if rule["min"] is not None:
+                            below_min = valid_num_s[valid_num_s < rule["min"]]
+                            if len(below_min) > 0:
+                                domain_invalid_cnt += len(below_min)
+                                invalid_samples.extend([str(v) for v in below_min.iloc[:3]])
+
+                        if rule["max"] is not None:
+                            above_max = valid_num_s[valid_num_s > rule["max"]]
+                            if len(above_max) > 0:
+                                domain_invalid_cnt += len(above_max)
+                                invalid_samples.extend([str(v) for v in above_max.iloc[:3]])
+
+                        if domain_invalid_cnt > 0:
+                            invalid_by_col[col_name] = invalid_by_col.get(col_name, 0) + domain_invalid_cnt
+                            total_invalid_cells += domain_invalid_cnt
+                            sample_str = f" (observed: {', '.join(invalid_samples)})" if invalid_samples else ""
+                            issues.append(IssueDetail(
+                                category="validity",
+                                severity="critical",
+                                description=f"Column '{col_name}' has {domain_invalid_cnt} values failing semantic range validation ({rule['description']}){sample_str}.",
+                                column=col_name,
+                                count=domain_invalid_cnt,
+                            ))
+
             elif inferred_type == 'datetime':
                 converted = pd.to_datetime(clean_s, errors='coerce')
                 invalid_cnt = int(converted.isna().sum())
@@ -225,31 +286,36 @@ class QualityService:
                 ))
 
         # CALCULATE SCORES (0 to 100)
-        completeness_score = max(0, min(100, round(100.0 - (total_missing_cells / total_cells * 100.0))))
-        
-        uniqueness_penalty = (duplicate_rows / total_rows * 100.0) + (len(identifier_duplicates) * 5.0)
+        completeness_penalty = (total_missing_cells / total_cells * 100.0) + (len(missing_by_col) * 2.0)
+        completeness_score = max(0, min(100, round(100.0 - completeness_penalty)))
+
+        uniqueness_penalty = (duplicate_rows / total_rows * 100.0) + (min(duplicate_rows, 20) * 1.0) + (len(identifier_duplicates) * 5.0)
         uniqueness_score = max(0, min(100, round(100.0 - uniqueness_penalty)))
-        
-        validity_score = max(0, min(100, round(100.0 - (total_invalid_cells / total_cells * 100.0))))
-        
-        consistency_penalty = ((whitespace_cnt + casing_cnt) / total_cells * 100.0)
+
+        validity_penalty = (total_invalid_cells / total_cells * 100.0) + (len(invalid_by_col) * 3.0) + (total_invalid_cells * 1.5)
+        validity_score = max(0, min(100, round(100.0 - validity_penalty)))
+
+        consistency_penalty = ((whitespace_cnt + casing_cnt) / total_cells * 100.0) + (len(inconsistent_cols) * 1.5)
         consistency_score = max(0, min(100, round(100.0 - consistency_penalty)))
-        
+
         structural_penalty = ((len(empty_cols) * 50.0 + len(constant_cols) * 20.0 + len(dup_cols) * 50.0) / total_cols * 100.0)
         structural_score = max(0, min(100, round(100.0 - structural_penalty)))
 
-        overall_score = round(
+        raw_overall = (
             0.30 * completeness_score
             + 0.20 * uniqueness_score
             + 0.25 * validity_score
             + 0.15 * consistency_score
             + 0.10 * structural_score
         )
+        overall_score = max(0, min(100, round(raw_overall)))
+
+        has_critical_issues = any(i.severity == "critical" for i in issues)
 
         if overall_score >= 90:
-            severity = "Excellent"
+            severity = "Good" if has_critical_issues else "Excellent"
         elif overall_score >= 80:
-            severity = "Good"
+            severity = "Good" if not has_critical_issues or validity_score >= 80 else "Fair"
         elif overall_score >= 60:
             severity = "Fair"
         elif overall_score >= 40:

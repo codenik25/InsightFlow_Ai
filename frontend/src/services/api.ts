@@ -28,12 +28,16 @@ import {
   DecisionOutcome,
   DecisionMemoryResponse,
   DecisionPerformanceSummary,
+  ForecastTaskDiscoveryResponse,
+  ForecastAnalysisResponse,
+  AnomalyAnalysisResponse,
   ScenarioCreateRequest,
   ScenarioResponse,
   ScenarioComparisonResponse,
   DecisionSummaryResponse,
   MLExplanationResponse,
 } from '../types';
+
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -805,6 +809,122 @@ export async function fetchDecisionPerformance(datasetId: string): Promise<Decis
 
   return await response.json();
 }
+
+// Demand Forecasting APIs
+
+export async function fetchForecastTasks(datasetId: string): Promise<ForecastTaskDiscoveryResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/forecast/tasks`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to discover forecast tasks (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function runForecastAnalysis(
+  datasetId: string,
+  targetColumn?: string,
+  timeColumn?: string,
+  horizon: number = 30
+): Promise<ForecastAnalysisResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/forecast/analyze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({
+      target_column: targetColumn || null,
+      time_column: timeColumn || null,
+      horizon,
+    }),
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Forecast analysis failed (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchForecastResult(
+  datasetId: string,
+  forecastId: string
+): Promise<ForecastAnalysisResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/forecast/${forecastId}`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to fetch forecast result (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+// Anomaly Intelligence APIs
+
+export async function runAnomalyAnalysis(
+  datasetId: string,
+  featureColumns?: string[],
+  contamination?: number
+): Promise<AnomalyAnalysisResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/anomaly/analyze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({
+      feature_columns: featureColumns || null,
+      contamination: contamination || null,
+    }),
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Anomaly analysis failed (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchAnomalyResult(datasetId: string): Promise<AnomalyAnalysisResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/anomaly`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to fetch anomaly results (${response.status})`);
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data[0] : data;
+}
+
+export async function fetchAnomalyById(
+  datasetId: string,
+  anomalyId: string
+): Promise<AnomalyAnalysisResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/anomaly/${anomalyId}`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
+    throw new Error(errData.detail || `Failed to fetch anomaly details (${response.status})`);
+  }
+
+  return await response.json();
+}
+
 
 
 

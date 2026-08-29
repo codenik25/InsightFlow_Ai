@@ -19,8 +19,8 @@ class DecisionGuardrailResponse(BaseModel):
     id: str = Field(..., description="Unique evaluation ID")
     recommendation_id: str = Field(..., description="Target recommendation ID")
     dataset_id: str = Field(..., description="Dataset ID")
-    ml_analysis_id: str = Field(..., description="ML Analysis ID")
-    optimization_id: str = Field(..., description="Optimization ID")
+    ml_analysis_id: Optional[str] = Field(None, description="ML Analysis ID")
+    optimization_id: Optional[str] = Field(None, description="Optimization ID")
     scenario_id: Optional[str] = Field(None, description="Scenario ID")
 
     # Guardrail Scores (0.0 to 100.0)

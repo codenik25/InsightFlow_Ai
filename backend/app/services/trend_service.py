@@ -5,6 +5,9 @@ from app.schemas.kpi import ColumnRoleInfo
 from app.schemas.eda import TrendMetric, TimeSeriesPoint
 
 
+from app.services.kpi_service import KPIService
+
+
 class TrendService:
     """Deterministic time-series aggregation and trend classification engine."""
 
@@ -45,8 +48,9 @@ class TrendService:
             for m in measures[:5]:
                 sub_df = df[valid_mask].copy()
                 sub_df["_dt"] = clean_dt[valid_mask]
-                sub_df[m] = pd.to_numeric(sub_df[m], errors="coerce")
-                sub_df = sub_df.dropna(subset=["_dt", m])
+                valid_m = KPIService.filter_valid_numeric_series(sub_df[m], m)
+                sub_df = sub_df.loc[valid_m.index].copy()
+                sub_df[m] = valid_m
 
                 if len(sub_df) < 3:
                     continue

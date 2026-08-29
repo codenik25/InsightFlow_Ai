@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ArrowLeft, Download, RefreshCw, Sparkles, Layers, Lightbulb, FileText, BrainCircuit, Compass, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw, Sparkles, Layers, Lightbulb, FileText, BrainCircuit, Compass, ShieldCheck, TrendingUp, ShieldAlert } from 'lucide-react';
+
 import { DatasetProfileData, DatasetQualityResponse, TransformationLogItem } from '../types';
 import { ColumnProfileTable } from './ColumnProfileTable';
 import { DataQualityCard } from './DataQualityCard';
@@ -10,6 +11,8 @@ import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { InsightsDashboard } from './InsightsDashboard';
 import { ExecutiveSummaryDashboard } from './ExecutiveSummaryDashboard';
 import { MLInsightsDashboard } from './MLInsightsDashboard';
+import { DemandForecastView } from './DemandForecastView';
+import { AnomalyIntelligenceView } from './AnomalyIntelligenceView';
 import { DecisionIntelligenceView } from './DecisionIntelligenceView';
 import { DecisionCommandCenter } from './DecisionCommandCenter';
 import { fetchDatasetQuality, fetchTransformationHistory, getDownloadUrl } from '../services/api';
@@ -22,7 +25,7 @@ interface DatasetProfileViewProps {
 export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile, onBack }) => {
   const { overview, quality, columns } = profile;
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'analytics' | 'insights' | 'executive' | 'ml' | 'decision' | 'command_center'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'analytics' | 'insights' | 'executive' | 'ml' | 'forecast' | 'anomaly' | 'decision' | 'command_center'>('profile');
   const [qualityData, setQualityData] = useState<DatasetQualityResponse | null>(null);
   const [transformationLogs, setTransformationLogs] = useState<TransformationLogItem[]>([]);
   const [isLoadingQuality, setIsLoadingQuality] = useState<boolean>(true);
@@ -58,124 +61,162 @@ export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile,
 
   return (
     <div className="space-y-6">
-      {/* Top Action Header & Tab Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Registry</span>
-          </button>
+      {/* Top Navigation & Workspace Header */}
+      <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 shadow-xl space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700/80 transition-all shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4 text-sky-400" />
+              <span>Back to Registry</span>
+            </button>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-white font-mono">{overview.filename}</h2>
-              <span className="px-2 py-0.5 text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded">
-                Profiled
-              </span>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-xl font-bold text-white font-mono tracking-tight">{overview.filename}</h2>
+                <span className="px-2.5 py-0.5 text-[10px] font-bold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full uppercase">
+                  Profiled Dataset
+                </span>
+              </div>
+              <p className="text-xs font-mono text-slate-400 mt-0.5">
+                Dataset ID: <span className="text-sky-300">{profile.dataset_id}</span> • {overview.total_rows.toLocaleString()} rows × {overview.total_columns} cols • {formatBytes(overview.file_size_bytes)}
+              </p>
             </div>
-            <p className="text-xs text-slate-400 font-mono">Dataset ID: {profile.dataset_id}</p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href={getDownloadUrl(profile.dataset_id, 'raw')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Raw CSV</span>
+            </a>
+            <a
+              href={getDownloadUrl(profile.dataset_id, 'processed')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold border border-emerald-500/30 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Cleaned CSV</span>
+            </a>
           </div>
         </div>
 
-        {/* Tab Buttons & Download */}
-        <div className="flex items-center gap-3">
-          <div className="bg-slate-900 border border-slate-800 p-1 rounded-xl flex items-center gap-1 text-xs font-medium flex-wrap">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
-                activeTab === 'profile'
-                  ? 'bg-emerald-600 text-white shadow-md font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Profile & Cleaning</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
-                activeTab === 'analytics'
-                  ? 'bg-emerald-600 text-white shadow-md font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Automated Analytics (EDA)</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('insights')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
-                activeTab === 'insights'
-                  ? 'bg-amber-600 text-white shadow-md font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Lightbulb className="w-3.5 h-3.5 text-amber-200" />
-              <span>Business Insights</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('executive')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
-                activeTab === 'executive'
-                  ? 'bg-amber-600 text-white shadow-md font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5 text-amber-200" />
-              <span>Executive Summary</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('ml')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
-                activeTab === 'ml'
-                  ? 'bg-purple-600 text-white shadow-md font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <BrainCircuit className="w-3.5 h-3.5 text-purple-300" />
-              <span>Predictive Analytics</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('decision')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
-                activeTab === 'decision'
-                  ? 'bg-indigo-600 text-white shadow-md font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Compass className="w-3.5 h-3.5 text-indigo-300" />
-              <span>Decision Optimization</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('command_center')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
-                activeTab === 'command_center'
-                  ? 'bg-sky-600 text-white shadow-md font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-sky-300" />
-              <span>Command Center</span>
-            </button>
-          </div>
-
-          <a
-            href={getDownloadUrl(profile.dataset_id, 'raw')}
-            download
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
+        {/* Tab Navigation Pill Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-semibold font-mono">
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === 'profile'
+                ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-500/20 font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
           >
-            <Download className="w-3.5 h-3.5 text-sky-400" />
-            <span>Download Raw CSV</span>
-          </a>
+            <Layers className="w-4 h-4 text-sky-300" />
+            <span>1. Profile & Cleaning</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === 'analytics'
+                ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-500/20 font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>2. EDA Analytics</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('insights')}
+            className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === 'insights'
+                ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/20 font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Lightbulb className="w-4 h-4 text-amber-200" />
+            <span>3. Business Insights</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('executive')}
+            className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === 'executive'
+                ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/20 font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <FileText className="w-4 h-4 text-amber-200" />
+            <span>4. Executive Summary</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('ml')}
+            className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === 'ml'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20 font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <BrainCircuit className="w-4 h-4 text-purple-300" />
+            <span>5. Predictive ML & XGBoost</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('forecast')}
+            className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === 'forecast'
+                ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-lg shadow-sky-500/20 font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4 text-sky-300" />
+            <span>6. Demand Forecast</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('anomaly')}
+            className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === 'anomaly'
+                ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-lg shadow-rose-500/20 font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4 text-rose-300" />
+            <span>7. Anomaly Intelligence</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('decision')}
+            className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === 'decision'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/20 font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Compass className="w-4 h-4 text-indigo-300" />
+            <span>8. Decision Optimization</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('command_center')}
+            className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === 'command_center'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20 font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-300" />
+            <span>9. Command Center</span>
+          </button>
         </div>
       </div>
 
@@ -183,6 +224,10 @@ export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile,
         <DecisionCommandCenter datasetId={profile.dataset_id} isProcessed={overview.duplicate_rows === 0 || transformationLogs.length > 0} />
       ) : activeTab === 'decision' ? (
         <DecisionIntelligenceView datasetId={profile.dataset_id} isProcessed={overview.duplicate_rows === 0 || transformationLogs.length > 0} />
+      ) : activeTab === 'anomaly' ? (
+        <AnomalyIntelligenceView datasetId={profile.dataset_id} />
+      ) : activeTab === 'forecast' ? (
+        <DemandForecastView datasetId={profile.dataset_id} />
       ) : activeTab === 'ml' ? (
         <MLInsightsDashboard datasetId={profile.dataset_id} />
       ) : activeTab === 'executive' ? (
@@ -194,6 +239,7 @@ export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile,
       ) : (
 
         <div className="space-y-6">
+
           {/* 1. DATASET OVERVIEW (Phase 1 KPI Cards) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-1">

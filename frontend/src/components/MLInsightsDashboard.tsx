@@ -320,56 +320,81 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
             </p>
           </div>
 
-          {/* EVALUATED CANDIDATE MODELS METRICS TABLE */}
-          <div className="card-panel space-y-3">
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-sky-400" />
-              <span>Candidate Models Evaluation Metrics</span>
-            </h4>
+          {/* MODEL BENCHMARK SECTION */}
+          <div className="card-panel space-y-3 bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div>
+                <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 font-mono">
+                  <BarChart3 className="w-4 h-4 text-purple-400" />
+                  <span>MODEL BENCHMARK</span>
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  InsightFlow evaluates multiple candidate models and selects the best-performing model according to the validation metric.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded text-[11px] font-mono font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                  XGBoost Supported Candidate
+                </span>
+              </div>
+            </div>
 
             <div className="overflow-x-auto border border-slate-800 rounded-lg">
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider text-[11px] border-b border-slate-800">
                   <tr>
                     <th className="px-4 py-2.5 font-semibold">Model Candidate</th>
-                    <th className="px-4 py-2.5 font-semibold">Status</th>
                     <th className="px-4 py-2.5 font-semibold">Validation Metrics</th>
+                    <th className="px-4 py-2.5 font-semibold text-center">Status</th>
                     <th className="px-4 py-2.5 font-semibold">Selection Rationale</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
-                  {activeAnalysis.candidate_models.map((cand, i) => (
-                    <tr key={i} className={cand.is_selected ? 'bg-purple-950/20 font-medium' : ''}>
-                      <td className="px-4 py-3 font-semibold text-white flex items-center gap-2">
-                        {cand.is_selected && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-                        <span>{cand.model_name}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {cand.is_selected ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            SELECTED
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">
-                            EVALUATED
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-slate-300">
-                        {Object.entries(cand.metrics)
-                          .filter(([_, v]) => v !== null && v !== undefined)
-                          .map(([k, v]) => `${k.toUpperCase()}: ${v}`)
-                          .join(' • ') || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-slate-400 leading-relaxed text-[11px]">
-                        {cand.selection_reason}
-                      </td>
-                    </tr>
-                  ))}
+                  {activeAnalysis.candidate_models.map((cand, i) => {
+                    const isXgb = cand.model_name.toLowerCase().includes('xgboost');
+                    return (
+                      <tr key={i} className={cand.is_selected ? 'bg-purple-950/30 font-medium' : ''}>
+                        <td className="px-4 py-3 font-semibold text-white flex items-center gap-2">
+                          <span>{cand.model_name}</span>
+                          {cand.is_selected && (
+                            <span className="text-amber-400 text-sm font-bold" title="Winning Model">
+                              ⭐
+                            </span>
+                          )}
+                          {isXgb && (
+                            <span className="px-1.5 py-0.5 text-[9px] font-mono bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">
+                              XGB
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-slate-300">
+                          {Object.entries(cand.metrics)
+                            .filter(([_, v]) => v !== null && v !== undefined)
+                            .map(([k, v]) => `${k.toUpperCase()}: ${v}`)
+                            .join(' • ') || 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {cand.is_selected ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                              SELECTED
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">
+                              CANDIDATE
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-slate-400 leading-relaxed text-[11px]">
+                          {cand.selection_reason}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
+
 
           {/* FEATURE SELECTION SUMMARY (INCLUDED VS EXCLUDED) */}
           <div className="card-panel space-y-3">

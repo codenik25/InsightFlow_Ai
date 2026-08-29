@@ -169,7 +169,33 @@ class ReportService:
             i for i in sorted_insights if i.recommendation and len(i.recommendation.strip()) > 10
         ]
 
+        buckets: Dict[str, List[Any]] = {"data_quality": [], "diversification": [], "performance": [], "other": []}
         for ins in action_candidates:
+            cat = ins.category or "GENERAL"
+            title_lower = ins.title.lower()
+            obs_lower = ins.observation.lower()
+            if cat == "DATA_QUALITY":
+                buckets["data_quality"].append(ins)
+            elif cat == "OPPORTUNITY" or "concentration" in title_lower or "concentration" in obs_lower or (ins.evidence and ins.evidence.contribution_percent and ins.evidence.contribution_percent >= 60.0):
+                buckets["diversification"].append(ins)
+            elif cat == "PERFORMANCE":
+                buckets["performance"].append(ins)
+            else:
+                buckets["other"].append(ins)
+
+        ordered_candidates: List[Any] = []
+        if buckets["data_quality"]:
+            ordered_candidates.append(buckets["data_quality"][0])
+        if buckets["diversification"]:
+            ordered_candidates.append(buckets["diversification"][0])
+        if buckets["performance"]:
+            ordered_candidates.append(buckets["performance"][0])
+
+        for ins in action_candidates:
+            if ins not in ordered_candidates:
+                ordered_candidates.append(ins)
+
+        for ins in ordered_candidates:
             cat = ins.category or "GENERAL"
             sev = ins.severity or "INFO"
             title_lower = ins.title.lower()

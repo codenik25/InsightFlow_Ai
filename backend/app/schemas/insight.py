@@ -36,6 +36,19 @@ class Insight(BaseModel):
     percentage_change: Optional[float] = None
     created_at: str
 
+    # Extended business insight fields (Backward Compatible)
+    group_id: Optional[str] = None
+    is_grouped: bool = False
+    supporting_insight_ids: List[str] = Field(default_factory=list)
+    metrics_involved: List[str] = Field(default_factory=list)
+    affected_dimension: Optional[str] = None
+    affected_entity: Optional[str] = None
+    business_impact: Optional[str] = "MEDIUM"  # HIGH, MEDIUM, LOW
+    confidence_label: Optional[str] = "HIGH"  # HIGH, MEDIUM, LOW
+    non_causal_notice: Optional[str] = None
+    scoring_components: Optional[Dict[str, float]] = None
+
+
 
 class InsightSummary(BaseModel):
     total: int

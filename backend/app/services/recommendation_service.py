@@ -11,6 +11,7 @@ from app.models.ml_analysis import MLAnalysis
 from app.models.insight import DatasetInsight
 from app.models.decision_optimization import DecisionOptimization
 from app.models.decision_recommendation_evaluation import DecisionRecommendationEvaluation
+from app.models.decision_recommendation import DecisionRecommendation as DecisionRecommendationModel
 from app.schemas.recommendation import (
     RecommendationRequest,
     RecommendationEvidence,
@@ -261,21 +262,38 @@ class RecommendationService:
 
     @classmethod
     def get_recommendations_for_dataset(cls, db: Session, dataset_id: str) -> List[DecisionRecommendation]:
-        """Retrieve stored decision recommendations for a dataset."""
+        """Retrieve stored decision recommendations for a dataset from all recommendation persistence sources."""
         target_dataset = EDAService.resolve_target_dataset(db=db, dataset_id=dataset_id)
-        stmt = (
+        dataset_ids = list(dict.fromkeys([target_dataset.id, dataset_id] + ([target_dataset.parent_id] if target_dataset.parent_id else [])))
+
+        # 1. Query DecisionRecommendationEvaluation table
+        stmt_eval = (
             select(DecisionRecommendationEvaluation)
-            .where(DecisionRecommendationEvaluation.dataset_id == target_dataset.id)
+            .where(DecisionRecommendationEvaluation.dataset_id.in_(dataset_ids))
             .order_by(DecisionRecommendationEvaluation.priority.asc(), DecisionRecommendationEvaluation.created_at.desc())
         )
-        records = db.scalars(stmt).all()
-        results = []
-        for r in records:
+        eval_records = db.scalars(stmt_eval).all()
+
+        # 2. Query DecisionRecommendation table
+        stmt_rec = (
+            select(DecisionRecommendationModel)
+            .where(DecisionRecommendationModel.dataset_id.in_(dataset_ids))
+            .order_by(DecisionRecommendationModel.created_at.desc())
+        )
+        rec_records = db.scalars(stmt_rec).all()
+
+        results: List[DecisionRecommendation] = []
+        seen_ids = set()
+
+        for r in eval_records:
+            if r.id in seen_ids:
+                continue
+            seen_ids.add(r.id)
             ev_data = r.evidence if isinstance(r.evidence, dict) else {}
             evidence_obj = RecommendationEvidence(
                 dataset_id=ev_data.get("dataset_id", r.dataset_id),
-                ml_analysis_id=ev_data.get("ml_analysis_id", r.ml_analysis_id),
-                optimization_id=ev_data.get("optimization_id", r.optimization_id),
+                ml_analysis_id=ev_data.get("ml_analysis_id", r.ml_analysis_id or ""),
+                optimization_id=ev_data.get("optimization_id", r.optimization_id or ""),
                 scenario_id=ev_data.get("scenario_id", r.scenario_id),
                 insight_ids=ev_data.get("insight_ids", []),
             )
@@ -297,6 +315,40 @@ class RecommendationService:
                     evidence=evidence_obj,
                 )
             )
+
+        for idx, r in enumerate(rec_records, start=len(results) + 1):
+            if r.id in seen_ids:
+                continue
+            seen_ids.add(r.id)
+            ev_data = r.evidence_traceability if isinstance(r.evidence_traceability, dict) else {}
+            evidence_obj = RecommendationEvidence(
+                dataset_id=ev_data.get("dataset_id", r.dataset_id),
+                ml_analysis_id=ev_data.get("ml_analysis_id", r.ml_analysis_id or ""),
+                optimization_id=ev_data.get("optimization_id", ""),
+                scenario_id=ev_data.get("scenario_id", r.scenario_id),
+                insight_ids=ev_data.get("source_insight_ids", [r.insight_id] if r.insight_id else []),
+            )
+            rationale = r.expected_impact or r.title
+            tradeoffs = "; ".join(r.action_items) if isinstance(r.action_items, list) else (r.expected_impact or "")
+            results.append(
+                DecisionRecommendation(
+                    id=r.id,
+                    title=r.title,
+                    recommendation_type=r.recommendation_type,
+                    priority=idx,
+                    target_metric=ev_data.get("target_column", "Target"),
+                    baseline_value=0.0,
+                    projected_value=0.0,
+                    absolute_delta=0.0,
+                    percentage_delta=0.0,
+                    changed_features=ev_data.get("changed_features", {}),
+                    rationale=rationale,
+                    tradeoffs=tradeoffs,
+                    confidence="MODERATE",
+                    evidence=evidence_obj,
+                )
+            )
+
         return results
 
     @classmethod

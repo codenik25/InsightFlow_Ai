@@ -92,7 +92,19 @@ class MetricDiscoveryService:
                     )
                 continue
 
-            # 5. Categorical Dimension Role
+            # 5. Free-Text Role
+            if inferred_type == "text":
+                roles.append(
+                    ColumnRoleInfo(
+                        column=col_name,
+                        role="text",
+                        reason=f"Free text narrative column ({unique_count} unique values)",
+                        inferred_type="text",
+                    )
+                )
+                continue
+
+            # 6. Categorical Dimension Role
             if inferred_type == "categorical" or unique_count <= 50 or (uniqueness_ratio <= 0.3 and total_rows > 10):
                 roles.append(
                     ColumnRoleInfo(
@@ -104,7 +116,7 @@ class MetricDiscoveryService:
                 )
                 continue
 
-            # 6. Text Role (Free text / high cardinality strings)
+            # 7. Fallback Text Role
             roles.append(
                 ColumnRoleInfo(
                     column=col_name,

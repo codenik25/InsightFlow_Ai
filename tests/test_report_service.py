@@ -128,3 +128,68 @@ def test_executive_report_generation(db_session):
     assert "## Strategic Actions" in md_text
     assert "Electronics's" not in md_text
     assert "Accessories's" not in md_text
+
+
+def test_report_kpi_semantics_and_evidence_traceability(db_session):
+    """Verify KPI aggregation semantics for rate/score measures and insight claim traceability."""
+    hospital_csv = """date,hospital,department,patient_visits,staff_count,occupancy_rate,average_bill,operating_cost,patient_satisfaction,total_revenue
+2026-01-01,Hospital A,Cardiology,100,10,0.85,4200.50,150000,85.5,420050
+2026-01-01,Hospital B,Neurology,120,12,0.90,5000.00,200000,90.0,600000
+2026-01-01,Hospital C,Orthopedics,80,8,0.75,3500.00,100000,80.0,280000
+"""
+    file_obj = UploadFile(
+        filename="test_hospital_report.csv",
+        file=io.BytesIO(hospital_csv.encode("utf-8")),
+    )
+
+    profile = DatasetService.ingest_and_profile_csv(db_session, file_obj)
+    raw_id = profile.dataset_id
+    raw_dataset = DatasetService.get_dataset_by_id(db_session, raw_id)
+    raw_df = DatasetService.load_dataset_dataframe(raw_dataset)
+
+    plan = CleaningPlan(
+        dataset_id=raw_id,
+        operations=[CleaningOperation(type="remove_duplicates")]
+    )
+    apply_res = CleaningService.apply_cleaning(db_session, raw_dataset, raw_df, plan)
+    proc_id = apply_res.output_dataset_id
+
+    # Generate insights and EDA for hospital dataset
+    EDAService.generate_eda(db_session, proc_id)
+    InsightService.generate_insights(db_session, proc_id)
+
+    report = ReportService.generate_executive_report(db_session, proc_id)
+
+    # 1. Verify KPI aggregation semantics
+    kpi_map = {k.name: k for k in report.key_kpis}
+
+    # Verify total_revenue is summed (amount_value)
+    if "Total Revenue" in kpi_map:
+        rev_kpi = kpi_map["Total Revenue"]
+        assert rev_kpi.aggregation == "sum"
+        assert rev_kpi.nature == "amount_value"
+
+    # Verify rate/score metrics use mean (price_rate) when present
+    all_kpis = EDAService.get_eda(db_session, proc_id).discovered_kpis
+    avg_bill_kpi = next((k for k in all_kpis if k.source_column == "average_bill" and k.metric_type == "mean"), None)
+    sat_kpi = next((k for k in all_kpis if k.source_column == "patient_satisfaction" and k.metric_type == "mean"), None)
+
+    assert avg_bill_kpi is not None
+    assert avg_bill_kpi.value == round((4200.50 + 5000.00 + 3500.00) / 3, 2)
+
+    assert sat_kpi is not None
+    assert sat_kpi.value == round((85.5 + 90.0 + 80.0) / 3, 2)
+
+    # 2. Verify evidence traceability for every claim
+    persisted_insights = {i.id: i for i in InsightService.get_insights(db_session, proc_id).insights}
+
+    for action in report.strategic_actions:
+        assert action.source_insight_id in persisted_insights
+        src_insight = persisted_insights[action.source_insight_id]
+        assert src_insight.recommendation is not None
+        assert len(src_insight.recommendation.strip()) > 0
+
+    for highlight in report.key_achievements + report.critical_risks + report.key_opportunities:
+        if highlight.source_insight_id:
+            assert highlight.source_insight_id in persisted_insights
+

@@ -71,3 +71,60 @@ def test_decision_brief_service_and_validation():
     is_valid_causal, causal_msg = DecisionBriefValidator.validate_brief_payload(invalid_causal_brief, cc_data, primary_rec_id)
     assert is_valid_causal is False
     assert "Prohibited causal term" in causal_msg
+
+
+def test_decision_brief_numerical_propagation_and_missing_values():
+    from app.services.llm_provider import DeterministicFallbackProvider
+
+    # Test Case 1: Real Numerical Propagation
+    mock_payload = {
+        "dataset_name": "hospital_dataset.csv",
+        "snapshot": {"decision_readiness_score": 97.0, "decision_status": "READY_TO_CONSIDER", "sample_size": 1200},
+        "primary_recommendation": {
+            "title": "Optimize Hospital Revenue",
+            "target_metric": "total_revenue",
+            "baseline_value": 2122261.71,
+            "projected_value": 2121243.33,
+            "absolute_delta": -1018.38,
+            "percentage_delta": -0.05,
+            "priority": 1,
+            "recommendation_type": "PERFORMANCE"
+        },
+        "risk_summary": {"risk_level": "LOW", "warnings": [], "failed_rules": [], "passed_rules": []},
+        "evidence_chain": {"optimization_id": "opt-123", "scenario_id": "scen-456", "guardrail_id": "g-789"}
+    }
+
+    provider = DeterministicFallbackProvider()
+    brief1 = provider.generate_brief(mock_payload)
+    exec_summary1 = brief1["executive_summary"]
+
+    assert "0.05% decrease" in exec_summary1
+    assert "2,122,261.71" in exec_summary1
+    assert "2,121,243.33" in exec_summary1
+    assert "0.0% change" not in exec_summary1
+
+    # Test Case 2: Genuinely Missing Values (not silently converted to zero)
+    mock_missing_payload = {
+        "dataset_name": "sparse_dataset.csv",
+        "snapshot": {"decision_readiness_score": 50.0, "decision_status": "HUMAN_REVIEW_REQUIRED", "sample_size": 15},
+        "primary_recommendation": {
+            "title": "Exploratory Recommendation",
+            "target_metric": "custom_metric",
+            "baseline_value": None,
+            "projected_value": None,
+            "absolute_delta": None,
+            "percentage_delta": None,
+            "priority": 1,
+            "recommendation_type": "EXPLORATORY"
+        },
+        "risk_summary": {"risk_level": "HIGH", "warnings": ["Small dataset warning"], "failed_rules": [], "passed_rules": []},
+        "evidence_chain": {}
+    }
+
+    brief2 = provider.generate_brief(mock_missing_payload)
+    exec_summary2 = brief2["executive_summary"]
+
+    assert "pending" in exec_summary2.lower()
+    assert "0.0% change" not in exec_summary2
+    assert "projected value: 0.0" not in exec_summary2
+

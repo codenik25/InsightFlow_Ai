@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Optional
 from pathlib import Path
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "insightflow_db"
     
     DATABASE_URL: str = "postgresql+psycopg://insightflow_user:insightflow_password@localhost:5432/insightflow_db"
+
+    # AI / LLM Provider Settings
+    AI_PROVIDER: str = "none"
+    AI_API_KEY: Optional[str] = None
+    AI_MODEL: str = "gpt-4o"
+    AI_TIMEOUT_SECONDS: float = 10.0
 
     # File Ingestion & Storage Settings
     MAX_UPLOAD_SIZE_BYTES: int = 52_428_800  # 50 MB default max upload size

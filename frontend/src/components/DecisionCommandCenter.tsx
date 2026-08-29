@@ -3,6 +3,7 @@ import { DecisionCommandCenterResponse } from '../types';
 import { fetchDecisionCommandCenter } from '../services/api';
 import { AIDecisionBriefCard } from './AIDecisionBriefCard';
 import { DecisionMemorySection } from './DecisionMemorySection';
+import { ScoreGauge } from './ui/ScoreGauge';
 
 interface DecisionCommandCenterProps {
   datasetId: string;
@@ -134,30 +135,14 @@ export const DecisionCommandCenter: React.FC<DecisionCommandCenterProps> = ({
       {/* Phase 7.6 Executive AI Decision Brief Component */}
       <AIDecisionBriefCard datasetId={datasetId} recommendationId={primary?.recommendation_id} />
 
-      {/* Section B: Decision Snapshot Progress Cards */}
+      {/* Section B: Executive Score Gauges */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {[
-          { label: 'Decision Readiness', val: snapshot.decision_readiness_score, color: 'from-emerald-500 to-indigo-500' },
-          { label: 'Feasibility Score', val: snapshot.feasibility_score, color: 'from-emerald-500 to-teal-500' },
-          { label: 'Realism Score', val: snapshot.realism_score, color: 'from-blue-500 to-indigo-500' },
-          { label: 'Risk Profile', val: snapshot.risk_score, color: 'from-amber-500 to-rose-500' },
-          { label: 'Model Confidence', val: snapshot.confidence_score, color: 'from-indigo-500 to-purple-500' },
-          { label: 'Data Quality', val: snapshot.dataset_quality_score, color: 'from-teal-500 to-emerald-500' },
-        ].map((card, idx) => (
-          <div key={idx} className="bg-gray-900/80 border border-gray-800 rounded-xl p-4 flex flex-col justify-between">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">{card.label}</span>
-            <div className="my-2 flex items-baseline justify-between font-mono">
-              <span className="text-xl font-extrabold text-white">{card.val.toFixed(0)}</span>
-              <span className="text-[10px] text-gray-500">/ 100</span>
-            </div>
-            <div className="w-full bg-gray-950 rounded-full h-1.5 overflow-hidden">
-              <div
-                className={`bg-gradient-to-r ${card.color} h-1.5 rounded-full transition-all duration-500`}
-                style={{ width: `${Math.min(Math.max(card.val, 5), 100)}%` }}
-              ></div>
-            </div>
-          </div>
-        ))}
+        <ScoreGauge score={snapshot.decision_readiness_score} label="Readiness" size="sm" showSubtext subtext={snapshot.decision_status.replace(/_/g, ' ')} />
+        <ScoreGauge score={snapshot.feasibility_score} label="Feasibility" size="sm" />
+        <ScoreGauge score={snapshot.realism_score} label="Realism" size="sm" />
+        <ScoreGauge score={snapshot.risk_score} label="Risk Profile" size="sm" showSubtext subtext={risk.risk_level} />
+        <ScoreGauge score={snapshot.confidence_score} label="Model Conf." size="sm" />
+        <ScoreGauge score={snapshot.dataset_quality_score} label="Data Quality" size="sm" />
       </div>
 
       {/* Section C & D Grid: Primary Recommendation & Comparison Matrix */}

@@ -6,6 +6,9 @@ from app.schemas.kpi import ColumnRoleInfo
 from app.schemas.eda import RelationshipMetric, DistributionStats
 
 
+from app.services.kpi_service import KPIService
+
+
 class RelationshipService:
     """Deterministic bivariate relationship and statistical distribution service."""
 
@@ -24,9 +27,10 @@ class RelationshipService:
 
         for col_a, col_b in pairs:
             sub = df[[col_a, col_b]].dropna().copy()
-            sub[col_a] = pd.to_numeric(sub[col_a], errors="coerce")
-            sub[col_b] = pd.to_numeric(sub[col_b], errors="coerce")
-            sub = sub.dropna()
+            valid_a = KPIService.filter_valid_numeric_series(sub[col_a], col_a)
+            valid_b = KPIService.filter_valid_numeric_series(sub[col_b], col_b)
+            valid_idx = valid_a.index.intersection(valid_b.index)
+            sub = sub.loc[valid_idx].copy()
 
             if len(sub) < 3:
                 continue
@@ -72,7 +76,7 @@ class RelationshipService:
         measures = [r.column for r in roles if r.role == "measure"]
 
         for col in measures:
-            clean_s = pd.to_numeric(df[col], errors="coerce").dropna()
+            clean_s = KPIService.filter_valid_numeric_series(df[col], col)
             if len(clean_s) == 0:
                 continue
 

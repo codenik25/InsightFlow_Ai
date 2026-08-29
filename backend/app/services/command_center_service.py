@@ -9,7 +9,9 @@ from fastapi import HTTPException, status
 from app.models.dataset import Dataset
 from app.models.ml_analysis import MLAnalysis
 from app.models.insight import DatasetInsight
+from app.models.scenario import Scenario
 from app.models.decision_optimization import DecisionOptimization
+from app.models.decision_recommendation import DecisionRecommendation
 from app.models.decision_recommendation_evaluation import DecisionRecommendationEvaluation
 from app.models.decision_guardrail import DecisionGuardrailEvaluation
 
@@ -29,10 +31,68 @@ class DecisionCommandCenterService:
     """Service layer for Phase 7.5 Decision Intelligence Command Center aggregation."""
 
     @classmethod
+    def _resolve_recommendation_metrics(cls, db: Session, r: Any, scen_record: Any, opt_record: Any, evidence_dict: Dict[str, Any]):
+        base_val = getattr(r, "baseline_value", None)
+        proj_val = getattr(r, "projected_value", None)
+        abs_delta = getattr(r, "absolute_delta", None)
+        pct_delta = getattr(r, "percentage_delta", None)
+
+        r_scen_id = getattr(r, "scenario_id", None)
+        r_scen = None
+        if r_scen_id:
+            r_scen = db.scalars(select(Scenario).where(Scenario.id == r_scen_id)).first()
+        if not r_scen:
+            r_scen = scen_record
+
+        if r_scen:
+            if base_val is None:
+                base_val = getattr(r_scen, "base_value", None)
+            if proj_val is None:
+                proj_val = getattr(r_scen, "predicted_outcome", None)
+            if abs_delta is None:
+                abs_delta = getattr(r_scen, "predicted_delta", None)
+            if pct_delta is None:
+                pct_delta = getattr(r_scen, "predicted_delta_percentage", None)
+
+        if isinstance(evidence_dict, dict):
+            if base_val is None:
+                base_val = evidence_dict.get("baseline_prediction") or evidence_dict.get("baseline_value")
+            if proj_val is None:
+                proj_val = evidence_dict.get("predicted_outcome") or evidence_dict.get("projected_value")
+            if abs_delta is None:
+                abs_delta = evidence_dict.get("predicted_delta") or evidence_dict.get("absolute_delta")
+            if pct_delta is None:
+                pct_delta = evidence_dict.get("predicted_delta_percentage") or evidence_dict.get("percentage_delta")
+
+        if opt_record:
+            if base_val is None:
+                base_val = getattr(opt_record, "baseline_prediction", None)
+            if proj_val is None:
+                proj_val = getattr(opt_record, "recommended_prediction", None)
+            if abs_delta is None:
+                abs_delta = getattr(opt_record, "expected_change", None)
+            if pct_delta is None:
+                pct_delta = getattr(opt_record, "expected_change_percent", None)
+
+        if base_val is not None and proj_val is not None:
+            try:
+                b_num = float(base_val)
+                p_num = float(proj_val)
+                if abs_delta is None:
+                    abs_delta = round(p_num - b_num, 4)
+                if pct_delta is None and b_num != 0:
+                    pct_delta = round(((p_num - b_num) / abs(b_num)) * 100.0, 4)
+            except (ValueError, TypeError):
+                pass
+
+        return base_val, proj_val, abs_delta, pct_delta
+
+    @classmethod
     def get_command_center(
         cls,
         db: Session,
         dataset_id: str,
+        target_recommendation_id: Optional[str] = None,
     ) -> DecisionCommandCenterResponse:
         """Aggregate existing Phase 4–7.4 analytical outputs into a unified executive decision command center view."""
         # 1. Resolve raw dataset to processed child using lineage logic
@@ -43,19 +103,48 @@ class DecisionCommandCenterService:
                 detail="Decision Command Center requires a processed dataset. Raw datasets are protected.",
             )
 
-        # 2. Retrieve Latest Decision Recommendation Evaluation Records
-        stmt_recs = (
+        # 2. Retrieve Decision Recommendation Records across both tables
+        stmt1 = (
+            select(DecisionRecommendation)
+            .where(DecisionRecommendation.dataset_id == target_dataset.id)
+            .order_by(DecisionRecommendation.created_at.desc())
+        )
+        recs1 = db.scalars(stmt1).all()
+
+        stmt2 = (
             select(DecisionRecommendationEvaluation)
             .where(DecisionRecommendationEvaluation.dataset_id == target_dataset.id)
-            .order_by(DecisionRecommendationEvaluation.priority.asc())
+            .order_by(DecisionRecommendationEvaluation.priority.asc(), DecisionRecommendationEvaluation.created_at.desc())
         )
-        recs = db.scalars(stmt_recs).all()
+        recs2 = db.scalars(stmt2).all()
 
-        if not recs:
+        all_recs = []
+        seen_ids = set()
+        for r in list(recs1) + list(recs2):
+            if r.id not in seen_ids:
+                seen_ids.add(r.id)
+                all_recs.append(r)
+
+        if not all_recs:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Required decision recommendations do not exist for dataset '{dataset_id}'. Please run recommendations first.",
             )
+
+        # Handle targeted recommendation ID if supplied
+        if target_recommendation_id:
+            target_matches = [r for r in all_recs if r.id == target_recommendation_id]
+            if not target_matches:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Recommendation '{target_recommendation_id}' not found for dataset '{dataset_id}'.",
+                )
+            primary_rec = target_matches[0]
+            alt_recs = [r for r in all_recs if r.id != target_recommendation_id]
+            recs = [primary_rec] + alt_recs
+        else:
+            recs = all_recs
+            primary_rec = recs[0]
 
         # 3. Retrieve Latest Decision Guardrail Evaluations
         stmt_guardrails = (
@@ -70,44 +159,79 @@ class DecisionCommandCenterService:
             if g.recommendation_id not in g_map:
                 g_map[g.recommendation_id] = g
 
-        # 4. Retrieve Optimization Record
-        primary_rec = recs[0]
-        stmt_opt = select(DecisionOptimization).where(
-            DecisionOptimization.id == primary_rec.optimization_id,
-            DecisionOptimization.dataset_id == target_dataset.id,
-        )
-        opt_record = db.scalars(stmt_opt).first()
-        if not opt_record:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Optimization artifact '{primary_rec.optimization_id}' not found for dataset '{dataset_id}'.",
-            )
+        # 4. Resolve Optimization & ML Analysis & Scenario metadata for primary_rec
+        evidence_dict = getattr(primary_rec, "evidence_traceability", None) or getattr(primary_rec, "evidence", None) or {}
+        opt_id = getattr(primary_rec, "optimization_id", None) or (evidence_dict.get("optimization_id") if isinstance(evidence_dict, dict) else None)
+        ml_id = getattr(primary_rec, "ml_analysis_id", None) or (evidence_dict.get("ml_analysis_id") if isinstance(evidence_dict, dict) else None)
+        scenario_id = getattr(primary_rec, "scenario_id", None)
 
-        # 5. Retrieve ML Analysis Record
-        stmt_ml = select(MLAnalysis).where(MLAnalysis.id == primary_rec.ml_analysis_id)
-        ml_record = db.scalars(stmt_ml).first()
+        if not opt_id:
+            latest_opt = db.scalars(
+                select(DecisionOptimization)
+                .where(DecisionOptimization.dataset_id == target_dataset.id)
+                .order_by(DecisionOptimization.created_at.desc())
+            ).first()
+            if latest_opt:
+                opt_id = latest_opt.id
 
-        # 6. Retrieve Phase 4 Insights
+        opt_record = None
+        if opt_id:
+            opt_record = db.scalars(select(DecisionOptimization).where(DecisionOptimization.id == opt_id)).first()
+
+        if not ml_id:
+            latest_ml = db.scalars(
+                select(MLAnalysis)
+                .where(MLAnalysis.dataset_id == target_dataset.id)
+                .order_by(MLAnalysis.created_at.desc())
+            ).first()
+            if latest_ml:
+                ml_id = latest_ml.id
+
+        ml_record = None
+        if ml_id:
+            ml_record = db.scalars(select(MLAnalysis).where(MLAnalysis.id == ml_id)).first()
+
+        scen_record = None
+        if scenario_id:
+            scen_record = db.scalars(select(Scenario).where(Scenario.id == scenario_id)).first()
+
+        # 5. Retrieve Phase 4 Insights
         stmt_ins = select(DatasetInsight).where(DatasetInsight.dataset_id == target_dataset.id)
         phase4_insights = db.scalars(stmt_ins).all()
 
-        # 7. Map Primary & Alternative Recommendation Summaries
+        # 6. Map Primary & Alternative Recommendation Summaries
         rec_summaries: List[DecisionRecommendationSummary] = []
-        for r in recs:
+        for idx, r in enumerate(recs):
             g_eval = g_map.get(r.id)
             d_status = g_eval.decision_status if g_eval else "HUMAN_REVIEW_REQUIRED"
+            p_val = getattr(r, "priority", idx + 1)
+            rec_type = getattr(r, "recommendation_type", "optimization")
+            title = r.title
+            target_metric = getattr(r, "target_metric", None) or (ml_record.target_column if ml_record else "target")
+            conf = getattr(r, "confidence", "MODERATE")
+
+            r_ev = getattr(r, "evidence_traceability", None) or getattr(r, "evidence", None) or {}
+
+            base_val, proj_val, abs_delta, pct_delta = cls._resolve_recommendation_metrics(
+                db=db,
+                r=r,
+                scen_record=scen_record,
+                opt_record=opt_record,
+                evidence_dict=r_ev,
+            )
+
             rec_summaries.append(
                 DecisionRecommendationSummary(
                     recommendation_id=r.id,
-                    priority=r.priority,
-                    recommendation_type=r.recommendation_type,
-                    title=r.title,
-                    target_metric=r.target_metric,
-                    baseline_value=r.baseline_value,
-                    projected_value=r.projected_value,
-                    absolute_delta=r.absolute_delta,
-                    percentage_delta=r.percentage_delta,
-                    confidence=r.confidence,
+                    priority=p_val,
+                    recommendation_type=rec_type,
+                    title=title,
+                    target_metric=target_metric,
+                    baseline_value=round(float(base_val), 2) if base_val is not None else None,
+                    projected_value=round(float(proj_val), 2) if proj_val is not None else None,
+                    absolute_delta=round(float(abs_delta), 2) if abs_delta is not None else None,
+                    percentage_delta=round(float(pct_delta), 2) if pct_delta is not None else None,
+                    confidence=conf,
                     decision_status=d_status,
                 )
             )
@@ -115,7 +239,16 @@ class DecisionCommandCenterService:
         primary_summary = rec_summaries[0]
         alternative_summaries = rec_summaries[1:]
 
-        # 8. Primary Guardrail Evaluation & Snapshot Construction
+        # Changed features resolution
+        changed_features = getattr(primary_rec, "changed_features", None)
+        if changed_features is None and scen_record and scen_record.feature_changes:
+            changed_features = scen_record.feature_changes
+        if not changed_features and isinstance(evidence_dict, dict):
+            changed_features = evidence_dict.get("changed_features", {})
+        if not changed_features:
+            changed_features = {}
+
+        # 7. Primary Guardrail Evaluation & Snapshot Construction
         primary_guardrail = g_map.get(primary_rec.id)
 
         sample_size = target_dataset.row_count or 0
@@ -144,7 +277,7 @@ class DecisionCommandCenterService:
             small_dataset_warning=small_ds_warning,
         )
 
-        # 9. Risk Summary Construction
+        # 8. Risk Summary Construction
         risk_level = primary_guardrail.risk_level if primary_guardrail else "MEDIUM"
         warnings_list = [w.get("message") for w in (primary_guardrail.warnings or [])] if primary_guardrail else []
         failed_list = [v.get("message") for v in (primary_guardrail.violated_rules or [])] if primary_guardrail else []
@@ -160,13 +293,12 @@ class DecisionCommandCenterService:
             passed_rules=passed_list,
         )
 
-        # 11. Current vs. Recommended Comparison Matrix
+        # 9. Current vs. Recommended Comparison Matrix
         comparison: List[DecisionComparison] = []
         baseline_inputs = {}
-        if opt_record.recommended_scenario and isinstance(opt_record.recommended_scenario, dict):
+        if opt_record and opt_record.recommended_scenario and isinstance(opt_record.recommended_scenario, dict):
             baseline_inputs = opt_record.recommended_scenario.get("baseline_inputs", {}) or {}
 
-        changed_features = primary_rec.changed_features or {}
         importances = (ml_record.metrics or {}).get("feature_importances", {}) if ml_record else {}
 
         for feat, prop_val in changed_features.items():
@@ -187,41 +319,38 @@ class DecisionCommandCenterService:
                 )
             )
 
-        # 11. Evidence Traceability Chain Construction
+        # 10. Evidence Traceability Chain Construction
         evidence_nodes: List[EvidenceNode] = []
 
-        # Node 1: Recommendation
         evidence_nodes.append(
             EvidenceNode(
                 node_type="RECOMMENDATION",
                 node_id=primary_rec.id,
-                title=f"Priority #{primary_rec.priority} Recommendation",
+                title=f"Primary Recommendation",
                 description=primary_rec.title,
             )
         )
 
-        # Node 2: Optimization
-        evidence_nodes.append(
-            EvidenceNode(
-                node_type="OPTIMIZATION",
-                node_id=opt_record.id,
-                title=f"Scenario Optimization Run ({opt_record.objective})",
-                description=f"Target Column: {opt_record.target_column}, Baseline Prediction: {opt_record.baseline_prediction}",
+        if opt_record:
+            evidence_nodes.append(
+                EvidenceNode(
+                    node_type="OPTIMIZATION",
+                    node_id=opt_record.id,
+                    title=f"Scenario Optimization Run ({opt_record.objective})",
+                    description=f"Target Column: {opt_record.target_column}, Baseline Prediction: {opt_record.baseline_prediction}",
+                )
             )
-        )
 
-        # Node 3: Scenario
-        scenario_id = primary_rec.scenario_id or "N/A"
-        evidence_nodes.append(
-            EvidenceNode(
-                node_type="SCENARIO",
-                node_id=scenario_id,
-                title=f"Ranked Scenario ({scenario_id})",
-                description=f"Feature Changes: {json.dumps(changed_features)}",
+        if scenario_id:
+            evidence_nodes.append(
+                EvidenceNode(
+                    node_type="SCENARIO",
+                    node_id=scenario_id,
+                    title=f"Ranked Scenario ({scenario_id})",
+                    description=f"Feature Changes: {json.dumps(changed_features)}",
+                )
             )
-        )
 
-        # Node 4: ML Analysis
         if ml_record:
             evidence_nodes.append(
                 EvidenceNode(
@@ -232,20 +361,17 @@ class DecisionCommandCenterService:
                 )
             )
 
-        # Node 5: Supporting Phase 4 Insights
-        ev_data = primary_rec.evidence or {}
-        linked_insight_ids = ev_data.get("insight_ids", [])
+        linked_insight_ids = evidence_dict.get("insight_ids", []) or evidence_dict.get("source_insight_ids", []) if isinstance(evidence_dict, dict) else []
         if linked_insight_ids:
             evidence_nodes.append(
                 EvidenceNode(
                     node_type="INSIGHT",
-                    node_id=", ".join([i[:8] for i in linked_insight_ids]),
+                    node_id=", ".join([str(i)[:8] for i in linked_insight_ids]),
                     title=f"Phase 4 Business Insights ({len(linked_insight_ids)} Linked)",
                     description=f"Evidence provenance linked to {len(linked_insight_ids)} observed historical dataset patterns.",
                 )
             )
 
-        # Node 6: Guardrail Evaluation
         if primary_guardrail:
             evidence_nodes.append(
                 EvidenceNode(
@@ -258,10 +384,10 @@ class DecisionCommandCenterService:
 
         evidence_chain = EvidenceChain(
             recommendation_id=primary_rec.id,
-            optimization_id=opt_record.id,
-            scenario_id=primary_rec.scenario_id,
-            ml_analysis_id=primary_rec.ml_analysis_id,
-            insight_ids=linked_insight_ids,
+            optimization_id=opt_id or "N/A",
+            scenario_id=scenario_id,
+            ml_analysis_id=ml_id,
+            insight_ids=[str(i) for i in linked_insight_ids],
             guardrail_id=primary_guardrail.id if primary_guardrail else None,
             nodes=evidence_nodes,
         )

@@ -19,8 +19,8 @@ class ControllableFeatureInfo(BaseModel):
 
 
 class FeatureConstraint(BaseModel):
-    min: Optional[float] = Field(None, description="Optional min bound constraint")
-    max: Optional[float] = Field(None, description="Optional max bound constraint")
+    min: Optional[Any] = Field(None, description="Optional min bound constraint")
+    max: Optional[Any] = Field(None, description="Optional max bound constraint")
 
 
 class OptimizationConstraints(BaseModel):

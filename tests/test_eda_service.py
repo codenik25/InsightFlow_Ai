@@ -122,3 +122,65 @@ def test_eda_directly_on_processed_dataset(db_session):
     eda = EDAService.generate_eda(db_session, proc_id)
     assert eda.dataset_id == proc_id
     assert eda.overview_kpis.total_rows == 3
+
+
+def test_eda_semantic_filtering_and_measure_classification(db_session):
+    """Verify filtering of semantically invalid observations (occupancy_rate=1.35, average_bill=-500, patient_satisfaction=140, readmission_rate=1.4),
+
+    monetary measure classification for operating_cost, and contribution_pct null for mean aggregations.
+    """
+    dirty_hospital_csv = """date,hospital,department,patient_visits,staff_count,occupancy_rate,average_bill,operating_cost,patient_satisfaction,readmission_rate,total_revenue
+2026-01-01,Hospital A,Cardiology,100,10,0.85,4200.50,150000,85.5,0.05,420050
+2026-01-01,Hospital B,Neurology,120,12,1.35,-500.00,200000,140.0,1.40,600000
+2026-01-01,Hospital C,Orthopedics,80,8,0.75,3500.00,100000,80.0,0.08,280000
+"""
+    file_obj = UploadFile(
+        filename="test_eda_invalid_filtering.csv",
+        file=io.BytesIO(dirty_hospital_csv.encode("utf-8")),
+    )
+    profile = DatasetService.ingest_and_profile_csv(db_session, file_obj)
+    raw_dataset = DatasetService.get_dataset_by_id(db_session, profile.dataset_id)
+    raw_df = DatasetService.load_dataset_dataframe(raw_dataset)
+
+    plan = CleaningPlan(dataset_id=profile.dataset_id, operations=[CleaningOperation(type="remove_duplicates")])
+    apply_res = CleaningService.apply_cleaning(db_session, raw_dataset, raw_df, plan)
+    proc_id = apply_res.output_dataset_id
+
+    eda = EDAService.generate_eda(db_session, proc_id)
+
+    # 1. Verify operating_cost is classified as amount_value with primary aggregation sum
+    op_cost_kpis = [k for k in eda.discovered_kpis if k.source_column == "operating_cost"]
+    op_cost_sum = next((k for k in op_cost_kpis if k.metric_type == "sum"), None)
+    assert op_cost_sum is not None
+    assert op_cost_sum.value == 450000.0  # 150k + 200k + 100k
+
+    # 2. Verify invalid range values are filtered out of EDA calculations
+    # occupancy_rate: 1.35 is filtered out -> mean of (0.85, 0.75) = 0.80
+    occ_kpis = [k for k in eda.discovered_kpis if k.source_column == "occupancy_rate"]
+    occ_mean = next(k for k in occ_kpis if k.metric_type == "mean")
+    assert occ_mean.value == 0.80
+
+    # average_bill: -500.0 is filtered out -> mean of (4200.50, 3500.00) = 3850.25
+    bill_kpis = [k for k in eda.discovered_kpis if k.source_column == "average_bill"]
+    bill_mean = next(k for k in bill_kpis if k.metric_type == "mean")
+    assert bill_mean.value == 3850.25
+
+    # patient_satisfaction: 140.0 is filtered out -> mean of (85.5, 80.0) = 82.75
+    sat_kpis = [k for k in eda.discovered_kpis if k.source_column == "patient_satisfaction"]
+    sat_mean = next(k for k in sat_kpis if k.metric_type == "mean")
+    assert sat_mean.value == 82.75
+
+    # readmission_rate: 1.40 is filtered out -> mean of (0.05, 0.08) = 0.065 -> 0.07
+    readm_kpis = [k for k in eda.discovered_kpis if k.source_column == "readmission_rate"]
+    readm_mean = next(k for k in readm_kpis if k.metric_type == "mean")
+    assert readm_mean.value == 0.07
+
+    # 3. Verify contribution_pct is None for mean aggregations in Category Breakdown
+    for breakdown in eda.category_breakdowns:
+        if breakdown.aggregation_method == "mean":
+            for g in breakdown.grouped_data:
+                assert g.contribution_pct is None
+        elif breakdown.aggregation_method == "sum":
+            for g in breakdown.grouped_data:
+                assert g.contribution_pct is not None
+

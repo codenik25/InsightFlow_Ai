@@ -6,7 +6,7 @@ from app.schemas.kpi import ColumnRoleInfo, KPIMetric, DatasetOverviewKPIs
 class GroupedCategoryValue(BaseModel):
     category_value: str
     metric_value: float
-    contribution_pct: float
+    contribution_pct: Optional[float] = None
 
 
 class CategoryBreakdown(BaseModel):

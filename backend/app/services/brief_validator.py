@@ -150,8 +150,12 @@ class DecisionBriefValidator:
 
     @classmethod
     def _extract_numbers_from_text(cls, text: str) -> List[float]:
+        # Pre-process text to remove commas within numbers (e.g. 2,122,261.71 -> 2122261.71)
+        cleaned_text = re.sub(r'(\d+),(\d+)', r'\1\2', text)
+        cleaned_text = re.sub(r'(\d+),(\d+)', r'\1\2', cleaned_text)
+
         # Extract floating numbers, integers, percentages
-        matches = re.findall(r'[-+]?\d*\.\d+|\d+', text)
+        matches = re.findall(r'[-+]?\d*\.\d+|\d+', cleaned_text)
         nums = []
         for m in matches:
             try:

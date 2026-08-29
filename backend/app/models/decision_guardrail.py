@@ -12,9 +12,9 @@ class DecisionGuardrailEvaluation(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     dataset_id = Column(String, ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False, index=True)
-    ml_analysis_id = Column(String, ForeignKey("ml_analyses.id", ondelete="CASCADE"), nullable=False, index=True)
-    optimization_id = Column(String, ForeignKey("decision_optimizations.id", ondelete="CASCADE"), nullable=False, index=True)
-    recommendation_id = Column(String, ForeignKey("decision_recommendation_evaluations.id", ondelete="CASCADE"), nullable=False, index=True)
+    ml_analysis_id = Column(String, ForeignKey("ml_analyses.id", ondelete="CASCADE"), nullable=True, index=True)
+    optimization_id = Column(String, ForeignKey("decision_optimizations.id", ondelete="CASCADE"), nullable=True, index=True)
+    recommendation_id = Column(String, nullable=False, index=True)
     scenario_id = Column(String, nullable=True)
 
     # Scores (0.0 to 100.0)
@@ -42,4 +42,4 @@ class DecisionGuardrailEvaluation(Base):
     dataset = relationship("Dataset", backref="guardrails")
     ml_analysis = relationship("MLAnalysis", backref="guardrails")
     optimization = relationship("DecisionOptimization", backref="guardrails")
-    recommendation = relationship("DecisionRecommendationEvaluation", backref="guardrails")
+
