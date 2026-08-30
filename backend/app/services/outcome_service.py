@@ -169,7 +169,36 @@ class DecisionOutcomeService:
         db.commit()
         db.refresh(outcome_record)
 
+        # Emit Audit Event
+        try:
+            from app.services.audit_service import DecisionAuditService
+            from app.schemas.audit import AuditEventCreate
+            DecisionAuditService.record_event(
+                db=db,
+                dataset_id=target_dataset.id,
+                payload=AuditEventCreate(
+                    decision_id=outcome_record.recommendation_id,
+                    recommendation_id=outcome_record.recommendation_id,
+                    event_type="OUTCOME_RECORDED",
+                    event_status="SUCCESS",
+                    source_service="outcome_service",
+                    evidence_references={
+                        "outcome_id": outcome_record.id,
+                        "recommendation_id": outcome_record.recommendation_id,
+                        "actual_metric": outcome_record.actual_metric,
+                    },
+                    new_state={
+                        "actual_value": outcome_record.actual_value,
+                        "outcome_status": outcome_record.outcome_status,
+                        "achievement_percentage": outcome_record.achievement_percentage,
+                    },
+                ),
+            )
+        except Exception:
+            pass
+
         return cls._map_to_response(outcome_record)
+
 
     @classmethod
     def evaluate_outcome_metrics(

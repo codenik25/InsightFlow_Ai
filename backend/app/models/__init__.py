@@ -13,6 +13,11 @@ from app.models.decision_brief import DecisionBrief
 from app.models.decision_outcome import DecisionOutcome
 from app.models.forecast_analysis import ForecastAnalysis
 from app.models.anomaly_analysis import AnomalyAnalysis
+from app.models.decision_impact import DecisionImpactMeasurement
+from app.models.decision_audit import DecisionAuditEvent
+from app.models.decision_approval import DecisionApproval
+from app.models.decision_action import DecisionActionLog
+from app.models.decision_ai_evaluation import DecisionAIEvaluation
 
 __all__ = [
     "Base",
@@ -30,5 +35,11 @@ __all__ = [
     "DecisionOutcome",
     "ForecastAnalysis",
     "AnomalyAnalysis",
+    "DecisionImpactMeasurement",
+    "DecisionAuditEvent",
+    "DecisionApproval",
+    "DecisionActionLog",
+    "DecisionAIEvaluation",
 ]
+
 

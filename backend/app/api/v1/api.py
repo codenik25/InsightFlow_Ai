@@ -14,6 +14,10 @@ from app.api.v1.endpoints import (
     outcomes,
     forecasting,
     anomaly,
+    impact,
+    audit,
+    approval,
+    ai_evaluations,
 )
 
 api_v1_router = APIRouter()
@@ -32,4 +36,9 @@ api_v1_router.include_router(outcomes.router, prefix="/datasets", tags=["Decisio
 api_v1_router.include_router(guardrails.router, prefix="/datasets", tags=["Decision Guardrails"])
 api_v1_router.include_router(recommendations.router, prefix="/datasets", tags=["Decision Recommendations"])
 api_v1_router.include_router(decision.router, prefix="/datasets", tags=["Decision Intelligence"])
+api_v1_router.include_router(impact.router, prefix="/datasets", tags=["Decision Impact & Value"])
+api_v1_router.include_router(audit.router, prefix="/datasets", tags=["Decision Audit Trail"])
+api_v1_router.include_router(approval.router, prefix="/datasets", tags=["Human Approval & Action Gate"])
+api_v1_router.include_router(ai_evaluations.router, prefix="/datasets", tags=["AI Evaluation Framework"])
+
 

@@ -91,6 +91,30 @@ from app.schemas.anomaly import (
     AnomalyAnalyzeRequest,
     AnomalyAnalysisResponse,
 )
+from app.schemas.impact import (
+    ImpactMeasurementCreate,
+    ImpactMeasurementResponse,
+    ImpactSummaryResponse,
+)
+from app.schemas.audit import (
+    AuditEventCreate,
+    AuditEventResponse,
+    DecisionAuditTrailResponse,
+)
+from app.schemas.approval import (
+    ApprovalRequestPayload,
+    ApprovalDecisionPayload,
+    ApprovalResponse,
+    ActionGateCheckResponse,
+    ActionExecuteRequest,
+    ActionExecuteResponse,
+)
+from app.schemas.ai_evaluation import (
+    EvaluationViolation,
+    EvaluationMetricScore,
+    AIEvaluationRequest,
+    AIEvaluationResponse,
+)
 
 __all__ = [
     "HealthCheckResponse",
@@ -175,7 +199,24 @@ __all__ = [
     "AnomalyItem",
     "AnomalyAnalyzeRequest",
     "AnomalyAnalysisResponse",
+    "ImpactMeasurementCreate",
+    "ImpactMeasurementResponse",
+    "ImpactSummaryResponse",
+    "AuditEventCreate",
+    "AuditEventResponse",
+    "DecisionAuditTrailResponse",
+    "ApprovalRequestPayload",
+    "ApprovalDecisionPayload",
+    "ApprovalResponse",
+    "ActionGateCheckResponse",
+    "ActionExecuteRequest",
+    "ActionExecuteResponse",
+    "EvaluationViolation",
+    "EvaluationMetricScore",
+    "AIEvaluationRequest",
+    "AIEvaluationResponse",
 ]
+
 
 
 
