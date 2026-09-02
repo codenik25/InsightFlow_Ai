@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Database, BarChart3, Sparkles, FileText, BrainCircuit, Compass, ShieldCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidebarProps {
   activeTab: string;
@@ -7,94 +7,102 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
-  const mainItems = [
-    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, status: 'Active' },
-    { id: 'datasets', label: 'Dataset Registry & Lab', icon: Database, status: 'Phases 1–7.7' },
-  ];
-
-  const modules = [
-    { id: 'cleaning', label: 'Data Cleaning & Lineage', icon: BarChart3, status: 'Phase 2' },
-    { id: 'kpis', label: 'Automated Analytics & EDA', icon: FileText, status: 'Phase 3' },
-    { id: 'ai', label: 'Business Insights', icon: Sparkles, status: 'Phase 4' },
-    { id: 'ml', label: 'Predictive Analytics & ML', icon: BrainCircuit, status: 'Phase 6' },
-    { id: 'decision', label: 'Decision Optimization', icon: Compass, status: 'Phase 7.2' },
-    { id: 'command_center', label: 'Decision Command Center', icon: ShieldCheck, status: 'Phase 7.5' },
+  const sections = [
+    {
+      title: 'INTELLIGENCE',
+      items: [
+        { id: 'data', label: 'DATA INTELLIGENCE' },
+        { id: 'signals', label: 'SIGNAL ANALYSIS' },
+        { id: 'patterns', label: 'PATTERN DETECTION' },
+      ]
+    },
+    {
+      title: 'DECISION ENGINE',
+      items: [
+        { id: 'predictions', label: 'PREDICTIONS' },
+        { id: 'recommendations', label: 'RECOMMENDATIONS' },
+        { id: 'optimization', label: 'OPTIMIZATION' },
+        { id: 'guardrails', label: 'DECISION GUARDRAILS' },
+      ]
+    },
+    {
+      title: 'DATA',
+      items: [
+        { id: 'sources', label: 'DATA SOURCES' },
+        { id: 'pipelines', label: 'INGESTION PIPELINES' },
+      ]
+    },
+    {
+      title: 'SYSTEM',
+      items: [
+        { id: 'model', label: 'MODEL STATUS' },
+        { id: 'activity', label: 'ACTIVITY' },
+      ]
+    }
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 hidden md:flex flex-col shrink-0">
-      <div className="p-4 flex-1 space-y-6">
-        {/* Core Navigation */}
-        <div>
-          <h2 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Platform Core
-          </h2>
-          <nav className="space-y-1">
-            {mainItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-sky-950/80 text-sky-300 border border-sky-800/60'
-                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-sky-400' : 'text-slate-400'}`} />
-                    <span>{item.label}</span>
-                  </div>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800 font-mono">
-                    {item.status}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+    <motion.aside 
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5, delay: 0.1 }}
+      className="w-[200px] shrink-0 border-r border-white/5 bg-[#02050A]/70 backdrop-blur-xl hidden md:flex flex-col py-6 overflow-y-auto relative z-20"
+    >
+      <div className="flex flex-col gap-8">
+        {sections.map((section, idx) => (
+          <div key={idx}>
+            <h3 className="px-6 text-[9px] font-mono font-bold text-slate-500 tracking-[0.25em] uppercase mb-3">
+              {section.title}
+            </h3>
+            <nav className="flex flex-col relative space-y-0.5 px-3">
+              {section.items.map((item) => {
+                const isActive = activeTab === item.id;
+                
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`relative w-full flex items-center px-4 py-2.5 text-left transition-all duration-300 rounded-md group overflow-hidden
+                      ${isActive ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'}`}
+                  >
+                    {/* Active Background Glow */}
+                    <AnimatePresence>
+                      {isActive && (
+                        <motion.div 
+                          layoutId="activeTabBg"
+                          className="absolute inset-0 bg-[linear-gradient(90deg,rgba(34,211,238,0.1)_0%,transparent_100%)] rounded-md pointer-events-none"
+                          initial={false}
+                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        />
+                      )}
+                    </AnimatePresence>
+                    
+                    {/* Active Indicator Line */}
+                    {isActive && (
+                      <motion.div 
+                        layoutId="activeTabLine"
+                        className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-accent-cyan rounded-r-full shadow-[0_0_12px_#22D3EE]"
+                        initial={false}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                    
+                    {/* Hover Line */}
+                    {!isActive && (
+                      <div className="absolute left-0 top-2 bottom-2 w-[2px] bg-accent-cyan/0 group-hover:bg-accent-cyan/30 rounded-r-full transition-colors" />
+                    )}
 
-        {/* Integrated Analytical Suite */}
-        <div>
-          <div className="flex items-center justify-between px-3 mb-2">
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Analytical Suite
-            </h2>
+                    <span className={`font-sans text-[11px] tracking-widest uppercase transition-colors relative z-10 pl-1 ${isActive ? 'text-white font-medium drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
           </div>
-          <nav className="space-y-1">
-            {modules.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab('datasets')}
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-slate-800/60 hover:text-white transition-colors"
-                  title="Select a dataset in the Registry to enter this view"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className="w-4 h-4 text-sky-400" />
-                    <span>{item.label}</span>
-                  </div>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">
-                    {item.status}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+        ))}
       </div>
-
-      {/* Footer Info */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900/50">
-        <div className="text-xs text-slate-400 space-y-1">
-          <p className="font-medium text-slate-300">InsightFlow AI Engine</p>
-          <p>Phase 1–7.7 Decision Intelligence</p>
-          <p className="text-[11px] text-slate-500">FastAPI + React + PostgreSQL</p>
-        </div>
-      </div>
-    </aside>
+    </motion.aside>
   );
 };
+

@@ -1,10 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white;
+    @apply bg-navy-900 text-text-white font-sans antialiased overflow-x-hidden;
   }
 
   /* Custom scrollbars */
@@ -13,59 +15,61 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.6);
+    background: #02050A;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(51, 65, 85, 0.8);
+    background: rgba(34, 211, 238, 0.2);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.8);
+    background: rgba(34, 211, 238, 0.5);
   }
 }
 
-.card-panel {
-  @apply bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-xl hover:border-slate-700/80 transition-all duration-300;
-}
+@layer utilities {
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(34, 211, 238, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
 
-.glass-panel {
-  @apply bg-slate-900/60 backdrop-blur-lg border border-slate-800/60 rounded-2xl shadow-2xl;
-}
+  .text-gradient-cyan {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent-cyan via-accent-blue to-accent-violet;
+  }
 
-.glass-panel-interactive {
-  @apply bg-slate-900/60 backdrop-blur-lg border border-slate-800/60 hover:border-indigo-500/40 rounded-2xl shadow-xl hover:shadow-indigo-500/10 transition-all duration-300;
-}
+  .glass-panel-premium {
+    background: rgba(13, 20, 32, 0.38); /* Matches theme.navy.panel with opacity */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(103, 232, 249, 0.25); /* accent-brightCyan with opacity */
+  }
 
-.text-gradient-primary {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400;
-}
+  .glass-button {
+    background: rgba(9, 13, 22, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .glass-button:hover {
+    background: rgba(9, 13, 22, 0.8);
+    border-color: rgba(34, 211, 238, 0.4);
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.15);
+    transform: translateY(-2px);
+  }
 
-.text-gradient-emerald {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400;
-}
+  .primary-glow-button {
+    background: linear-gradient(135deg, #22D3EE 0%, #3B82F6 100%);
+    box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+    transition: all 0.3s ease;
+  }
 
-.text-gradient-amber {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-orange-400 to-amber-500;
-}
-
-.badge-success {
-  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
-}
-
-.badge-warning {
-  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20;
-}
-
-.badge-error {
-  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono bg-rose-500/10 text-rose-400 border border-rose-500/20;
-}
-
-.badge-info {
-  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono bg-sky-500/10 text-sky-400 border border-sky-500/20;
-}
-
-.badge-indigo {
-  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono bg-indigo-500/10 text-indigo-300 border border-indigo-500/20;
+  .primary-glow-button:hover {
+    box-shadow: 0 6px 20px rgba(34, 211, 238, 0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+  }
 }
 
 /* Accessibility: respect prefers-reduced-motion */
@@ -77,5 +81,9 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  
+  .bg-grid-pattern {
+    background-attachment: fixed !important;
   }
 }
