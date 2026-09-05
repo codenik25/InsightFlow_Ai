@@ -7,7 +7,7 @@ import {
   OptimizationResponse,
   DecisionRecommendation,
   RecommendationResponse,
-  DecisionGuardrailResponse,
+  
   ScenarioComparisonResponse,
 } from '../types';
 import {
@@ -15,9 +15,9 @@ import {
   runOptimization,
   generateRecommendations,
   fetchRecommendations,
-  evaluateAllGuardrails,
-  evaluateGuardrailsForRecommendation,
-  fetchGuardrailsForDataset,
+  
+  
+  
   fetchDecisionSummary,
   fetchMLAnalyses,
   explainMLModel,
@@ -65,8 +65,6 @@ export const DecisionIntelligenceView: React.FC<DecisionIntelligenceViewProps> =
   const [recError, setRecError] = useState<string | null>(null);
 
   // Phase 7.4 Decision Guardrails State
-  const [guardrailsMap, setGuardrailsMap] = useState<Record<string, DecisionGuardrailResponse>>({});
-  const [evaluatingGuardrailId, setEvaluatingGuardrailId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDecisionData();
@@ -108,18 +106,6 @@ export const DecisionIntelligenceView: React.FC<DecisionIntelligenceViewProps> =
           setRecommendations(storedRecs);
         } catch (recErr) {
           console.warn('Recommendations fetch warning:', recErr);
-        }
-
-        // 6. Fetch Phase 7.4 Guardrail Evaluations
-        try {
-          const storedGuardrails = await fetchGuardrailsForDataset(datasetId);
-          const gMap: Record<string, DecisionGuardrailResponse> = {};
-          storedGuardrails.forEach((g) => {
-            gMap[g.recommendation_id] = g;
-          });
-          setGuardrailsMap(gMap);
-        } catch (gErr) {
-          console.warn('Guardrails fetch warning:', gErr);
         }
 
         // Pre-populate sample JSON based on first 2 feature columns
@@ -222,18 +208,6 @@ export const DecisionIntelligenceView: React.FC<DecisionIntelligenceViewProps> =
       const res = await generateRecommendations(datasetId, targetOptId, 3);
       setRecResponse(res);
       setRecommendations(res.recommendations);
-
-      // Auto-evaluate Guardrails for newly generated recommendations
-      try {
-        const batchRes = await evaluateAllGuardrails(datasetId);
-        const gMap: Record<string, DecisionGuardrailResponse> = {};
-        batchRes.evaluations.forEach((g: DecisionGuardrailResponse) => {
-          gMap[g.recommendation_id] = g;
-        });
-        setGuardrailsMap(gMap);
-      } catch (gErr) {
-        console.warn('Batch guardrail evaluation warning:', gErr);
-      }
     } catch (err: any) {
       setRecError(err.message || 'Failed to generate executive recommendations');
     } finally {
@@ -241,17 +215,7 @@ export const DecisionIntelligenceView: React.FC<DecisionIntelligenceViewProps> =
     }
   };
 
-  const handleEvaluateGuardrailForRec = async (recId: string) => {
-    setEvaluatingGuardrailId(recId);
-    try {
-      const gRes = await evaluateGuardrailsForRecommendation(datasetId, recId);
-      setGuardrailsMap((prev) => ({ ...prev, [recId]: gRes }));
-    } catch (err: any) {
-      console.error('Guardrail evaluation error:', err);
-    } finally {
-      setEvaluatingGuardrailId(null);
-    }
-  };
+
 
   if (!isProcessed) {
     return (
@@ -701,137 +665,7 @@ export const DecisionIntelligenceView: React.FC<DecisionIntelligenceViewProps> =
                           </div>
                         </div>
 
-                        {/* Phase 7.4 Decision Guardrails & Feasibility Analysis Card */}
-                        {(() => {
-                          const guardrail = guardrailsMap[rec.id];
-                          if (!guardrail) {
-                            return (
-                              <div className="bg-gray-950/80 rounded-lg p-3 border border-gray-800 flex items-center justify-between text-xs">
-                                <span className="text-gray-400 font-mono text-[11px]">🛡️ Guardrails: Not evaluated yet</span>
-                                <button
-                                  onClick={() => handleEvaluateGuardrailForRec(rec.id)}
-                                  disabled={evaluatingGuardrailId === rec.id}
-                                  className="text-[10px] font-semibold bg-indigo-600/80 hover:bg-indigo-500 text-white px-2.5 py-1 rounded transition-colors"
-                                >
-                                  {evaluatingGuardrailId === rec.id ? 'Auditing Rules...' : 'Run Guardrails Audit'}
-                                </button>
-                              </div>
-                            );
-                          }
-
-                          const dStatusColor =
-                            guardrail.decision_status === 'READY_TO_CONSIDER'
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                              : guardrail.decision_status === 'HUMAN_REVIEW_REQUIRED'
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                              : 'bg-rose-500/20 text-rose-300 border-rose-500/40';
-
-                          const rLevelColor =
-                            guardrail.risk_level === 'LOW'
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                              : guardrail.risk_level === 'MEDIUM'
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                              : 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-
-                          const fStatusColor =
-                            guardrail.feasibility_status === 'FEASIBLE'
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                              : guardrail.feasibility_status === 'CAUTION'
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                              : 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-
-                          return (
-                            <div className="bg-gradient-to-r from-gray-950 via-gray-900 to-indigo-950/20 rounded-lg p-4 border border-indigo-500/30 space-y-3 text-xs">
-                              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2">
-                                <div className="flex items-center space-x-2">
-                                  <span className="font-bold text-white text-xs flex items-center space-x-1">
-                                    <span>🛡️</span>
-                                    <span>Decision Guardrails & Feasibility Audit</span>
-                                  </span>
-                                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border uppercase ${dStatusColor}`}>
-                                    {guardrail.decision_status.replace(/_/g, ' ')}
-                                  </span>
-                                </div>
-
-                                <div className="flex items-center space-x-2">
-                                  <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-semibold border uppercase ${fStatusColor}`}>
-                                    Feasibility: {guardrail.feasibility_status}
-                                  </span>
-                                  <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-semibold border uppercase ${rLevelColor}`}>
-                                    Risk: {guardrail.risk_level}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Guardrail Scores Bar Grid */}
-                              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-gray-950/90 rounded p-2.5 border border-gray-800 font-mono text-[10px] text-center">
-                                <div>
-                                  <span className="block text-gray-500 text-[9px]">Feasibility</span>
-                                  <span className="font-bold text-white">{guardrail.feasibility_score}/100</span>
-                                </div>
-                                <div>
-                                  <span className="block text-gray-500 text-[9px]">Realism</span>
-                                  <span className="font-bold text-gray-300">{guardrail.realism_score}/100</span>
-                                </div>
-                                <div>
-                                  <span className="block text-gray-500 text-[9px]">Risk Score</span>
-                                  <span className="font-bold text-amber-400">{guardrail.risk_score}/100</span>
-                                </div>
-                                <div>
-                                  <span className="block text-gray-500 text-[9px]">Confidence</span>
-                                  <span className="font-bold text-indigo-300">{guardrail.confidence_score}/100</span>
-                                </div>
-                                <div>
-                                  <span className="block text-gray-500 text-[9px]">Readiness</span>
-                                  <span className="font-bold text-emerald-400">{guardrail.decision_readiness_score}/100</span>
-                                </div>
-                              </div>
-
-                              {/* Executive Guardrail Explanation */}
-                              <p className="text-[11px] text-gray-300 leading-relaxed font-mono bg-gray-950/50 p-2.5 rounded border border-gray-800">
-                                💡 {guardrail.explanation}
-                              </p>
-
-                              {/* Rule Breakdown List */}
-                              {guardrail.guardrail_results && guardrail.guardrail_results.length > 0 && (
-                                <div className="space-y-1.5 pt-1">
-                                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                    Rule Verification Log ({guardrail.passed_rules.length} Passed, {guardrail.warnings.length} Warnings, {guardrail.violated_rules.length} Failed)
-                                  </span>
-                                  <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
-                                    {guardrail.guardrail_results.map((rule, idx) => {
-                                      const statusIcon =
-                                        rule.status === 'PASS' ? '✅' : rule.status === 'WARNING' ? '⚠️' : '❌';
-                                      const badgeClass =
-                                        rule.status === 'PASS'
-                                          ? 'text-emerald-400'
-                                          : rule.status === 'WARNING'
-                                          ? 'text-amber-400'
-                                          : 'text-rose-400';
-                                      return (
-                                        <div
-                                          key={idx}
-                                          className="bg-gray-950/60 p-2 rounded border border-gray-800 flex items-start justify-between gap-2 text-[10px]"
-                                        >
-                                          <div className="space-y-0.5">
-                                            <div className="flex items-center space-x-1.5">
-                                              <span>{statusIcon}</span>
-                                              <span className={`font-bold font-mono ${badgeClass}`}>{rule.rule_name}</span>
-                                              <span className="bg-gray-800 text-gray-400 text-[9px] px-1.5 py-0.2 rounded font-mono">
-                                                {rule.category}
-                                              </span>
-                                            </div>
-                                            <p className="text-gray-300 text-[10px] pl-5">{rule.message}</p>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
+                        
                       </div>
                     );
                   })}

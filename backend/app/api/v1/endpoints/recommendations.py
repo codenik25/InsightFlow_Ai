@@ -14,8 +14,8 @@ router = APIRouter()
 
 
 @router.post(
-    "/{dataset_id}/decision/recommendations",
-    summary="Generate evidence-backed executive decision recommendations",
+    "/{dataset_id}/decision/optimize/recommendations",
+    summary="Generate evidence-backed executive decision recommendations from optimizations",
 )
 def generate_executive_recommendations(
     dataset_id: str,
@@ -41,14 +41,14 @@ def generate_executive_recommendations(
 
 
 @router.get(
-    "/{dataset_id}/decision/recommendations",
-    summary="List stored decision recommendations for a dataset",
+    "/{dataset_id}/decision/optimize/recommendations",
+    summary="List stored optimization-based decision recommendations for a dataset",
 )
 def list_executive_recommendations(
     dataset_id: str,
     db: Session = Depends(get_db),
 ) -> Any:
-    """Retrieve stored decision recommendations for a dataset."""
+    """Retrieve stored optimization-based decision recommendations for a dataset."""
     recs = RecommendationService.get_recommendations_for_dataset(
         db=db,
         dataset_id=dataset_id,
@@ -60,9 +60,9 @@ def list_executive_recommendations(
 
 
 @router.get(
-    "/{dataset_id}/decision/recommendations/{recommendation_id}",
+    "/{dataset_id}/decision/optimize/recommendations/{recommendation_id}",
     response_model=DecisionRecommendation,
-    summary="Get a specific decision recommendation by ID",
+    summary="Get a specific optimization-based decision recommendation by ID",
 )
 def get_executive_recommendation(
     dataset_id: str,

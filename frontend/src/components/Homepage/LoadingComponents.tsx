@@ -1077,10 +1077,10 @@ export const SignalNetwork: React.FC<{
   const si = stageIndex(stage);
 
   const paths = [
-    { id: 'tl', d: 'M 22% 25% Q 36% 42% 50% 56%', dur: 2.4 },
-    { id: 'bl', d: 'M 20% 66% Q 36% 60% 50% 56%', dur: 3.0 },
-    { id: 'tr', d: 'M 78% 25% Q 64% 42% 50% 56%', dur: 2.1 },
-    { id: 'br', d: 'M 80% 66% Q 64% 60% 50% 56%', dur: 2.7 },
+    { id: 'tl', d: 'M 22 25 Q 36 42 50 56', dur: 2.4 },
+    { id: 'bl', d: 'M 20 66 Q 36 60 50 56', dur: 3.0 },
+    { id: 'tr', d: 'M 78 25 Q 64 42 50 56', dur: 2.1 },
+    { id: 'br', d: 'M 80 66 Q 64 60 50 56', dur: 2.7 },
   ];
 
   // Paths more visible from early stages
@@ -1088,6 +1088,8 @@ export const SignalNetwork: React.FC<{
 
   return (
     <svg
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
       className="absolute inset-0 w-full h-full pointer-events-none z-10 hidden lg:block"
       aria-hidden="true"
     >

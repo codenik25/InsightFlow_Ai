@@ -33,7 +33,7 @@ def test_outcome_api_security_lineage_and_endpoints():
     client.post(f"/api/v1/datasets/{proc_a}/insights/generate")
     ml_a = client.post(f"/api/v1/datasets/{proc_a}/ml/analyze", json={"task_type": "regression", "target_column": "target_revenue"}).json()["id"]
     opt_a = client.post(f"/api/v1/datasets/{proc_a}/decision/optimize", json={"analysis_id": ml_a, "objective": "maximize"}).json()["optimization_id"]
-    recs_a = client.post(f"/api/v1/datasets/{proc_a}/decision/recommendations", json={"optimization_id": opt_a, "max_recommendations": 3}).json()["recommendations"]
+    recs_a = client.post(f"/api/v1/datasets/{proc_a}/decision/optimize/recommendations", json={"optimization_id": opt_a, "max_recommendations": 3}).json()["recommendations"]
     rec_a_id = recs_a[0]["id"]
 
     # Test 2: POST /outcomes returns 201 Created
@@ -95,7 +95,7 @@ def test_decision_service_recommendation_outcome_integration():
     # Generate DecisionService recommendations
     recs_scen = client.get(f"/api/v1/datasets/{proc_id}/decision/recommendations", params={"scenario_id": scen_id, "ml_analysis_id": ml_id}).json()
     if not recs_scen:
-        recs_scen = client.post(f"/api/v1/datasets/{proc_id}/decision/recommendations", json={"optimization_id": opt_id}).json()["recommendations"]
+        recs_scen = client.post(f"/api/v1/datasets/{proc_id}/decision/optimize/recommendations", json={"optimization_id": opt_id}).json()["recommendations"]
     assert len(recs_scen) > 0
     rec_scen_id = recs_scen[0]["id"]
 

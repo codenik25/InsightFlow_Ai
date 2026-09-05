@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DecisionCommandCenterResponse } from '../types';
-import { fetchDecisionCommandCenter } from '../services/api';
+import { fetchDecisionCommandCenter, generateRecommendations } from '../services/api';
 import { AIDecisionBriefCard } from './AIDecisionBriefCard';
 import { DecisionMemorySection } from './DecisionMemorySection';
 import { ScoreGauge } from './ui/ScoreGauge';
@@ -8,14 +8,17 @@ import { ScoreGauge } from './ui/ScoreGauge';
 interface DecisionCommandCenterProps {
   datasetId: string;
   isProcessed: boolean;
+  onNavigate?: (tab: string) => void;
 }
 
 export const DecisionCommandCenter: React.FC<DecisionCommandCenterProps> = ({
   datasetId,
   isProcessed,
+  onNavigate,
 }) => {
   const [data, setData] = useState<DecisionCommandCenterResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,6 +35,19 @@ export const DecisionCommandCenter: React.FC<DecisionCommandCenterProps> = ({
       setError(err.message || 'Failed to load Decision Command Center data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateAndLoad = async () => {
+    setIsGenerating(true);
+    setError(null);
+    try {
+      await generateRecommendations(datasetId);
+      await loadCommandCenter();
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate recommendations');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -57,18 +73,32 @@ export const DecisionCommandCenter: React.FC<DecisionCommandCenterProps> = ({
 
   if (error || !data) {
     return (
-      <div className="bg-gray-900 border border-rose-500/30 rounded-xl p-6 text-rose-300 space-y-3">
-        <h3 className="text-base font-bold flex items-center space-x-2">
-          <span>⚠️</span>
-          <span>Decision Command Center Unavailable</span>
-        </h3>
-        <p className="text-xs text-gray-300">{error || 'No decision intelligence artifacts found.'}</p>
-        <button
-          onClick={loadCommandCenter}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
-        >
-          Retry Aggregation
-        </button>
+      <div className="bg-gray-900 border border-indigo-500/30 rounded-xl p-8 text-center max-w-xl mx-auto space-y-4 my-8">
+        <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-full w-fit mx-auto text-indigo-400">
+          <span className="text-2xl">🎯</span>
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-lg font-bold text-white">Initialize Decision Intelligence</h3>
+          <p className="text-xs text-gray-400 leading-relaxed">
+            {error || 'Decision recommendations have not been generated for this dataset yet. Run the recommendation engine to produce evidence-backed executive briefs.'}
+          </p>
+        </div>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            onClick={handleGenerateAndLoad}
+            disabled={isGenerating}
+            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-lg disabled:opacity-50"
+          >
+            {isGenerating ? 'Generating Evidence...' : 'Generate Recommendations Now'}
+          </button>
+          <button
+            onClick={loadCommandCenter}
+            disabled={isGenerating}
+            className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold px-4 py-2.5 rounded-lg border border-gray-700 transition-colors"
+          >
+            Retry Aggregation
+          </button>
+        </div>
       </div>
     );
   }
@@ -411,6 +441,20 @@ export const DecisionCommandCenter: React.FC<DecisionCommandCenterProps> = ({
           ))}
         </div>
       </div>
+
+      {onNavigate && (
+        <div className="flex justify-end pt-8 pb-12 mt-10 border-t border-indigo-500/30">
+          <button
+            onClick={() => onNavigate('guardrails')}
+            className="group relative flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-full overflow-hidden shadow-lg hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <span className="font-sans font-extrabold text-sm tracking-widest uppercase relative z-10 flex items-center gap-2">
+              CONTINUE TO GUARDRAILS →
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

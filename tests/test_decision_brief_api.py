@@ -30,7 +30,7 @@ def test_decision_brief_api_safety_security_and_prompt_injection():
     client.post(f"/api/v1/datasets/{proc_a}/insights/generate")
     ml_a = client.post(f"/api/v1/datasets/{proc_a}/ml/analyze", json={"task_type": "regression", "target_column": "target_revenue"}).json()["id"]
     opt_a = client.post(f"/api/v1/datasets/{proc_a}/decision/optimize", json={"analysis_id": ml_a, "objective": "maximize"}).json()["optimization_id"]
-    client.post(f"/api/v1/datasets/{proc_a}/decision/recommendations", json={"optimization_id": opt_a, "max_recommendations": 3})
+    client.post(f"/api/v1/datasets/{proc_a}/decision/optimize/recommendations", json={"optimization_id": opt_a, "max_recommendations": 3})
     client.post(f"/api/v1/datasets/{proc_a}/decision/guardrails")
 
     # Test 2: POST /brief generates and persists brief (HTTP 201 Created)
@@ -60,7 +60,7 @@ def test_decision_brief_api_safety_security_and_prompt_injection():
     client.post(f"/api/v1/datasets/{c_m}/insights/generate")
     ml_m = client.post(f"/api/v1/datasets/{c_m}/ml/analyze", json={"task_type": "regression", "target_column": "target_revenue"}).json()["id"]
     opt_m = client.post(f"/api/v1/datasets/{c_m}/decision/optimize", json={"analysis_id": ml_m, "objective": "maximize"}).json()["optimization_id"]
-    client.post(f"/api/v1/datasets/{c_m}/decision/recommendations", json={"optimization_id": opt_m, "max_recommendations": 3})
+    client.post(f"/api/v1/datasets/{c_m}/decision/optimize/recommendations", json={"optimization_id": opt_m, "max_recommendations": 3})
     client.post(f"/api/v1/datasets/{c_m}/decision/guardrails")
 
     inj_res = client.post(f"/api/v1/datasets/{c_m}/decision/brief")
@@ -98,7 +98,7 @@ def test_decision_brief_integration_and_evidence():
     scen_d = client.post(f"/api/v1/datasets/{proc_d}/decision/scenarios", json={"name": "Brief Test Scenario", "ml_analysis_id": ml_d, "feature_changes": {"unit_price": 180}}).json()["id"]
 
     # Generate recommendations without scenario
-    recs_no_scen = client.post(f"/api/v1/datasets/{proc_d}/decision/recommendations", json={"optimization_id": opt_d}).json()["recommendations"]
+    recs_no_scen = client.post(f"/api/v1/datasets/{proc_d}/decision/optimize/recommendations", json={"optimization_id": opt_d}).json()["recommendations"]
     assert len(recs_no_scen) > 0
     rec_null_scen_id = recs_no_scen[0]["id"]
 

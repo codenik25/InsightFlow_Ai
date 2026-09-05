@@ -9,62 +9,69 @@ export const CockpitFrame: React.FC<CockpitFrameProps> = ({ hasLoaded }) => {
   return (
     <div className="absolute inset-0 pointer-events-none z-30 select-none overflow-hidden">
       {/* Outer framing borders and technical corner brackets */}
-      <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bracketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.2" />
-          </linearGradient>
-        </defs>
+      {/* Top-Left Corner Bracket */}
+      <div className="absolute top-0 left-0 w-44 h-24 hidden md:block">
+        <svg viewBox="0 0 180 100" className="w-full h-full" fill="none">
+          <defs>
+            <linearGradient id="bracketGradTL" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.2" />
+            </linearGradient>
+          </defs>
+          <path d="M 18 80 L 18 30 L 30 18 L 160 18" stroke="url(#bracketGradTL)" strokeWidth="1.5" className="opacity-70" />
+          <line x1="30" y1="18" x2="42" y2="18" stroke="#67E8F9" strokeWidth="2.5" />
+          <line x1="18" y1="30" x2="18" y2="42" stroke="#67E8F9" strokeWidth="2.5" />
+          <circle cx="160" cy="18" r="2" fill="#22D3EE" />
+        </svg>
+      </div>
 
-        {/* Top-Left Corner Bracket (Desktop only) */}
-        <path
-          d="M 18 80 L 18 30 L 30 18 L 160 18"
-          fill="none"
-          stroke="url(#bracketGrad)"
-          strokeWidth="1.5"
-          className="opacity-70 hidden md:block"
-        />
-        <line x1="30" y1="18" x2="42" y2="18" stroke="#67E8F9" strokeWidth="2.5" className="hidden md:block" />
-        <line x1="18" y1="30" x2="18" y2="42" stroke="#67E8F9" strokeWidth="2.5" className="hidden md:block" />
-        <circle cx="160" cy="18" r="2" fill="#22D3EE" className="hidden md:block" />
+      {/* Top-Right Corner Bracket */}
+      <div className="absolute top-0 right-0 w-44 h-24 hidden md:block -scale-x-100">
+        <svg viewBox="0 0 180 100" className="w-full h-full" fill="none">
+          <defs>
+            <linearGradient id="bracketGradTR" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.2" />
+            </linearGradient>
+          </defs>
+          <path d="M 18 80 L 18 30 L 30 18 L 160 18" stroke="url(#bracketGradTR)" strokeWidth="1.5" className="opacity-70" />
+          <line x1="30" y1="18" x2="42" y2="18" stroke="#67E8F9" strokeWidth="2.5" />
+          <line x1="18" y1="30" x2="18" y2="42" stroke="#67E8F9" strokeWidth="2.5" />
+          <circle cx="160" cy="18" r="2" fill="#22D3EE" />
+        </svg>
+      </div>
 
-        {/* Top-Right Corner Bracket (Desktop only) */}
-        <path
-          d="M calc(100% - 160px) 18 L calc(100% - 30px) 18 L calc(100% - 18px) 30 L calc(100% - 18px) 80"
-          fill="none"
-          stroke="url(#bracketGrad)"
-          strokeWidth="1.5"
-          className="opacity-70 hidden md:block"
-        />
-        <line x1="calc(100% - 42px)" y1="18" x2="calc(100% - 30px)" y2="18" stroke="#67E8F9" strokeWidth="2.5" className="hidden md:block" />
-        <line x1="calc(100% - 18px)" y1="30" x2="calc(100% - 18px)" y2="42" stroke="#67E8F9" strokeWidth="2.5" className="hidden md:block" />
-        <circle cx="calc(100% - 160px)" cy="18" r="2" fill="#22D3EE" className="hidden md:block" />
+      {/* Bottom-Left Corner Bracket */}
+      <div className="absolute bottom-0 left-0 w-44 h-24 -scale-y-100">
+        <svg viewBox="0 0 180 100" className="w-full h-full" fill="none">
+          <defs>
+            <linearGradient id="bracketGradBL" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.2" />
+            </linearGradient>
+          </defs>
+          <path d="M 18 80 L 18 30 L 30 18 L 160 18" stroke="url(#bracketGradBL)" strokeWidth="1.5" className="opacity-70" />
+          <circle cx="160" cy="18" r="2" fill="#22D3EE" />
+        </svg>
+      </div>
 
-        {/* Bottom-Left Corner Bracket */}
-        <path
-          d="M 18 calc(100% - 80px) L 18 calc(100% - 30px) L 30 calc(100% - 18px) L 160 calc(100% - 18px)"
-          fill="none"
-          stroke="url(#bracketGrad)"
-          strokeWidth="1.5"
-          className="opacity-70"
-        />
-        <circle cx="160" cy="calc(100% - 18px)" r="2" fill="#22D3EE" />
+      {/* Bottom-Right Corner Bracket */}
+      <div className="absolute bottom-0 right-0 w-44 h-24 -scale-100">
+        <svg viewBox="0 0 180 100" className="w-full h-full" fill="none">
+          <defs>
+            <linearGradient id="bracketGradBR" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.2" />
+            </linearGradient>
+          </defs>
+          <path d="M 18 80 L 18 30 L 30 18 L 160 18" stroke="url(#bracketGradBR)" strokeWidth="1.5" className="opacity-70" />
+          <circle cx="160" cy="18" r="2" fill="#22D3EE" />
+        </svg>
+      </div>
 
-        {/* Bottom-Right Corner Bracket */}
-        <path
-          d="M calc(100% - 160px) calc(100% - 18px) L calc(100% - 30px) calc(100% - 18px) L calc(100% - 18px) calc(100% - 30px) L calc(100% - 18px) calc(100% - 80px)"
-          fill="none"
-          stroke="url(#bracketGrad)"
-          strokeWidth="1.5"
-          className="opacity-70"
-        />
-        <circle cx="calc(100% - 160px)" cy="calc(100% - 18px)" r="2" fill="#22D3EE" />
-
-        {/* Faint Horizontal Screen Edge Tick Marks */}
-        <line x1="220" y1="18" x2="340" y2="18" stroke="rgba(34,211,238,0.2)" strokeWidth="1" strokeDasharray="4 6" className="hidden md:block" />
-        <line x1="calc(100% - 340px)" y1="18" x2="calc(100% - 220px)" y2="18" stroke="rgba(34,211,238,0.2)" strokeWidth="1" strokeDasharray="4 6" className="hidden md:block" />
-      </svg>
+      {/* Faint Horizontal Screen Edge Tick Marks */}
+      <div className="absolute top-[18px] left-[220px] w-[120px] h-[1px] border-t border-dashed border-cyan-400/20 hidden md:block" />
+      <div className="absolute top-[18px] right-[220px] w-[120px] h-[1px] border-t border-dashed border-cyan-400/20 hidden md:block" />
 
       {/* TOP-LEFT TELEMETRY (Visible only on md+) */}
       <motion.div

@@ -47,7 +47,7 @@ def test_outcome_service_evaluations_and_memory():
     client.post(f"/api/v1/datasets/{proc_id}/insights/generate")
     ml_id = client.post(f"/api/v1/datasets/{proc_id}/ml/analyze", json={"task_type": "regression", "target_column": "target_revenue"}).json()["id"]
     opt_id = client.post(f"/api/v1/datasets/{proc_id}/decision/optimize", json={"analysis_id": ml_id, "objective": "maximize"}).json()["optimization_id"]
-    recs = client.post(f"/api/v1/datasets/{proc_id}/decision/recommendations", json={"optimization_id": opt_id, "max_recommendations": 3}).json()["recommendations"]
+    recs = client.post(f"/api/v1/datasets/{proc_id}/decision/optimize/recommendations", json={"optimization_id": opt_id, "max_recommendations": 3}).json()["recommendations"]
     client.post(f"/api/v1/datasets/{proc_id}/decision/guardrails")
 
     rec_id = recs[0]["id"]

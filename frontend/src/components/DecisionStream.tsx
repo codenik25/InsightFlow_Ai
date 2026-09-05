@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fetchDatasetProfile, fetchInsights, fetchDecisionCommandCenter } from '../services/api';
 
-export const DecisionStream: React.FC = () => {
+interface DecisionStreamProps {
+  selectedDatasetId?: string | null;
+}
+
+export const DecisionStream: React.FC<DecisionStreamProps> = ({ selectedDatasetId }) => {
   const steps = [
     'DATA INGESTED',
     'SIGNALS ANALYZED',
@@ -15,11 +20,33 @@ export const DecisionStream: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
 
   useEffect(() => {
+    if (selectedDatasetId) {
+      // Logic to set active step based on actual data
+      const determineStep = async () => {
+        try {
+          const decisions = await fetchDecisionCommandCenter(selectedDatasetId);
+          if (decisions) return setActiveStep(5);
+        } catch(e) {}
+        try {
+          const insights = await fetchInsights(selectedDatasetId);
+          if (insights && insights.insights.length > 0) return setActiveStep(3);
+        } catch(e) {}
+        try {
+          const profile = await fetchDatasetProfile(selectedDatasetId);
+          if (profile) return setActiveStep(1);
+        } catch(e) {}
+        setActiveStep(0);
+      };
+      determineStep();
+      return;
+    }
+
+    // Default simulated animation
     const interval = setInterval(() => {
       setActiveStep((prev) => (prev + 1) % steps.length);
     }, 4000); // 4 seconds per step
     return () => clearInterval(interval);
-  }, [steps.length]);
+  }, [steps.length, selectedDatasetId]);
 
   return (
     <div className="h-[80px] shrink-0 border-t border-white/5 bg-[#02050A]/90 backdrop-blur-xl relative flex flex-col justify-center px-12 overflow-hidden z-20">

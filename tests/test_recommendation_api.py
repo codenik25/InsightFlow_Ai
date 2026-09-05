@@ -38,43 +38,43 @@ def test_recommendation_api_security_and_edge_cases():
 
     # Test 1: Cross-dataset optimization usage (passing Dataset A's opt_id to Dataset B returns 404)
     cross_res = client.post(
-        f"/api/v1/datasets/{proc_b}/decision/recommendations",
+        f"/api/v1/datasets/{proc_b}/decision/optimize/recommendations",
         json={"optimization_id": opt_a, "max_recommendations": 3},
     )
     assert cross_res.status_code == 404
 
     # Test 2: Invalid dataset ID (returns 404)
     invalid_ds_res = client.post(
-        "/api/v1/datasets/invalid-dataset-id-123/decision/recommendations",
+        "/api/v1/datasets/invalid-dataset-id-123/decision/optimize/recommendations",
         json={"optimization_id": opt_a, "max_recommendations": 3},
     )
     assert invalid_ds_res.status_code == 404
 
     # Test 3: Invalid max_recommendations (<= 0 or > 10 returns 400 or 422)
     zero_max_res = client.post(
-        f"/api/v1/datasets/{proc_a}/decision/recommendations",
+        f"/api/v1/datasets/{proc_a}/decision/optimize/recommendations",
         json={"optimization_id": opt_a, "max_recommendations": 0},
     )
     assert zero_max_res.status_code in [400, 422]
 
     huge_max_res = client.post(
-        f"/api/v1/datasets/{proc_a}/decision/recommendations",
+        f"/api/v1/datasets/{proc_a}/decision/optimize/recommendations",
         json={"optimization_id": opt_a, "max_recommendations": 100},
     )
     assert huge_max_res.status_code in [400, 422]
 
     # Test 4: Valid recommendation creation on Dataset A
     valid_res = client.post(
-        f"/api/v1/datasets/{proc_a}/decision/recommendations",
+        f"/api/v1/datasets/{proc_a}/decision/optimize/recommendations",
         json={"optimization_id": opt_a, "max_recommendations": 3},
     )
     assert valid_res.status_code == 201
     rec_id = valid_res.json()["recommendations"][0]["id"]
 
     # Test 5: GET recommendation by invalid ID (returns 404)
-    bad_rec_get = client.get(f"/api/v1/datasets/{proc_a}/decision/recommendations/invalid-rec-id")
+    bad_rec_get = client.get(f"/api/v1/datasets/{proc_a}/decision/optimize/recommendations/invalid-rec-id")
     assert bad_rec_get.status_code == 404
 
     # Test 6: Cross-dataset recommendation retrieval (Dataset B requesting Dataset A's recommendation returns 404)
-    cross_rec_get = client.get(f"/api/v1/datasets/{proc_b}/decision/recommendations/{rec_id}")
+    cross_rec_get = client.get(f"/api/v1/datasets/{proc_b}/decision/optimize/recommendations/{rec_id}")
     assert cross_rec_get.status_code == 404

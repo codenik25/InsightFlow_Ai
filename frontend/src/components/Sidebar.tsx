@@ -1,5 +1,6 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { Database, Search, Cpu, BrainCircuit, Activity, Settings, Target, Shield, Layers, Server } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -11,32 +12,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     {
       title: 'INTELLIGENCE',
       items: [
-        { id: 'data', label: 'DATA INTELLIGENCE' },
-        { id: 'signals', label: 'SIGNAL ANALYSIS' },
-        { id: 'patterns', label: 'PATTERN DETECTION' },
+        { id: 'UPLOAD', label: 'DATA INTELLIGENCE', icon: Database },
+        { id: 'ANALYSIS', label: 'SIGNAL ANALYSIS', icon: Activity },
+        { id: 'INSIGHTS', label: 'PATTERN DETECTION', icon: Search },
       ]
     },
     {
       title: 'DECISION ENGINE',
       items: [
-        { id: 'predictions', label: 'PREDICTIONS' },
-        { id: 'recommendations', label: 'RECOMMENDATIONS' },
-        { id: 'optimization', label: 'OPTIMIZATION' },
-        { id: 'guardrails', label: 'DECISION GUARDRAILS' },
+        { id: 'PREDICTIONS', label: 'PREDICTIONS', icon: BrainCircuit },
+        { id: 'OPTIMIZATION', label: 'OPTIMIZATION', icon: Settings },
+        { id: 'RECOMMENDATIONS', label: 'RECOMMENDATIONS', icon: Target },
+        { id: 'DECISIONS', label: 'DECISIONS', icon: Shield },
+        { id: 'GUARDRAILS', label: 'GUARDRAILS', icon: Shield },
       ]
     },
     {
       title: 'DATA',
       items: [
-        { id: 'sources', label: 'DATA SOURCES' },
-        { id: 'pipelines', label: 'INGESTION PIPELINES' },
+        { id: 'sources', label: 'DATA SOURCES', icon: Layers },
+        { id: 'pipelines', label: 'INGESTION', icon: Server },
       ]
     },
     {
       title: 'SYSTEM',
       items: [
-        { id: 'model', label: 'MODEL STATUS' },
-        { id: 'activity', label: 'ACTIVITY' },
+        { id: 'model', label: 'MODEL STATUS', icon: Cpu },
+        { id: 'activity', label: 'ACTIVITY', icon: Activity },
       ]
     }
   ];
@@ -62,29 +64,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className={`relative w-full flex items-center px-4 py-2.5 text-left transition-all duration-300 rounded-md group overflow-hidden
-                      ${isActive ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'}`}
+                    className={`relative w-full flex items-center px-4 py-3 text-left transition-all duration-300 rounded-lg group overflow-hidden
+                      ${isActive ? 'bg-[#0A1930] text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.02]'}`}
                   >
-                    {/* Active Background Glow */}
-                    <AnimatePresence>
-                      {isActive && (
-                        <motion.div 
-                          layoutId="activeTabBg"
-                          className="absolute inset-0 bg-[linear-gradient(90deg,rgba(34,211,238,0.1)_0%,transparent_100%)] rounded-md pointer-events-none"
-                          initial={false}
-                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                        />
-                      )}
-                    </AnimatePresence>
-                    
-                    {/* Active Indicator Line */}
+                    {/* Active Left Border Indicator */}
                     {isActive && (
-                      <motion.div 
-                        layoutId="activeTabLine"
-                        className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-accent-cyan rounded-r-full shadow-[0_0_12px_#22D3EE]"
-                        initial={false}
-                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      />
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/4 bg-accent-cyan shadow-[0_0_10px_#22D3EE] rounded-r-full" />
                     )}
                     
                     {/* Hover Line */}
@@ -92,9 +77,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                       <div className="absolute left-0 top-2 bottom-2 w-[2px] bg-accent-cyan/0 group-hover:bg-accent-cyan/30 rounded-r-full transition-colors" />
                     )}
 
-                    <span className={`font-sans text-[11px] tracking-widest uppercase transition-colors relative z-10 pl-1 ${isActive ? 'text-white font-medium drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]' : 'text-slate-400 group-hover:text-slate-200'}`}>
-                      {item.label}
-                    </span>
+                    <div className="relative z-10 flex items-center gap-2 pl-1">
+                      <item.icon className={`w-4 h-4 mr-3 relative z-10 transition-colors duration-300 ${isActive ? 'text-accent-cyan drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                      <span className="relative z-10 font-sans font-semibold text-[10px] tracking-widest uppercase">
+                        {item.label}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
@@ -102,7 +90,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
           </div>
         ))}
       </div>
+      
+      {/* Footer: Need Help */}
+      <div className="p-6">
+        <button className="w-full flex items-center justify-between p-3 rounded-xl border border-white/5 hover:border-white/10 hover:bg-white/5 transition-colors group">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full border border-slate-600 flex items-center justify-center text-slate-400 group-hover:text-white transition-colors">
+              ?
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="font-sans font-bold text-[10px] tracking-widest text-white uppercase">
+                NEED HELP?
+              </span>
+              <span className="font-sans text-[10px] text-slate-500">
+                Documentation & Support
+              </span>
+            </div>
+          </div>
+          <svg width="6" height="10" viewBox="0 0 6 10" fill="none" className="text-slate-600 group-hover:text-slate-400 transition-colors">
+            <path d="M1 9L5 5L1 1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
     </motion.aside>
   );
 };
-

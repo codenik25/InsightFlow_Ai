@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart2, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { CategoryBreakdown } from '../types';
 
@@ -26,101 +26,109 @@ export const CategoryAnalysisView: React.FC<CategoryAnalysisViewProps> = ({ brea
     return clean;
   };
 
-  const COLORS = ['#10b981', '#0284c7', '#6366f1', '#a855f7', '#ec4899', '#f59e0b'];
-
+  const getBarColor = (item: CategoryBreakdown, category_value: string) => {
+    if (item.top_category && item.top_category.category_value === category_value) {
+      return '#10b981'; // Top - green
+    }
+    if (item.bottom_category && item.bottom_category.category_value === category_value) {
+      return '#f59e0b'; // Lowest - amber
+    }
+    return '#3b82f6'; // Neutral Blue instead of Cyan for standard bars to reduce cyan overload
+  };
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-          <BarChart2 className="w-4 h-4 text-indigo-400" />
-          <span>Category Analysis & Grouped Dimension Metrics ({breakdowns.length} breakdowns)</span>
-        </h3>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {breakdowns.map((item, idx) => {
-          const isMean = item.aggregation_method === 'mean';
-          const measureLabel = formatMeasureName(item.measure);
-          const dimLabel = formatTitle(item.dimension);
-
-          return (
-            <div
-              key={idx}
-              className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 flex flex-col justify-between"
-            >
-              {/* Header Title */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div>
-                  <h4 className="text-sm font-bold text-white font-mono">
-                    {isMean ? 'AVERAGE' : 'TOTAL'} {measureLabel} by {dimLabel}
-                  </h4>
-                  <p className="text-xs text-slate-400 font-mono">
-                    {isMean ? 'Overall Average' : 'Total Measure Value'}: <strong className="text-emerald-400">{item.total_measure_value.toLocaleString()}</strong>
-                  </p>
-                </div>
-              </div>
-
-              {/* Top vs Bottom Highlights */}
-              <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-                {item.top_category && (
-                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg space-y-1">
-                    <div className="flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      <span>{isMean ? 'Highest Average' : 'Top Performer'}</span>
-                    </div>
-                    <div className="text-white font-bold text-sm truncate">{item.top_category.category_value}</div>
-                    <div className="text-slate-300 text-[11px]">
-                      {item.top_category.metric_value.toLocaleString()}
-                      {!isMean && item.top_category.contribution_pct > 0 && ` (${item.top_category.contribution_pct}%)`}
-                    </div>
-                  </div>
-                )}
-
-                {item.bottom_category && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg space-y-1">
-                    <div className="flex items-center gap-1.5 text-rose-400 font-semibold text-[11px]">
-                      <TrendingDown className="w-3.5 h-3.5" />
-                      <span>{isMean ? 'Lowest Average' : 'Lowest Performer'}</span>
-                    </div>
-                    <div className="text-white font-bold text-sm truncate">{item.bottom_category.category_value}</div>
-                    <div className="text-slate-300 text-[11px]">
-                      {item.bottom_category.metric_value.toLocaleString()}
-                      {!isMean && item.bottom_category.contribution_pct > 0 && ` (${item.bottom_category.contribution_pct}%)`}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Recharts Bar Chart */}
-              <div className="h-56 w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={item.top_5} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-                    <XAxis
-                      dataKey="category_value"
-                      stroke="#64748b"
-                      fontSize={11}
-                      tickLine={false}
-                      interval={0}
-                      angle={-15}
-                      textAnchor="end"
-                    />
-                    <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', fontSize: '12px' }}
-                      formatter={(val: any) => [Number(val).toLocaleString(), isMean ? `Average ${measureLabel}` : measureLabel]}
-                    />
-                    <Bar dataKey="metric_value" radius={[4, 4, 0, 0]}>
-                      {item.top_5.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {breakdowns.map((item, idx) => {
+        const isMean = item.aggregation_method === 'mean';
+        const measureLabel = formatMeasureName(item.measure);
+        const dimLabel = formatTitle(item.dimension);
+        return (
+          <div
+            key={idx}
+            className="flex flex-col gap-6 py-4"
+          >
+            {/* Header Title */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-800/50 pb-3 gap-2">
+              <h4 className="text-sm font-mono font-bold text-white tracking-widest uppercase">
+                {measureLabel} <span className="text-slate-600 font-normal">BY</span> {dimLabel}
+              </h4>
+              <div className="text-[10px] text-slate-500 font-mono tracking-widest uppercase flex items-center gap-2">
+                <span>{isMean ? 'Overall Average' : 'Total Value'}</span>
+                <span className="text-slate-700">—</span>
+                <strong className="text-white text-xs">{item.total_measure_value.toLocaleString()}</strong>
               </div>
             </div>
-          );
-        })}
-      </div>
+
+            {/* Top vs Bottom Highlights */}
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-xs font-mono relative z-10 py-2">
+              {item.top_category && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-widest">
+                    <TrendingUp className="w-3 h-3" />
+                    <span>{isMean ? 'Highest' : 'Top Performer'}</span>
+                  </div>
+                  <div className="text-white font-bold text-sm truncate tracking-tight">{item.top_category.category_value}</div>
+                  <div className="text-slate-400 text-[10px]">
+                    {item.top_category.metric_value.toLocaleString()}
+                    {!isMean && item.top_category.contribution_pct > 0 && ` (${item.top_category.contribution_pct}%)`}
+                  </div>
+                </div>
+              )}
+
+              {item.bottom_category && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[10px] uppercase tracking-widest">
+                    <TrendingDown className="w-3 h-3" />
+                    <span>{isMean ? 'Lowest' : 'Lowest Performer'}</span>
+                  </div>
+                  <div className="text-white font-bold text-sm truncate tracking-tight">{item.bottom_category.category_value}</div>
+                  <div className="text-slate-400 text-[10px]">
+                    {item.bottom_category.metric_value.toLocaleString()}
+                    {!isMean && item.bottom_category.contribution_pct > 0 && ` (${item.bottom_category.contribution_pct}%)`}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Recharts Bar Chart */}
+            <div className="h-64 w-full relative z-10 mt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={item.top_5} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
+                  <XAxis
+                    type="number"
+                    stroke="#475569"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    fontFamily="JetBrains Mono"
+                    tickFormatter={(val) => val >= 1000 ? `${(val/1000).toFixed(1)}k` : val}
+                  />
+                  <YAxis 
+                    dataKey="category_value" 
+                    type="category" 
+                    stroke="#cbd5e1" 
+                    fontSize={10} 
+                    fontFamily="JetBrains Mono"
+                    tickLine={false} 
+                    axisLine={false} 
+                    width={120}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(2,5,10,0.85)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '0.25rem', fontSize: '11px', backdropFilter: 'blur(12px)' }}
+                    itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                    formatter={(val: any) => [Number(val).toLocaleString(), isMean ? `Avg ${measureLabel}` : measureLabel]}
+                    cursor={{ fill: 'rgba(255,255,255,0.02)' }}
+                  />
+                  <Bar dataKey="metric_value" radius={[0, 4, 4, 0]} animationDuration={1000} barSize={24}>
+                    {item.top_5.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={getBarColor(item, entry.category_value)} fillOpacity={0.9} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

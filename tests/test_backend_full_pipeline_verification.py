@@ -72,7 +72,7 @@ def test_decision_memory_and_dataset_isolation():
     # Pipeline A
     ml_a = client.post(f"/api/v1/datasets/{proc_a}/ml/analyze", json={"task_type": "regression", "target_column": "total_revenue"}).json()["id"]
     opt_a = client.post(f"/api/v1/datasets/{proc_a}/decision/optimize", json={"analysis_id": ml_a, "objective": "maximize"}).json()["optimization_id"]
-    recs_a = client.post(f"/api/v1/datasets/{proc_a}/decision/recommendations", json={"optimization_id": opt_a}).json()["recommendations"]
+    recs_a = client.post(f"/api/v1/datasets/{proc_a}/decision/optimize/recommendations", json={"optimization_id": opt_a}).json()["recommendations"]
     rec_a_id = recs_a[0]["id"]
 
     # Record Outcome on Dataset A

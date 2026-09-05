@@ -25,7 +25,7 @@ def test_decision_brief_service_and_validation():
     client.post(f"/api/v1/datasets/{proc_id}/insights/generate")
     ml_id = client.post(f"/api/v1/datasets/{proc_id}/ml/analyze", json={"task_type": "regression", "target_column": "target_revenue"}).json()["id"]
     opt_id = client.post(f"/api/v1/datasets/{proc_id}/decision/optimize", json={"analysis_id": ml_id, "objective": "maximize"}).json()["optimization_id"]
-    client.post(f"/api/v1/datasets/{proc_id}/decision/recommendations", json={"optimization_id": opt_id, "max_recommendations": 3})
+    client.post(f"/api/v1/datasets/{proc_id}/decision/optimize/recommendations", json={"optimization_id": opt_id, "max_recommendations": 3})
     client.post(f"/api/v1/datasets/{proc_id}/decision/guardrails")
 
     # 2. Brief Generation

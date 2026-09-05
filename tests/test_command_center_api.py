@@ -39,7 +39,7 @@ def test_command_center_api_safety_and_edge_cases():
     client.post(f"/api/v1/datasets/{proc_a}/insights/generate")
     ml_a = client.post(f"/api/v1/datasets/{proc_a}/ml/analyze", json={"task_type": "regression", "target_column": "target_revenue"}).json()["id"]
     opt_a = client.post(f"/api/v1/datasets/{proc_a}/decision/optimize", json={"analysis_id": ml_a, "objective": "maximize"}).json()["optimization_id"]
-    client.post(f"/api/v1/datasets/{proc_a}/decision/recommendations", json={"optimization_id": opt_a, "max_recommendations": 3})
+    client.post(f"/api/v1/datasets/{proc_a}/decision/optimize/recommendations", json={"optimization_id": opt_a, "max_recommendations": 3})
     client.post(f"/api/v1/datasets/{proc_a}/decision/guardrails")
 
     # Test 3: Raw dataset WITH processed child auto-resolves to 200 OK

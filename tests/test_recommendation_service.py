@@ -27,7 +27,7 @@ def test_recommendation_service_comprehensive_rules():
 
     # Test 15: Raw Dataset Protection (POST recommendation on raw dataset returns 400)
     raw_rec_res = client.post(
-        f"/api/v1/datasets/{raw_id}/decision/recommendations",
+        f"/api/v1/datasets/{raw_id}/decision/optimize/recommendations",
         json={"optimization_id": "dummy-opt-id", "max_recommendations": 3},
     )
     assert raw_rec_res.status_code == 400
@@ -61,14 +61,14 @@ def test_recommendation_service_comprehensive_rules():
 
     # Test 13: Invalid optimization ID (returns 404)
     bad_opt_res = client.post(
-        f"/api/v1/datasets/{proc_id}/decision/recommendations",
+        f"/api/v1/datasets/{proc_id}/decision/optimize/recommendations",
         json={"optimization_id": "non-existent-opt-id", "max_recommendations": 3},
     )
     assert bad_opt_res.status_code == 404
 
     # Test 1: Generate Decision Recommendations
     rec_res = client.post(
-        f"/api/v1/datasets/{proc_id}/decision/recommendations",
+        f"/api/v1/datasets/{proc_id}/decision/optimize/recommendations",
         json={"optimization_id": opt_id, "max_recommendations": 3},
     )
     assert rec_res.status_code == 201
@@ -106,7 +106,7 @@ def test_recommendation_service_comprehensive_rules():
 
     # Test 5 & 18: Deterministic Repeated Execution
     rec_res2 = client.post(
-        f"/api/v1/datasets/{proc_id}/decision/recommendations",
+        f"/api/v1/datasets/{proc_id}/decision/optimize/recommendations",
         json={"optimization_id": opt_id, "max_recommendations": 3},
     )
     assert rec_res2.status_code == 201
@@ -117,11 +117,11 @@ def test_recommendation_service_comprehensive_rules():
     assert clean_recs1 == clean_recs2
 
     # Test 16 & 17: Persistence & Retrieval (GET /recommendations & GET /recommendations/{id})
-    list_rec_res = client.get(f"/api/v1/datasets/{proc_id}/decision/recommendations")
+    list_rec_res = client.get(f"/api/v1/datasets/{proc_id}/decision/optimize/recommendations")
     assert list_rec_res.status_code == 200
     assert len(list_rec_res.json()) >= 1
 
     first_rec_id = recs[0]["id"]
-    get_rec_res = client.get(f"/api/v1/datasets/{proc_id}/decision/recommendations/{first_rec_id}")
+    get_rec_res = client.get(f"/api/v1/datasets/{proc_id}/decision/optimize/recommendations/{first_rec_id}")
     assert get_rec_res.status_code == 200
     assert get_rec_res.json()["id"] == first_rec_id

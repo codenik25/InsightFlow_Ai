@@ -35,7 +35,7 @@ def test_guardrail_api_security_and_edge_cases():
     # Generate ML, Optimization, and Recommendations on Dataset A
     ml_a = client.post(f"/api/v1/datasets/{proc_a}/ml/analyze", json={"task_type": "regression", "target_column": "target_revenue"}).json()["id"]
     opt_a = client.post(f"/api/v1/datasets/{proc_a}/decision/optimize", json={"analysis_id": ml_a, "objective": "maximize"}).json()["optimization_id"]
-    rec_a = client.post(f"/api/v1/datasets/{proc_a}/decision/recommendations", json={"optimization_id": opt_a, "max_recommendations": 3}).json()["recommendations"][0]["id"]
+    rec_a = client.post(f"/api/v1/datasets/{proc_a}/decision/optimize/recommendations", json={"optimization_id": opt_a, "max_recommendations": 3}).json()["recommendations"][0]["id"]
 
     # Test 1: Valid Evaluation
     eval_res = client.post(f"/api/v1/datasets/{proc_a}/decision/recommendations/{rec_a}/guardrails")
@@ -97,7 +97,7 @@ def test_decision_service_recommendation_guardrail_integration():
     scen_c = client.post(f"/api/v1/datasets/{proc_c}/decision/scenarios", json={"name": "Test Scenario", "ml_analysis_id": ml_c, "feature_changes": {"unit_price": 120}}).json()["id"]
 
     # Generate recommendations via DecisionService & RecommendationService
-    recs_no_scen = client.post(f"/api/v1/datasets/{proc_c}/decision/recommendations", json={"optimization_id": opt_c}).json()["recommendations"]
+    recs_no_scen = client.post(f"/api/v1/datasets/{proc_c}/decision/optimize/recommendations", json={"optimization_id": opt_c}).json()["recommendations"]
     assert len(recs_no_scen) > 0
     rec_null_scen_id = recs_no_scen[0]["id"]
 

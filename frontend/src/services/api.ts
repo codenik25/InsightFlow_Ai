@@ -571,17 +571,21 @@ export async function fetchOptimizationById(datasetId: string, optimizationId: s
 
 export async function generateRecommendations(
   datasetId: string,
-  optimizationId: string,
+  optimizationId?: string,
   maxRecommendations: number = 3
 ): Promise<RecommendationResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/recommendations`, {
+  const url = optimizationId 
+    ? `${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/optimize/recommendations`
+    : `${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/recommendations`;
+
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
     body: JSON.stringify({
-      optimization_id: optimizationId,
+      ...(optimizationId ? { optimization_id: optimizationId } : {}),
       max_recommendations: maxRecommendations,
     }),
   });

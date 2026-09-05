@@ -9,15 +9,20 @@ import { fetchDatasetProfile } from '../services/api';
 interface DatasetSectionProps {
   datasets: DatasetListResponse | null;
   onRefresh?: () => void;
+  onSelectDataset?: (id: string, name: string) => void;
 }
 
-export const DatasetSection: React.FC<DatasetSectionProps> = ({ datasets, onRefresh }) => {
+export const DatasetSection: React.FC<DatasetSectionProps> = ({ datasets, onRefresh, onSelectDataset }) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [activeProfile, setActiveProfile] = useState<DatasetProfileData | null>(null);
   const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   const handleDatasetClick = async (item: DatasetItem) => {
+    if (onSelectDataset) {
+      onSelectDataset(item.id, item.name);
+    }
+    
     if (item.profile_data) {
       setActiveProfile(item.profile_data);
       return;
@@ -65,33 +70,14 @@ export const DatasetSection: React.FC<DatasetSectionProps> = ({ datasets, onRefr
 
   return (
     <div className="card-panel space-y-6">
-      {/* Header & Upload Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
-              <Database className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white tracking-tight">Dataset Registry & Ingestion Pipeline</h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
-                  Live Registry
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Ingest CSV datasets to trigger automated column profiling, quality scoring, EDA, predictive analytics, and decision optimization.
-              </p>
-            </div>
-          </div>
-        </div>
-
+      {/* Upload Controls for Table */}
+      <div className="flex justify-end mb-4">
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-sky-500/20 transition-all shrink-0"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-accent-cyan to-accent-blue hover:from-accent-cyan/80 hover:to-accent-blue/80 text-white rounded-full text-xs font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all shrink-0"
         >
           <Upload className="w-4 h-4" />
-          <span>Ingest CSV Dataset</span>
+          <span>Ingest Dataset</span>
         </button>
       </div>
 
@@ -127,10 +113,27 @@ export const DatasetSection: React.FC<DatasetSectionProps> = ({ datasets, onRefr
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/50 bg-slate-900/30">
-            {filteredItems.length === 0 ? (
+            {rawItems.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-16 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <Database className="w-8 h-8 text-slate-500 mb-2" />
+                    <h3 className="text-lg font-sans text-white">No datasets found</h3>
+                    <p className="text-slate-400 font-sans text-sm pb-4">Upload your first dataset to get started</p>
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-accent-cyan to-accent-blue hover:from-accent-cyan/80 hover:to-accent-blue/80 text-white rounded-full text-xs font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Upload Dataset</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredItems.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-slate-400 text-xs font-mono">
-                  No datasets matching filter. Click <strong className="text-sky-400 font-semibold">"Ingest CSV Dataset"</strong> to profile your first CSV file.
+                  No datasets matching filter.
                 </td>
               </tr>
             ) : (
