@@ -203,7 +203,7 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
         </div>
         
         {activeAnalysis && (
-          <div className="flex bg-slate-900/60 border border-slate-800 rounded-lg p-3 gap-6 text-xs font-mono">
+          <div className="flex glass-panel-premium p-3 gap-6 text-xs font-mono">
             <div className="flex flex-col">
               <span className="text-slate-500 uppercase">Dataset</span>
               <span className="text-slate-200 font-bold">{datasetId.substring(0, 8)}...</span>
@@ -232,7 +232,7 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
       )}
 
       {/* DISCOVERED TASKS CONTROLS (Compact) */}
-      <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 space-y-4">
+      <div className="glass-panel-premium p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="relative">
@@ -369,7 +369,7 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             {/* Main Summary */}
-            <div className="lg:col-span-4 bg-slate-900 border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden group shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+            <div className="lg:col-span-4 glass-panel-premium p-6 relative overflow-hidden group shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
               <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-cyan-500/5 opacity-50 group-hover:opacity-100 transition-opacity"></div>
               <div className="relative z-10 space-y-6">
                 <div className="uppercase tracking-widest text-[10px] font-bold text-purple-400 mb-2">
@@ -403,7 +403,7 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
                 .filter(([_, v]) => v !== null && v !== undefined)
                 .slice(0, 4) // Show top 4 metrics
                 .map(([key, val]) => (
-                  <div key={key} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col justify-center shadow-lg relative overflow-hidden">
+                  <div key={key} className="glass-panel-premium p-5 flex flex-col justify-center shadow-lg relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-16 h-16 bg-white/5 rounded-bl-full -mr-8 -mt-8"></div>
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 z-10">
                       {key}
@@ -417,7 +417,7 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
           </div>
 
           {/* 04 - MODEL COMPARISON */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-1">
+          <div className="glass-panel-premium p-1">
             <button 
               onClick={() => setIsModelComparisonOpen(!isModelComparisonOpen)}
               className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-800/50 rounded-lg transition-colors"
@@ -495,7 +495,7 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
           </div>
 
           {/* 05 - FEATURE INTELLIGENCE */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+          <div className="glass-panel-premium p-6 space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
                 <Layers className="w-5 h-5 text-purple-500" />
@@ -557,7 +557,7 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
           </div>
 
           {/* 06 - PREDICTION ENGINE */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 relative overflow-hidden">
+          <div className="glass-panel-premium p-6 space-y-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
             
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -686,7 +686,7 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
             <div className="flex justify-end pt-8 pb-12">
               <button
                 onClick={() => onNavigate('recommendations')}
-                className="group relative flex items-center gap-3 px-8 py-4 bg-white text-slate-950 rounded-full overflow-hidden shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                className="group relative flex items-center gap-3 px-8 py-4 primary-glow-button rounded-full overflow-hidden shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-white"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
                 <span className="font-sans font-extrabold text-sm tracking-widest uppercase relative z-10 flex items-center gap-2">

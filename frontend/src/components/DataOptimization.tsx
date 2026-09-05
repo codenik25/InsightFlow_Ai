@@ -208,7 +208,7 @@ export const DataOptimization: React.FC<DataOptimizationProps> = ({ processedDat
 
       {/* 02 — CONFIGURATION LAB */}
       {optOptions && !error && (
-        <motion.section variants={itemVariants} className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden">
+        <motion.section variants={itemVariants} className="glass-panel-premium p-8 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/10 via-transparent to-transparent pointer-events-none"></div>
           
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-start justify-between gap-8 mb-8">
@@ -383,7 +383,7 @@ export const DataOptimization: React.FC<DataOptimizationProps> = ({ processedDat
             )}
 
             {optResult.best_scenario && (
-              <div className="bg-slate-900 border border-indigo-900/50 rounded-3xl p-8 relative overflow-hidden shadow-[0_0_30px_rgba(79,70,229,0.05)]">
+              <div className="glass-panel-premium p-8 relative overflow-hidden shadow-[0_0_30px_rgba(79,70,229,0.05)]">
                 <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none"></div>
                 
                 <div className="relative z-10">
@@ -438,7 +438,7 @@ export const DataOptimization: React.FC<DataOptimizationProps> = ({ processedDat
               </div>
             )}
 
-            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm">
+            <div className="glass-panel-premium p-8">
                <h3 className="text-[10px] font-bold font-mono text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-6">
                  <Database className="w-3.5 h-3.5" /> Scenario Ranking Table ({optResult.scenarios.length} Evaluated)
                </h3>
@@ -504,14 +504,14 @@ export const DataOptimization: React.FC<DataOptimizationProps> = ({ processedDat
       </AnimatePresence>
 
       {/* 05 — CONTINUE NAVIGATION */}
-      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-slate-800/60 mt-12">
+      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-[rgba(34,211,238,0.12)] mt-12">
         <button
           onClick={() => setCurrentStage('RECOMMENDATIONS')}
           disabled={!optResult}
-          className="px-8 py-4 bg-white text-slate-950 hover:bg-slate-200 disabled:opacity-50 disabled:hover:bg-white rounded-xl text-sm font-bold tracking-widest uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+          className="px-8 py-3.5 primary-glow-button disabled:opacity-50 disabled:hover:bg-white rounded-full text-white text-[15px] font-sans font-semibold tracking-wide flex items-center gap-2"
         >
           CONTINUE TO RECOMMENDATIONS
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-5 h-5 ml-1" />
         </button>
       </motion.div>
     </motion.div>

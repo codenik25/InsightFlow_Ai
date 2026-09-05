@@ -1,16 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
-import { RelationshipMetric, DistributionStats } from '../types';
+import { RelationshipMetric } from '../types';
 
 interface CorrelationMatrixViewProps {
   relationships: RelationshipMetric[];
-  distributions: DistributionStats[];
 }
 
 export const CorrelationMatrixView: React.FC<CorrelationMatrixViewProps> = ({
   relationships,
-  distributions,
 }) => {
   const getStrengthBadge = (strength: string, corr: number) => {
     switch (strength) {
@@ -88,12 +86,12 @@ export const CorrelationMatrixView: React.FC<CorrelationMatrixViewProps> = ({
                   PRIMARY RELATIONSHIP
                 </div>
                 
-                <div className="flex items-center justify-center gap-6 mb-8 w-full">
-                  <div className="text-xl lg:text-3xl font-bold text-white tracking-tight text-right flex-1 truncate">
+                <div className="flex items-center justify-center gap-4 lg:gap-6 mb-8 w-full min-w-0">
+                  <div className="text-xl lg:text-3xl font-bold text-white tracking-tight text-right flex-1 break-words min-w-0 leading-tight">
                     {formatTitle(primaryRel.column_a)}
                   </div>
-                  <div className="text-slate-600 font-bold text-2xl">×</div>
-                  <div className="text-xl lg:text-3xl font-bold text-white tracking-tight text-left flex-1 truncate">
+                  <div className="text-slate-600 font-bold text-2xl shrink-0">×</div>
+                  <div className="text-xl lg:text-3xl font-bold text-white tracking-tight text-left flex-1 break-words min-w-0 leading-tight">
                     {formatTitle(primaryRel.column_b)}
                   </div>
                 </div>
@@ -122,23 +120,23 @@ export const CorrelationMatrixView: React.FC<CorrelationMatrixViewProps> = ({
 
             {/* Secondary Relationships List */}
             {secondaryRels.length > 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-4 pt-6">
+              <div className="grid gap-x-8 lg:gap-x-12 gap-y-4 pt-6 min-w-0 w-full" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
                 <div className="col-span-full mb-2">
                   <h3 className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">SECONDARY RELATIONSHIPS</h3>
                 </div>
                 {secondaryRels.map((rel, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-3 border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors px-2">
-                    <div className="flex flex-col gap-1">
-                      <div className="text-xs font-mono font-bold text-white tracking-tight flex items-center gap-2">
-                        <span>{formatTitle(rel.column_a)}</span>
+                  <div key={idx} className="flex items-center justify-between py-4 border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors px-2 min-w-0 gap-4">
+                    <div className="flex flex-col gap-2 min-w-0 flex-1">
+                      <div className="text-xs font-mono font-bold text-white flex flex-col gap-1 min-w-0" style={{ overflowWrap: 'anywhere' }}>
+                        <span className="break-words whitespace-normal leading-snug">{formatTitle(rel.column_a)}</span>
                         <span className="text-slate-600">×</span>
-                        <span>{formatTitle(rel.column_b)}</span>
+                        <span className="break-words whitespace-normal leading-snug">{formatTitle(rel.column_b)}</span>
                       </div>
-                      <div className="text-[10px] text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                      <div className="text-[10px] text-slate-500 uppercase tracking-widest flex items-center gap-2 mt-1">
                         {rel.strength.replace('_', ' ')}
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-white font-mono">
+                    <div className="text-xl lg:text-2xl font-bold text-white font-mono shrink-0 text-right">
                       {rel.correlation > 0 ? '+' : ''}{rel.correlation.toFixed(4)}
                     </div>
                   </div>
@@ -148,80 +146,6 @@ export const CorrelationMatrixView: React.FC<CorrelationMatrixViewProps> = ({
           </div>
         )}
       </div>
-
-      {/* 05 — DISTRIBUTION & SHAPE */}
-      {distributions.length > 0 && (
-        <div className="space-y-6">
-          <motion.div 
-            initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="pt-16 pb-2 relative"
-          >
-            <div className="flex items-center gap-6">
-              <h2 className="text-[20px] lg:text-[28px] font-bold text-white tracking-tight flex items-center gap-4">
-                <span className="text-accent-cyan font-mono text-[20px] lg:text-[28px] font-normal tracking-wider">05</span> 
-                DISTRIBUTION & SHAPE
-              </h2>
-              <div className="h-px bg-gradient-to-r from-slate-800 to-transparent flex-1" />
-            </div>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {distributions.map((dist) => {
-              // Conceptual normalization for the visual span since we don't have global min/max
-              const spanWidth = Math.min(100, Math.max(10, (dist.iqr / (Math.abs(dist.p75) + 0.001)) * 100));
-              
-              return (
-              <div key={dist.column} className="bg-transparent border border-slate-800/80 hover:border-slate-700 transition-colors p-6 group relative overflow-hidden flex flex-col justify-between">
-                <div>
-                  <h3 className="text-sm font-mono font-bold text-white uppercase tracking-widest mb-6 truncate pr-4">
-                    {formatTitle(dist.column)}
-                  </h3>
-
-                  {dist.is_constant ? (
-                    <div className="h-24 flex items-center justify-center">
-                      <span className="px-3 py-1 text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full font-bold tracking-widest uppercase">
-                        Constant Value
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {/* Conceptual Distribution Span */}
-                      <div className="w-full py-4 relative group-hover:opacity-100 opacity-80 transition-opacity">
-                        <div className="absolute left-0 top-0 text-[9px] font-mono text-slate-500">Q1 ({dist.p25})</div>
-                        <div className="absolute right-0 top-0 text-[9px] font-mono text-slate-500">Q3 ({dist.p75})</div>
-                        <div className="h-1.5 w-full bg-slate-800 rounded-full mt-4 relative overflow-hidden">
-                          <div 
-                            className="absolute h-full bg-accent-cyan/80 rounded-full" 
-                            style={{ left: `${50 - spanWidth/2}%`, width: `${spanWidth}%` }}
-                          />
-                        </div>
-                        <div className="text-center mt-2 text-[10px] font-mono text-white font-bold">
-                          IQR: {dist.iqr}
-                        </div>
-                      </div>
-                      
-                      <div className="w-full h-px bg-slate-800/50" />
-                      
-                      <div className="grid grid-cols-2 gap-y-4 gap-x-4">
-                        <div className="flex flex-col">
-                          <span className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">Skewness</span>
-                          <span className={`font-mono text-sm font-bold ${dist.skewness > 0.5 || dist.skewness < -0.5 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                            {dist.skewness.toFixed(4)}
-                          </span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">Zero Count</span>
-                          <span className="text-white font-mono text-sm font-bold">{dist.zero_count.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )})}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

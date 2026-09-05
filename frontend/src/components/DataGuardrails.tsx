@@ -222,7 +222,7 @@ export const DataGuardrails: React.FC<DataGuardrailsProps> = ({ processedDataset
         
         {/* Left Col: Decision Info */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 backdrop-blur-sm h-full">
+          <div className="glass-panel-premium p-6 h-full">
             <h3 className="text-[10px] font-bold font-mono text-slate-500 uppercase tracking-widest mb-6 border-b border-slate-800 pb-3">Decision Under Validation</h3>
             
             {primary && (
@@ -280,7 +280,7 @@ export const DataGuardrails: React.FC<DataGuardrailsProps> = ({ processedDataset
         {/* Right Col: Guardrail Execution & Results */}
         <div className="lg:col-span-2 space-y-6">
           {!guardrail ? (
-            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-12 backdrop-blur-sm h-full flex flex-col items-center justify-center text-center">
+            <div className="glass-panel-premium p-12 h-full flex flex-col items-center justify-center text-center">
               <ShieldCheck className="w-16 h-16 text-slate-700 mb-6" />
               <h3 className="text-2xl font-sans text-white mb-3 tracking-tight">Run Guardrail Validation</h3>
               <p className="text-slate-400 font-mono text-sm max-w-md mb-8">
@@ -289,7 +289,7 @@ export const DataGuardrails: React.FC<DataGuardrailsProps> = ({ processedDataset
               <button
                 onClick={handleRunGuardrails}
                 disabled={evaluating}
-                className="px-8 py-4 bg-indigo-600/90 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-sm uppercase tracking-widest font-bold transition-all shadow-[0_0_30px_rgba(79,70,229,0.2)]"
+                className="px-8 py-3.5 primary-glow-button disabled:opacity-50 text-white rounded-full text-sm uppercase tracking-widest font-bold transition-all"
               >
                 {evaluating ? 'AUDITING RULES...' : 'RUN GUARDRAILS'}
               </button>
@@ -299,26 +299,26 @@ export const DataGuardrails: React.FC<DataGuardrailsProps> = ({ processedDataset
               
               {/* Risk Scores Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                 <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 text-center">
+                 <div className="glass-panel-premium p-5 text-center">
                     <span className="block text-[10px] font-bold font-mono text-slate-500 uppercase tracking-widest mb-2">Feasibility</span>
                     <span className="text-2xl font-bold text-white font-mono">{guardrail.feasibility_score}<span className="text-sm text-slate-600">/100</span></span>
                  </div>
-                 <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 text-center">
+                 <div className="glass-panel-premium p-5 text-center">
                     <span className="block text-[10px] font-bold font-mono text-slate-500 uppercase tracking-widest mb-2">Realism</span>
                     <span className="text-2xl font-bold text-white font-mono">{guardrail.realism_score}<span className="text-sm text-slate-600">/100</span></span>
                  </div>
-                 <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 text-center">
+                 <div className="glass-panel-premium p-5 text-center">
                     <span className="block text-[10px] font-bold font-mono text-slate-500 uppercase tracking-widest mb-2">Risk Score</span>
                     <span className="text-2xl font-bold text-amber-400 font-mono">{guardrail.risk_score}<span className="text-sm text-amber-400/30">/100</span></span>
                  </div>
-                 <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 text-center">
+                 <div className="glass-panel-premium p-5 text-center">
                     <span className="block text-[10px] font-bold font-mono text-slate-500 uppercase tracking-widest mb-2">Confidence</span>
                     <span className="text-2xl font-bold text-indigo-400 font-mono">{guardrail.confidence_score}<span className="text-sm text-indigo-400/30">/100</span></span>
                  </div>
               </div>
 
               {/* Guardrails Detailed Results */}
-              <div className="bg-slate-900/40 border border-indigo-500/20 rounded-3xl p-8">
+              <div className="glass-panel-premium p-8">
                 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6 mb-6">
                   <div>
@@ -390,7 +390,7 @@ export const DataGuardrails: React.FC<DataGuardrailsProps> = ({ processedDataset
               </div>
 
               {/* FINAL VALIDATION SUMMARY */}
-              <div className="bg-gradient-to-r from-slate-900/80 to-slate-950 border border-slate-800 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="glass-panel-premium p-8 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div>
                   <h3 className="text-xs font-bold font-mono text-slate-500 uppercase tracking-widest mb-1">Final Validation Summary</h3>
                   {guardrail.decision_status === 'READY_TO_CONSIDER' || guardrail.decision_status === 'PASS' || guardrail.feasibility_status === 'FEASIBLE' ? (

@@ -223,22 +223,22 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ rawDatasetId, setPro
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6">
+            <div className="glass-panel-premium p-6">
               <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Processed Rows</div>
               <div className="text-3xl font-mono text-white tracking-tight">{applyResult.after.total_rows}</div>
               <div className="text-slate-400 font-mono text-[10px] mt-2 line-through">{applyResult.before.total_rows} originally</div>
             </div>
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6">
+            <div className="glass-panel-premium p-6">
               <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Missing Values</div>
               <div className="text-3xl font-mono text-emerald-400 tracking-tight">{applyResult.after.total_missing_cells}</div>
               <div className="text-slate-400 font-mono text-[10px] mt-2">{applyResult.before.total_missing_cells} originally</div>
             </div>
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6">
+            <div className="glass-panel-premium p-6">
               <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Duplicates</div>
               <div className="text-3xl font-mono text-emerald-400 tracking-tight">{applyResult.after.duplicate_rows}</div>
               <div className="text-slate-400 font-mono text-[10px] mt-2">{applyResult.before.duplicate_rows} originally</div>
             </div>
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6">
+            <div className="glass-panel-premium p-6">
               <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Quality Score</div>
               <div className="text-3xl font-mono text-cyan-400 tracking-tight">{applyResult.after.quality_score}</div>
               <div className="text-slate-400 font-mono text-[10px] mt-2">{applyResult.before.quality_score} originally</div>
@@ -267,7 +267,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ rawDatasetId, setPro
             <motion.section variants={itemVariants} className="lg:col-span-1 space-y-6">
               <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">A. Readiness Summary</h2>
               
-              <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-sm space-y-4">
+              <div className="glass-panel-premium p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-800/50 pb-4">
                   <span className="text-slate-400 font-mono text-xs uppercase">Target Dataset</span>
                   <span className="font-mono text-white text-xs truncate max-w-[150px]">{profile.overview.filename}</span>
@@ -298,7 +298,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ rawDatasetId, setPro
             <motion.section variants={itemVariants} className="lg:col-span-2 space-y-6">
               <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">B. Cleaning Operations</h2>
               
-              <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm space-y-8">
+              <div className="glass-panel-premium p-8 space-y-8">
                 
                 {/* Remove Duplicates */}
                 <div className="flex items-center justify-between bg-slate-950/50 border border-slate-800 rounded-2xl p-5">
@@ -402,7 +402,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ rawDatasetId, setPro
           </div>
 
           {/* C. BEFORE -> AFTER CONCEPT VISUALIZATION */}
-          <motion.section variants={itemVariants} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-10 flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-sm">
+          <motion.section variants={itemVariants} className="glass-panel-premium p-10 flex flex-col items-center justify-center relative overflow-hidden">
             
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-900 via-cyan-500/50 to-slate-900"></div>
 
@@ -461,15 +461,15 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ rawDatasetId, setPro
           )}
 
           {/* PRIMARY ACTION */}
-          <motion.div variants={itemVariants} className="pt-8 flex justify-end border-t border-slate-800/60 mt-8">
+          <motion.div variants={itemVariants} className="pt-8 flex justify-end border-t border-[rgba(34,211,238,0.12)] mt-8">
             <button
               onClick={executeCleaning}
               disabled={isCleaning}
-              className="px-8 py-4 bg-white text-slate-950 hover:bg-slate-200 disabled:opacity-50 rounded-xl text-sm font-bold tracking-widest uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] min-w-[240px] justify-center"
+              className="px-8 py-3.5 primary-glow-button disabled:opacity-50 rounded-full text-white text-[15px] font-sans font-semibold tracking-wide flex items-center justify-center gap-2 min-w-[240px]"
             >
               {isCleaning ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-slate-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -478,7 +478,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ rawDatasetId, setPro
               ) : (
                 <>
                   RUN CLEANING
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
                 </>

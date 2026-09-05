@@ -1,4 +1,5 @@
 import React from 'react';
+import { Search, Bell, ChevronDown } from 'lucide-react';
 import { HealthStatus } from '../types';
 
 interface HeaderProps {
@@ -11,12 +12,12 @@ export const Header: React.FC<HeaderProps> = ({ health, activeTab, setActiveTab 
   const isHealthy = health?.status === 'healthy';
 
   return (
-    <header className="h-[72px] w-full border-b border-white/5 bg-[#02050A]/80 backdrop-blur-md flex items-center justify-between px-6 shrink-0 relative z-50">
+    <header className="h-[72px] w-full border-b border-[rgba(34,211,238,0.10)] bg-[rgba(2,6,13,0.78)] backdrop-blur-md flex items-center justify-between px-6 shrink-0 relative z-50 gap-4">
       {/* LEFT: Logo & Engine Status */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-6 shrink-0">
         <div className="flex items-center gap-3">
           {/* IF Box Logo */}
-          <div className="w-9 h-9 bg-accent-cyan rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.4)]">
+          <div className="w-9 h-9 bg-gradient-to-br from-accent-cyan to-accent-electricBlue rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.4)] border border-white/20">
             <span className="font-sans font-black text-[#02050A] text-lg tracking-tighter">IF</span>
           </div>
           {/* Logo Text */}
@@ -31,17 +32,17 @@ export const Header: React.FC<HeaderProps> = ({ health, activeTab, setActiveTab 
         </div>
         
         {/* Engine Status Badge */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#040F1A] border border-white/5 rounded-full mt-1">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34D399]" />
-          <span className="font-mono text-[9px] tracking-widest text-emerald-400 font-bold">
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#040F1A]/80 backdrop-blur border border-white/5 rounded-full mt-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-accent-success shadow-[0_0_8px_#22C55E] animate-pulseSlow" />
+          <span className="font-mono text-[9px] tracking-widest text-accent-success font-bold">
             ENGINE ONLINE
           </span>
         </div>
       </div>
 
       {/* CENTER: Navigation Categories */}
-      <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center h-full mt-1">
-        <nav className="flex items-center h-full font-sans text-[11px] font-semibold tracking-[0.1em] gap-8">
+      <div className="hidden lg:flex flex-1 items-center justify-center min-w-0 px-4 mt-1">
+        <nav className="flex items-center h-full font-sans text-[11px] font-semibold tracking-[0.1em] gap-4 xl:gap-8 overflow-hidden">
           {['DATA', 'SIGNALS', 'PATTERNS', 'PREDICTIONS', 'DECISIONS'].map(tab => {
             const id = tab.toLowerCase();
             const isActive = activeTab === id;
@@ -50,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({ health, activeTab, setActiveTab 
                 key={id}
                 onClick={() => setActiveTab && setActiveTab(id)}
                 className={`relative h-full flex items-center transition-all duration-300
-                  ${isActive ? 'text-accent-cyan drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'text-slate-400 hover:text-slate-200'}`}
+                  ${isActive ? 'text-accent-cyan drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'text-slate-400 hover:text-accent-cyan/80'}`}
               >
                 {tab}
                 {isActive && (
@@ -62,12 +63,22 @@ export const Header: React.FC<HeaderProps> = ({ health, activeTab, setActiveTab 
         </nav>
       </div>
 
-      {/* RIGHT: System Status & User */}
-      <div className="flex items-center gap-8 mt-1">
+      {/* RIGHT: Search, System Status & User */}
+      <div className="flex items-center gap-4 xl:gap-6 shrink-0 mt-1">
+        {/* Search */}
+        <div className="hidden xl:flex items-center relative">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3" />
+          <input 
+            type="text" 
+            placeholder="Search datasets, insights..." 
+            className="bg-[#0A1220]/50 border border-white/10 rounded-full py-1.5 pl-9 pr-4 text-[11px] text-white font-sans placeholder-slate-500 focus:outline-none focus:border-accent-cyan/50 focus:shadow-[0_0_10px_rgba(34,211,238,0.2)] transition-all w-48 xl:w-64"
+          />
+        </div>
+
         <div className="hidden sm:flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className={`w-1.5 h-1.5 rounded-full ${isHealthy ? 'bg-emerald-400 shadow-[0_0_8px_#34D399]' : 'bg-rose-400 shadow-[0_0_8px_#FB7185]'}`} />
-            <span className={`font-mono text-[9px] font-bold tracking-[0.15em] uppercase ${isHealthy ? 'text-emerald-400/80' : 'text-rose-400/80'}`}>
+            <div className={`w-1.5 h-1.5 rounded-full ${isHealthy ? 'bg-accent-success shadow-[0_0_8px_#22C55E] animate-pulseSlow' : 'bg-accent-error shadow-[0_0_8px_#EF4444]'}`} />
+            <span className={`font-mono text-[9px] font-bold tracking-[0.15em] uppercase ${isHealthy ? 'text-accent-success' : 'text-accent-error'}`}>
               SYSTEM {isHealthy ? 'ONLINE' : 'OFFLINE'}
             </span>
           </div>
@@ -79,19 +90,22 @@ export const Header: React.FC<HeaderProps> = ({ health, activeTab, setActiveTab 
           </div>
         </div>
 
-        <div className="flex items-center gap-2 border-l border-white/10 pl-6 cursor-pointer group">
-          <div className="w-6 h-6 rounded-full bg-[#0A1930] border border-accent-blue/30 flex items-center justify-center text-[10px] font-bold text-accent-cyan">
+        {/* Notifications */}
+        <button className="relative text-slate-400 hover:text-white focus-visible:outline-none focus-visible:text-accent-cyan transition-colors rounded">
+          <Bell className="w-4 h-4" />
+          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-accent-error shadow-[0_0_5px_#EF4444]" />
+        </button>
+
+        <button className="flex items-center gap-2 border-l border-white/10 pl-6 cursor-pointer group focus-visible:outline-none">
+          <div className="w-7 h-7 rounded-full bg-[#0A1930] border border-accent-electricBlue/30 flex items-center justify-center text-[10px] font-bold text-accent-cyan shadow-[0_0_10px_rgba(59,130,246,0.15)] group-hover:border-accent-cyan/50 group-focus-visible:border-accent-cyan/80 transition-colors">
             CM
           </div>
-          <span className="font-mono text-[9px] tracking-widest text-slate-300 font-bold group-hover:text-white transition-colors">
+          <span className="font-mono text-[9px] tracking-widest text-slate-300 font-bold group-hover:text-white group-focus-visible:text-accent-cyan transition-colors">
             COMMANDER
           </span>
-          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" className="text-slate-500 ml-1">
-            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
+          <ChevronDown className="w-3.5 h-3.5 text-slate-500 group-hover:text-white group-focus-visible:text-accent-cyan transition-colors ml-1" />
+        </button>
       </div>
     </header>
   );
 };
-

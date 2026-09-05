@@ -86,8 +86,8 @@ export const DataTerrain: React.FC<DataTerrainProps> = ({}) => {
         </svg>
 
         {/* Gradient fade on left side (Left Side Protection) and bottom */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#02050A] via-transparent to-transparent opacity-80" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#02050A] via-transparent to-transparent opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#02060D] via-transparent to-transparent opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#02060D] via-transparent to-transparent opacity-90" />
       </div>
     </div>
   );

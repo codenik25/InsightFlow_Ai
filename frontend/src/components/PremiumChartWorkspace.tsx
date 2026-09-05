@@ -173,11 +173,11 @@ export const PremiumChartWorkspace: React.FC<PremiumChartWorkspaceProps> = ({ tr
         transition={{ duration: 0.5, delay: 1.2 }}
         className="flex flex-wrap items-center justify-between gap-4 mb-10 relative z-10"
       >
-        <div className="flex items-start gap-6">
-          <div className="p-2.5 bg-slate-800/50 rounded-xl border border-slate-700/50 mt-1">
+        <div className="flex items-start gap-6 min-w-0 flex-1">
+          <div className="p-2.5 bg-slate-800/50 rounded-xl border border-slate-700/50 mt-1 shrink-0">
             <LineChartIcon className="w-6 h-6 text-accent-cyan" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-4 mb-2">
               <h3 className="text-[11px] font-mono text-slate-500 uppercase tracking-widest">
                 PRIMARY SIGNAL
@@ -188,11 +188,11 @@ export const PremiumChartWorkspace: React.FC<PremiumChartWorkspaceProps> = ({ tr
               </div>
             </div>
             
-            <div className="relative inline-block group mb-2">
+            <div className="relative inline-block group mb-2 max-w-full w-full">
               <select 
                 value={selectedMetricId} 
                 onChange={(e) => setSelectedMetricId(e.target.value)}
-                className="appearance-none bg-transparent text-3xl lg:text-[40px] font-bold text-white pr-12 outline-none cursor-pointer hover:text-accent-cyan transition-colors"
+                className="appearance-none bg-transparent text-2xl lg:text-[32px] font-bold text-white pr-12 outline-none cursor-pointer hover:text-accent-cyan transition-colors max-w-full text-ellipsis overflow-hidden whitespace-nowrap w-full"
               >
                 {availableMetrics.map(m => (
                   <option key={m.id} value={m.id} className="bg-slate-900 text-sm">

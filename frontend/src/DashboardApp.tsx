@@ -50,76 +50,54 @@ export const DashboardApp: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#02050A] text-slate-100 selection:bg-accent-cyan/30 selection:text-white relative overflow-hidden font-sans">
+    <div className="min-h-screen flex flex-col bg-[#02060D] text-slate-100 selection:bg-accent-cyan/30 selection:text-white relative font-sans">
       
       {/* BACKGROUND LAYERS */}
-      <motion.div 
-        className="fixed inset-0 z-0 pointer-events-none overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 2 }}
-      >
-        {/* BACKGROUND: deep navy/black gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#02050A] via-[#040914] to-[#081224]" />
-
-        {/* MIDGROUND: very faint technical grid + atmospheric glow */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        
+        {/* Layer 1: Atmospheric glows (Cyan, Blue, Violet) */}
         <motion.div 
-          className="absolute inset-[-10%] w-[120%] h-[120%]"
-          animate={!reducedMotion ? { y: [-10, 10], x: [-10, 10] } : {}}
-          transition={{ duration: 30, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
+          className="absolute inset-0"
+          animate={!reducedMotion ? { opacity: [0.85, 1, 0.85] } : {}}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
         >
-          {/* Main Glows */}
-          <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-accent-cyan/5 rounded-full blur-[150px] mix-blend-screen" />
-          <div className="absolute bottom-[20%] right-[10%] w-[600px] h-[400px] bg-accent-violet/5 rounded-full blur-[120px] mix-blend-screen" />
-          
-          {/* Faint Grid */}
+          {/* Left/Center cyan */}
           <div 
-            className="absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.02)_1px,transparent_1px)] bg-[size:40px_40px]"
-            style={{ maskImage: 'radial-gradient(ellipse at center, black 10%, transparent 70%)', WebkitMaskImage: 'radial-gradient(ellipse at center, black 10%, transparent 70%)' }}
+            className="absolute inset-0" 
+            style={{ background: 'radial-gradient(circle at 35% 45%, rgba(34, 211, 238, 0.16), rgba(34, 211, 238, 0.05) 25%, transparent 55%)' }} 
+          />
+          
+          {/* Right blue */}
+          <div 
+            className="absolute inset-0" 
+            style={{ background: 'radial-gradient(circle at 78% 45%, rgba(59, 130, 246, 0.13), rgba(59, 130, 246, 0.04) 30%, transparent 60%)' }} 
+          />
+          
+          {/* Bottom violet/navy */}
+          <div 
+            className="absolute inset-0" 
+            style={{ background: 'radial-gradient(circle at 55% 90%, rgba(139, 92, 246, 0.12), rgba(139, 92, 246, 0.03) 30%, transparent 60%)' }} 
           />
         </motion.div>
 
-        {/* FOREGROUND: digital terrain/wave mesh near bottom */}
+        {/* Layer 2: Subtle technical grid */}
         <motion.div 
-          className="absolute bottom-0 left-[-10%] right-[-10%] h-[30vh] overflow-hidden opacity-60"
-          style={{ transform: 'perspective(1000px) rotateX(60deg) scale(1.2)', transformOrigin: 'bottom' }}
-          animate={!reducedMotion ? { x: [-30, 30] } : {}}
-          transition={{ duration: 40, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+          className="absolute inset-0"
+          animate={!reducedMotion ? { y: [-10, 10], x: [-5, 5] } : {}}
+          transition={{ duration: 40, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
         >
-          <svg className="w-full h-full" viewBox="0 0 1000 200" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="terrain-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="transparent" />
-                <stop offset="50%" stopColor="rgba(34,211,238,0.25)" />
-                <stop offset="100%" stopColor="transparent" />
-              </linearGradient>
-            </defs>
-            <path 
-              d="M-200 150 C 0 150, 100 50, 300 50 C 500 50, 600 180, 800 180 C 1000 180, 1100 70, 1300 70 C 1400 70, 1500 150, 1500 150"
-              fill="none" 
-              stroke="url(#terrain-grad)" 
-              strokeWidth="1.5"
-              strokeDasharray="4 6"
-            />
-            <path 
-              d="M-200 100 C -100 100, 50 180, 250 180 C 450 180, 550 80, 750 80 C 950 80, 1050 150, 1250 150 C 1400 150, 1500 100, 1500 100"
-              fill="none" 
-              stroke="rgba(139,92,246,0.15)" 
-              strokeWidth="1"
-            />
-            {/* Very faint connecting lines to look like a mesh */}
-            {[...Array(6)].map((_, i) => (
-              <line
-                key={`mesh-col-${i}`}
-                x1={150 + i * 150} y1="200"
-                x2={150 + i * 150} y2="50"
-                stroke="rgba(34,211,238,0.05)"
-                strokeWidth="1"
-              />
-            ))}
-          </svg>
+          <div 
+            className="absolute inset-[-10%] w-[120%] h-[120%]"
+            style={{ 
+              backgroundImage: `linear-gradient(rgba(34,211,238,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.035) 1px, transparent 1px)`,
+              backgroundSize: '48px 48px'
+            }}
+          />
         </motion.div>
-      </motion.div>
+
+        {/* Layer 3: Very soft vignette (Depth, NOT PURE BLACK) */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,rgba(2,6,13,0.3)_100%)] pointer-events-none" />
+      </div>
 
       {/* TOP HEADER - 150ms delay */}
       <motion.div

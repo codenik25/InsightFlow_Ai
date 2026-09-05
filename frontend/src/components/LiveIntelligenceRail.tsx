@@ -53,56 +53,67 @@ export const LiveIntelligenceRail: React.FC<LiveIntelligenceRailProps> = ({ sele
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.6, delay: 0.5 }}
-      className="w-[280px] shrink-0 hidden xl:flex flex-col h-[calc(100vh-100px)] mt-6 mr-6 mb-6 rounded-2xl border border-white/5 bg-[#040C19]/80 backdrop-blur-xl relative z-20 shadow-2xl"
+      className="w-[320px] shrink-0 hidden xl:flex flex-col h-full border-l border-[rgba(34,211,238,0.08)] bg-[rgba(2,7,14,0.82)] backdrop-blur-xl relative z-20"
     >
-      <div className="flex items-center gap-3 p-6 pb-4 border-b border-white/5">
-        <Activity className="w-4 h-4 text-accent-cyan" />
-        <h3 className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent-cyan uppercase">
+      <div className="flex items-center gap-3 p-6 border-b border-[rgba(34,211,238,0.08)] bg-[#040C19]/50 backdrop-blur-md">
+        <div className="relative flex items-center justify-center">
+          <div className="absolute w-3 h-3 bg-accent-success rounded-full animate-ping opacity-20" />
+          <div className="w-1.5 h-1.5 bg-accent-success rounded-full shadow-[0_0_8px_#22C55E]" />
+        </div>
+        <h3 className="font-mono text-[11px] font-bold tracking-[0.2em] text-slate-300 uppercase">
           LIVE INTELLIGENCE
         </h3>
       </div>
       
-      <div className="relative flex-1 overflow-y-auto py-2">
-        <div className="absolute left-[33.5px] top-4 bottom-4 w-[1px] bg-white/10" />
+      <div className="relative flex-1 overflow-y-auto p-4 custom-scrollbar">
+        <div className="absolute left-[35px] top-6 bottom-6 w-[1px] bg-gradient-to-b from-accent-cyan/50 via-white/10 to-transparent" />
         
         <AnimatePresence>
-          {events.map((event, index) => (
+          {events.map((event) => (
             <motion.div 
+              layout
               key={event.id}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="relative pl-14 pr-6 py-4 hover:bg-white/[0.02] transition-colors group cursor-pointer"
+              transition={{ duration: 0.3 }}
+              className="relative pl-12 py-4 group cursor-pointer"
             >
-              {/* Timeline Node Badge */}
-              <div className={`absolute left-6 top-5 w-[16px] h-[16px] rounded flex items-center justify-center ${event.color} z-10`}>
-                <event.icon className="w-2.5 h-2.5 text-white" />
+              {/* Timeline Node */}
+              <div className="absolute left-[13px] top-8 w-3 h-3 rounded-full bg-[#02050A] border-2 border-slate-600 group-hover:border-accent-cyan transition-colors z-10 flex items-center justify-center">
+                <div className="w-1 h-1 rounded-full bg-transparent group-hover:bg-accent-cyan transition-colors" />
               </div>
               
-              <div className="font-mono text-[9px] text-slate-500 mb-0.5">
-                {event.time}
+              <div className="glass-panel-premium p-4 rounded-xl border border-white/5 group-hover:border-accent-cyan/30 transition-all duration-300 relative overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <event.icon className="w-12 h-12" />
+                </div>
+                
+                <div className="flex justify-between items-start mb-2 relative z-10">
+                  <span className="font-mono text-[10px] text-accent-cyan tracking-wider">{event.time}</span>
+                  <div className={`text-[9px] font-mono font-bold tracking-widest uppercase px-2 py-0.5 rounded-full border border-white/10 ${event.color.includes('cyan') ? 'text-accent-cyan bg-accent-cyan/10' : event.color.includes('emerald') ? 'text-emerald-400 bg-emerald-400/10' : 'text-accent-intelligence bg-accent-intelligence/10'}`}>
+                    {event.type}
+                  </div>
+                </div>
+                
+                <div className="font-sans font-bold text-[13px] tracking-wide text-white mb-1.5 relative z-10">
+                  {event.title}
+                </div>
+                
+                <div className="font-sans text-[12px] text-slate-400 leading-relaxed relative z-10">
+                  {event.desc}
+                </div>
               </div>
-              
-              <div className="font-mono text-[10px] font-bold tracking-wider text-white">
-                {event.title}
-              </div>
-              
-              <div className="font-sans text-[11px] text-slate-400 mt-1 leading-relaxed">
-                {event.desc}
-              </div>
-              
-              <div className="absolute right-6 top-5 w-1 h-1 rounded-full bg-slate-600 group-hover:bg-accent-cyan transition-colors" />
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
 
-      <div className="p-4 mt-auto">
-        <button className="w-full py-3.5 px-4 rounded-xl border border-white/5 hover:border-white/10 hover:bg-white/5 transition-all group flex items-center justify-center gap-2">
-          <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent-violet uppercase group-hover:text-white transition-colors">
-            VIEW ALL ACTIVITY
+      <div className="p-6 border-t border-[rgba(34,211,238,0.08)] bg-[#040C19]/50 backdrop-blur-md">
+        <button className="w-full h-10 glass-button rounded-xl flex items-center justify-center gap-2 group">
+          <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent-cyan uppercase group-hover:text-white transition-colors">
+            VIEW FULL LOG
           </span>
-          <svg width="6" height="10" viewBox="0 0 6 10" fill="none" className="text-accent-violet group-hover:text-white transition-colors">
+          <svg width="6" height="10" viewBox="0 0 6 10" fill="none" className="text-accent-cyan group-hover:text-white transition-colors">
             <path d="M1 1L5 5L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>

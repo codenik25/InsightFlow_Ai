@@ -6,6 +6,7 @@ import { KpiCardsGrid } from './KpiCardsGrid';
 import { PremiumChartWorkspace } from './PremiumChartWorkspace';
 import { CorrelationMatrixView } from './CorrelationMatrixView';
 import { CategoryAnalysisView } from './CategoryAnalysisView';
+import { DistributionShapeView } from './DistributionShapeView';
 
 interface DataAnalysisProps {
   processedDatasetId: string | null;
@@ -16,6 +17,15 @@ export const DataAnalysis: React.FC<DataAnalysisProps> = ({ processedDatasetId, 
   const [edaData, setEdaData] = useState<EDAResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mediaQuery.matches);
+    const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', listener);
+    return () => mediaQuery.removeEventListener('change', listener);
+  }, []);
 
   const loadEDA = useCallback(async () => {
     if (!processedDatasetId) {
@@ -108,121 +118,174 @@ export const DataAnalysis: React.FC<DataAnalysisProps> = ({ processedDatasetId, 
   } as any;
 
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="max-w-[1750px] mx-auto space-y-12 pb-24"
-    >
-      {/* 01 — HEADER */}
-      <motion.section variants={itemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-800/60 pb-8">
-        <div>
-          <h1 className="text-4xl md:text-5xl font-sans font-light tracking-tight text-white mb-3">ANALYSIS / VISUALIZATION</h1>
-          <p className="text-slate-400 font-mono text-sm max-w-xl">
-            Explore the structure, distributions, relationships, and trends within the processed dataset.
-          </p>
-        </div>
-        <div className="self-start md:self-auto flex flex-col items-end gap-3">
-          <div className="flex items-center gap-3 bg-slate-900/50 border border-slate-800 rounded-xl p-3">
-             <div className="flex flex-col text-right">
-               <span className="text-slate-500 text-[10px] uppercase font-mono tracking-widest">Source</span>
-               <span className="text-emerald-400 text-xs font-bold uppercase tracking-widest">Processed Dataset</span>
-             </div>
-             <div className="pl-3 border-l border-slate-700 font-mono text-white text-xs truncate max-w-[150px]" title={processedDatasetId}>
-               {processedDatasetId}
-             </div>
-          </div>
-          <button 
-            onClick={() => setCurrentStage('CLEANING')}
-            className="px-4 py-2 text-slate-400 hover:text-white font-mono text-xs uppercase tracking-wider transition-colors"
-          >
-            ← BACK TO CLEANING
-          </button>
-        </div>
-      </motion.section>
-
-      {/* 02 — DATASET SNAPSHOT */}
-      <motion.section variants={itemVariants} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm">
-        <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Dataset Snapshot</h2>
+    <div className="relative min-h-full w-full rounded-2xl overflow-hidden">
+      {/* CINEMATIC BACKGROUND LAYER */}
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[#02060D]">
+        {/* Base deep navy gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#030B16] via-[#02060D] to-[#02060D]" />
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6">
-            <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Rows</div>
-            <div className="text-3xl font-mono text-white tracking-tight">{overview_kpis.total_rows.toLocaleString()}</div>
-          </div>
-          <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6">
-            <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Columns</div>
-            <div className="text-3xl font-mono text-white tracking-tight">{overview_kpis.total_columns}</div>
-          </div>
-          <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6">
-            <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Numeric</div>
-            <div className="text-3xl font-mono text-cyan-400 tracking-tight">{overview_kpis.measure_count}</div>
-          </div>
-          <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6">
-            <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Categorical</div>
-            <div className="text-3xl font-mono text-violet-400 tracking-tight">{overview_kpis.dimension_count}</div>
-          </div>
+        {/* Atmospheric Glows */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* cyan top */}
+          <motion.div 
+            className="absolute top-[5%] left-[10%] w-[800px] h-[800px] bg-[#22D3EE]/10 rounded-full blur-[150px] mix-blend-screen"
+            animate={!reducedMotion ? { x: [0, 50, 0], y: [0, 30, 0], opacity: [0.8, 1, 0.8] } : {}}
+            transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          />
+          
+          {/* blue middle */}
+          <motion.div 
+            className="absolute top-[40%] right-[10%] w-[900px] h-[900px] bg-[#3B82F6]/10 rounded-full blur-[150px] mix-blend-screen"
+            animate={!reducedMotion ? { x: [0, -40, 0], y: [0, 50, 0], opacity: [0.7, 0.9, 0.7] } : {}}
+            transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+          />
+          
+          {/* violet bottom */}
+          <motion.div 
+            className="absolute bottom-[10%] left-[20%] w-[800px] h-[800px] bg-[#8B5CF6]/10 rounded-full blur-[150px] mix-blend-screen"
+            animate={!reducedMotion ? { x: [0, 40, 0], y: [0, -30, 0], opacity: [0.6, 0.8, 0.6] } : {}}
+            transition={{ duration: 35, repeat: Infinity, ease: "easeInOut" }}
+          />
         </div>
-      </motion.section>
 
-      {/* 03 — METRICS GRID */}
-      {discovered_kpis && discovered_kpis.length > 0 && (
-        <motion.section variants={itemVariants}>
-          <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Key Discovered Metrics</h2>
-          <KpiCardsGrid kpis={discovered_kpis} trends={trends} />
-        </motion.section>
-      )}
+        {/* Technical grid */}
+        <motion.div 
+          className="absolute inset-[-10%] w-[120%] h-[120%]"
+          animate={!reducedMotion ? { y: [-20, 20], x: [-10, 10] } : {}}
+          transition={{ duration: 60, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
+        >
+          <div 
+            className="absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.02)_1px,transparent_1px)] bg-[size:60px_60px]"
+            style={{ maskImage: 'linear-gradient(to bottom, black 0%, black 80%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 80%, transparent 100%)' }}
+          />
+        </motion.div>
 
-      {/* 04 — PRIMARY VISUALIZATION WORKSPACE */}
-      <motion.section variants={itemVariants}>
-        <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Primary Signals</h2>
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden backdrop-blur-sm">
-          <PremiumChartWorkspace trends={trends} categories={category_breakdowns} />
-        </div>
-      </motion.section>
-
-      {/* 05 — DETAILED ANALYSIS (Correlations & Categories) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <motion.section variants={itemVariants}>
-          <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Correlation Matrix</h2>
-          {relationships && relationships.length > 0 ? (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden backdrop-blur-sm">
-              <CorrelationMatrixView relationships={relationships} distributions={distributions || []} />
-            </div>
-          ) : (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm text-center">
-              <p className="text-slate-500 text-sm font-mono">No numerical correlation data available for this dataset.</p>
-            </div>
-          )}
-        </motion.section>
-
-        <motion.section variants={itemVariants}>
-          <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Category Breakdown</h2>
-          {category_breakdowns && category_breakdowns.length > 0 ? (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden backdrop-blur-sm">
-              <CategoryAnalysisView breakdowns={category_breakdowns} />
-            </div>
-          ) : (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm text-center">
-              <p className="text-slate-500 text-sm font-mono">No categorical variables available for category analysis.</p>
-            </div>
-          )}
-        </motion.section>
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(2,6,13,0.8)_100%)]" />
       </div>
 
-      {/* 06 — CONTINUE TO INSIGHTS */}
-      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-slate-800/60 mt-12">
-        <button
-          onClick={() => setCurrentStage('INSIGHTS')}
-          className="px-8 py-4 bg-white text-slate-950 hover:bg-slate-200 rounded-xl text-sm font-bold tracking-widest uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
-        >
-          CONTINUE TO INSIGHTS
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-          </svg>
-        </button>
-      </motion.div>
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10 w-full min-w-0 mx-auto space-y-12 pb-24 px-6 pt-6"
+      >
+        {/* 01 — HEADER */}
+        <motion.section variants={itemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-800/60 pb-8">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-sans font-light tracking-tight text-white mb-3">ANALYSIS / VISUALIZATION</h1>
+            <p className="text-slate-400 font-mono text-sm max-w-xl">
+              Explore the structure, distributions, relationships, and trends within the processed dataset.
+            </p>
+          </div>
+          <div className="self-start md:self-auto flex flex-col items-end gap-3">
+            <div className="flex items-center gap-3 bg-slate-900/50 border border-slate-800 rounded-xl p-3">
+               <div className="flex flex-col text-right">
+                 <span className="text-slate-500 text-[10px] uppercase font-mono tracking-widest">Source</span>
+                 <span className="text-emerald-400 text-xs font-bold uppercase tracking-widest">Processed Dataset</span>
+               </div>
+               <div className="pl-3 border-l border-slate-700 font-mono text-white text-xs truncate max-w-[150px]" title={processedDatasetId}>
+                 {processedDatasetId}
+               </div>
+            </div>
+            <button 
+              onClick={() => setCurrentStage('CLEANING')}
+              className="px-4 py-2 text-slate-400 hover:text-white font-mono text-xs uppercase tracking-wider transition-colors"
+            >
+              ← BACK TO CLEANING
+            </button>
+          </div>
+        </motion.section>
 
-    </motion.div>
+        {/* 02 — DATASET SNAPSHOT */}
+        <motion.section variants={itemVariants} className="glass-panel-premium p-8">
+          <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Dataset Snapshot</h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6">
+              <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Rows</div>
+              <div className="text-3xl font-mono text-white tracking-tight">{overview_kpis.total_rows.toLocaleString()}</div>
+            </div>
+            <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6">
+              <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Columns</div>
+              <div className="text-3xl font-mono text-white tracking-tight">{overview_kpis.total_columns}</div>
+            </div>
+            <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6">
+              <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Numeric</div>
+              <div className="text-3xl font-mono text-cyan-400 tracking-tight">{overview_kpis.measure_count}</div>
+            </div>
+            <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6">
+              <div className="text-slate-500 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Categorical</div>
+              <div className="text-3xl font-mono text-violet-400 tracking-tight">{overview_kpis.dimension_count}</div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* 03 — METRICS GRID */}
+        {discovered_kpis && discovered_kpis.length > 0 && (
+          <motion.section variants={itemVariants} className="min-w-0">
+            <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Key Discovered Metrics</h2>
+            <KpiCardsGrid kpis={discovered_kpis} trends={trends} />
+          </motion.section>
+        )}
+
+        {/* 04 — PRIMARY VISUALIZATION WORKSPACE */}
+        <motion.section variants={itemVariants} className="min-w-0">
+          <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Primary Signals</h2>
+          <div className="glass-panel-premium overflow-hidden">
+            <PremiumChartWorkspace trends={trends} categories={category_breakdowns} />
+          </div>
+        </motion.section>
+
+        {/* 05 — DETAILED ANALYSIS (Correlations & Categories) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 min-w-0">
+          <motion.section variants={itemVariants} className="min-w-0">
+            <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Correlation Matrix</h2>
+            {relationships && relationships.length > 0 ? (
+              <div className="glass-panel-premium overflow-hidden">
+                <CorrelationMatrixView relationships={relationships} />
+              </div>
+            ) : (
+              <div className="glass-panel-premium p-8 text-center">
+                <p className="text-slate-500 text-sm font-mono">No numerical correlation data available for this dataset.</p>
+              </div>
+            )}
+          </motion.section>
+
+          <motion.section variants={itemVariants} className="min-w-0">
+            <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Category Breakdown</h2>
+            {category_breakdowns && category_breakdowns.length > 0 ? (
+              <div className="glass-panel-premium overflow-hidden">
+                <CategoryAnalysisView breakdowns={category_breakdowns} />
+              </div>
+            ) : (
+              <div className="glass-panel-premium p-8 text-center">
+                <p className="text-slate-500 text-sm font-mono">No categorical variables available for category analysis.</p>
+              </div>
+            )}
+          </motion.section>
+        </div>
+
+        {/* 06 — DISTRIBUTION & SHAPE (Full Width) */}
+        <div className="min-w-0">
+          <DistributionShapeView distributions={distributions || []} />
+        </div>
+
+        {/* 07 — CONTINUE TO INSIGHTS */}
+        <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-[rgba(34,211,238,0.12)] mt-12">
+          <button
+            onClick={() => setCurrentStage('INSIGHTS')}
+            className="px-8 py-3.5 primary-glow-button rounded-full text-white text-[15px] font-sans font-semibold tracking-wide flex items-center gap-2"
+          >
+            CONTINUE TO INSIGHTS
+            <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </button>
+        </motion.div>
+
+      </motion.div>
+    </div>
   );
 };
+

@@ -109,7 +109,7 @@ export const RecommendationsDashboard: React.FC<RecommendationsDashboardProps> =
       )}
 
       {recommendations.length === 0 ? (
-        <div className="text-center py-16 bg-slate-900/40 rounded-xl border border-dashed border-slate-800">
+        <div className="text-center py-16 glass-panel-premium border-dashed">
           <Target className="w-12 h-12 text-slate-600 mx-auto mb-4" />
           <p className="text-base text-white font-bold mb-2">Recommendations are not available yet.</p>
           <p className="text-sm text-slate-500 mb-6">Run the recommendation engine to generate evidence-backed actions.</p>
@@ -136,7 +136,7 @@ export const RecommendationsDashboard: React.FC<RecommendationsDashboardProps> =
             return (
               <div
                 key={rec.id}
-                className="bg-slate-900/80 border border-slate-800 hover:border-purple-500/40 rounded-2xl p-6 transition-all shadow-lg"
+                className="glass-panel-premium hover:border-purple-500/40 p-6 transition-all shadow-lg"
               >
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                   <div className="flex items-center gap-3">
@@ -184,14 +184,14 @@ export const RecommendationsDashboard: React.FC<RecommendationsDashboardProps> =
 
                 {/* Operational Trade-offs & Evidence */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800/80">
+                  <div className="glass-panel-premium p-4">
                     <span className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">
                       <span>⚖️</span> Trade-offs & Constraints
                     </span>
                     <p className="text-slate-300 leading-relaxed text-xs">{rec.tradeoffs}</p>
                   </div>
 
-                  <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800/80">
+                  <div className="glass-panel-premium p-4">
                     <span className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">
                       <span>🔍</span> Evidence Provenance
                     </span>
@@ -213,7 +213,7 @@ export const RecommendationsDashboard: React.FC<RecommendationsDashboardProps> =
         <div className="flex justify-end pt-8 pb-12 border-t border-slate-800/50 mt-10">
           <button
             onClick={() => onNavigate('optimization')}
-            className="group relative flex items-center gap-3 px-8 py-4 bg-white text-slate-950 rounded-full overflow-hidden shadow-lg hover:shadow-purple-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+            className="group relative flex items-center gap-3 px-8 py-4 primary-glow-button rounded-full overflow-hidden shadow-lg hover:shadow-purple-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-white"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
             <span className="font-sans font-extrabold text-sm tracking-widest uppercase relative z-10 flex items-center gap-2">

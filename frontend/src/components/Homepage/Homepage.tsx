@@ -26,7 +26,7 @@ export const Homepage: React.FC<HomepageProps> = ({ onLaunch }) => {
   };
 
   return (
-    <div className="bg-[#02050A] min-h-screen text-slate-100 font-sans selection:bg-accent-cyan/30 selection:text-white relative overflow-x-hidden">
+    <div className="bg-transparent min-h-screen text-slate-100 font-sans selection:bg-accent-cyan/30 selection:text-white relative overflow-x-hidden">
       
       {/* ============================================================ */}
       {/* 0. CONTINUOUS CINEMATIC BACKGROUND (Z-INDEX 0) */}

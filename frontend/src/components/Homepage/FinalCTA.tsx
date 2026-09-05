@@ -7,7 +7,7 @@ export const FinalCTA: React.FC<{ onLaunch: () => void }> = ({ onLaunch }) => {
   const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
   return (
-    <section ref={containerRef} className="py-40 relative overflow-hidden bg-[#02050A] border-t border-white/5 flex items-center justify-center min-h-[75vh]">
+    <section ref={containerRef} className="py-40 relative overflow-hidden bg-transparent border-t border-white/5 flex items-center justify-center min-h-[75vh]">
       
       {/* Cinematic Background Network & Subtle Intelligence Core */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">

@@ -21,14 +21,14 @@ class QualityService:
         {
             "keywords": ["occupancy_rate", "occupancy_pct", "occupancy_ratio"],
             "min": 0.0,
-            "max": 1.0,
-            "description": "Occupancy rate ratio must be between 0.0 and 1.0 (0% - 100%).",
+            "max": 100.0,
+            "description": "Occupancy percentage must be between 0.0 and 100.0.",
         },
         {
             "keywords": ["readmission_rate", "readmission_pct", "readmission_ratio"],
             "min": 0.0,
-            "max": 1.0,
-            "description": "Readmission rate ratio must be between 0.0 and 1.0 (0% - 100%).",
+            "max": 100.0,
+            "description": "Readmission percentage must be between 0.0 and 100.0.",
         },
         {
             "keywords": ["patient_satisfaction", "satisfaction_score", "satisfaction_pct"],

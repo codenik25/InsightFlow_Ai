@@ -153,15 +153,15 @@ export const DatasetOverview: React.FC<DatasetOverviewProps> = ({ rawDatasetId, 
       {/* DATASET METRICS */}
       <motion.section variants={itemVariants}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm">
+          <div className="glass-panel-premium p-8">
             <h3 className="text-slate-500 font-mono text-xs font-bold tracking-widest uppercase mb-4">Rows</h3>
             <div className="text-5xl font-mono text-white font-light tracking-tight">{overview.total_rows.toLocaleString()}</div>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm">
+          <div className="glass-panel-premium p-8">
             <h3 className="text-slate-500 font-mono text-xs font-bold tracking-widest uppercase mb-4">Columns</h3>
             <div className="text-5xl font-mono text-white font-light tracking-tight">{overview.total_columns.toLocaleString()}</div>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden">
+          <div className="glass-panel-premium p-8 relative overflow-hidden">
             <div className="relative z-10">
               <h3 className="text-slate-500 font-mono text-xs font-bold tracking-widest uppercase mb-4">File Size</h3>
               <div className="text-5xl font-mono text-white font-light tracking-tight">{formatBytes(overview.file_size_bytes)}</div>
@@ -190,17 +190,17 @@ export const DatasetOverview: React.FC<DatasetOverviewProps> = ({ rawDatasetId, 
             <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Health Snapshot</h2>
             <div className="space-y-4">
               
-              <div className="flex items-center justify-between p-5 rounded-2xl bg-slate-900/30 border border-slate-800/50">
+              <div className="flex items-center justify-between p-5 rounded-2xl glass-panel-premium bg-opacity-40">
                 <span className="text-slate-400 font-sans text-sm">Missing Values</span>
                 <span className="font-mono text-white text-lg">{quality.empty_columns.length} <span className="text-xs text-slate-500">cols</span></span>
               </div>
               
-              <div className="flex items-center justify-between p-5 rounded-2xl bg-slate-900/30 border border-slate-800/50">
+              <div className="flex items-center justify-between p-5 rounded-2xl glass-panel-premium bg-opacity-40">
                 <span className="text-slate-400 font-sans text-sm">Duplicate Rows</span>
                 <span className="font-mono text-white text-lg">{overview.duplicate_rows.toLocaleString()}</span>
               </div>
 
-              <div className="flex items-center justify-between p-5 rounded-2xl bg-slate-900/30 border border-slate-800/50">
+              <div className="flex items-center justify-between p-5 rounded-2xl glass-panel-premium bg-opacity-40">
                 <span className="text-slate-400 font-sans text-sm">Constant Columns</span>
                 <span className="font-mono text-white text-lg">{quality.constant_columns.length}</span>
               </div>
@@ -214,7 +214,7 @@ export const DatasetOverview: React.FC<DatasetOverviewProps> = ({ rawDatasetId, 
           
           <div>
             <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">Column Profile</h2>
-            <div className="border border-slate-800/80 rounded-3xl bg-slate-900/20 overflow-hidden backdrop-blur-sm">
+            <div className="glass-panel-premium overflow-hidden">
               <div className="overflow-x-auto max-h-[360px] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
                 <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className="sticky top-0 bg-slate-950/90 backdrop-blur-md text-slate-500 uppercase tracking-widest text-[10px] font-mono font-bold">
@@ -256,7 +256,7 @@ export const DatasetOverview: React.FC<DatasetOverviewProps> = ({ rawDatasetId, 
           <span className="text-slate-500 text-[10px] font-mono">Sample Rows</span>
         </h2>
         
-        <div className="border border-slate-800/80 rounded-3xl bg-slate-900/20 overflow-hidden backdrop-blur-sm overflow-x-auto">
+        <div className="glass-panel-premium overflow-hidden overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-slate-950/60 text-slate-500 text-[10px] font-mono font-bold tracking-widest border-b border-slate-800">
               <tr>
@@ -289,13 +289,13 @@ export const DatasetOverview: React.FC<DatasetOverviewProps> = ({ rawDatasetId, 
       </motion.section>
 
       {/* PRIMARY ACTION */}
-      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-slate-800/60 mt-12">
+      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-[rgba(34,211,238,0.12)] mt-12">
         <button
           onClick={() => setCurrentStage('QUALITY')}
-          className="px-8 py-4 bg-white text-slate-950 hover:bg-slate-200 rounded-xl text-sm font-bold tracking-widest uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+          className="px-8 py-3.5 primary-glow-button rounded-full text-white text-[15px] font-sans font-semibold tracking-wide flex items-center gap-2"
         >
           CONTINUE TO DATA QUALITY
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
         </button>

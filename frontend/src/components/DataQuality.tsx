@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate, useReducedMotion } from 'framer-motion';
 import { fetchDatasetQuality, fetchDatasetProfile } from '../services/api';
 import { DatasetQualityResponse, DatasetProfileData } from '../types';
 
@@ -14,6 +14,27 @@ export const DataQuality: React.FC<DataQualityProps> = ({ rawDatasetId, setCurre
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
+
+  const prefersReducedMotion = useReducedMotion();
+  const scoreValue = useMotionValue(0);
+  const roundedScore = useTransform(scoreValue, (latest) => Math.round(latest));
+
+  useEffect(() => {
+    if (quality?.score?.overall_score !== undefined) {
+      const clampedScore = Math.max(0, Math.min(100, quality.score.overall_score));
+      if (prefersReducedMotion) {
+        scoreValue.set(clampedScore);
+      } else {
+        const controls = animate(scoreValue, clampedScore, {
+          duration: 0.8,
+          ease: "easeOut"
+        });
+        return controls.stop;
+      }
+    } else {
+      scoreValue.set(0);
+    }
+  }, [quality, prefersReducedMotion, scoreValue]);
 
   const loadData = async () => {
     if (!rawDatasetId) {
@@ -111,8 +132,20 @@ export const DataQuality: React.FC<DataQualityProps> = ({ rawDatasetId, setCurre
 
   const { score, issues, completeness, uniqueness, validity, consistency } = quality;
   const overall = score.overall_score;
-  const colorHex = getScoreColorHex(overall);
-  const colorClass = getScoreColor(overall);
+  const clampedScore = Math.max(0, Math.min(100, overall));
+  const colorHex = getScoreColorHex(clampedScore);
+  const colorClass = getScoreColor(clampedScore);
+
+  const CENTER_X = 100;
+  const CENTER_Y = 100;
+  const NEEDLE_LENGTH = 75;
+  const theta = Math.PI - (clampedScore / 100) * Math.PI;
+  const needleX = CENTER_X + NEEDLE_LENGTH * Math.cos(theta);
+  const needleY = CENTER_Y - NEEDLE_LENGTH * Math.sin(theta);
+
+  const transitionProps = prefersReducedMotion 
+    ? { duration: 0 } 
+    : { duration: 0.8, ease: "easeOut" as const };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -156,7 +189,7 @@ export const DataQuality: React.FC<DataQualityProps> = ({ rawDatasetId, setCurre
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 01 — QUALITY SCORE */}
-        <motion.section variants={itemVariants} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden flex flex-col items-center justify-center">
+        <motion.section variants={itemVariants} className="glass-panel-premium p-8 relative overflow-hidden flex flex-col items-center justify-center">
           <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-8 self-start opacity-80">01 — Quality Score</h2>
           
           <div className="relative w-64 h-40">
@@ -179,31 +212,33 @@ export const DataQuality: React.FC<DataQualityProps> = ({ rawDatasetId, setCurre
                 strokeLinecap="round"
                 strokeDasharray="251.2"
                 initial={{ strokeDashoffset: 251.2 }}
-                animate={{ strokeDashoffset: 251.2 - (251.2 * (overall / 100)) }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
+                animate={{ strokeDashoffset: 251.2 - (251.2 * (clampedScore / 100)) }}
+                transition={transitionProps}
               />
+              {/* Needle Line */}
+              <motion.line 
+                x1={CENTER_X} 
+                y1={CENTER_Y} 
+                initial={{ x2: 25, y2: 100 }}
+                animate={{ x2: needleX, y2: needleY }} 
+                stroke={colorHex} 
+                strokeWidth="4" 
+                strokeLinecap="round"
+                transition={transitionProps}
+              />
+              
               {/* Center Pivot */}
               <circle cx="100" cy="100" r="6" fill="#334155" />
               <circle cx="100" cy="100" r="3" fill="#94a3b8" />
-              
-              {/* Needle Group */}
-              <motion.g 
-                initial={{ rotate: 0 }}
-                animate={{ rotate: overall * 1.8 }}
-                style={{ transformOrigin: '100px 100px' }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-              >
-                <polygon points="100,97 100,103 30,100" fill={colorHex} />
-              </motion.g>
             </svg>
             <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center">
               <motion.div 
                 className={`text-5xl font-mono font-bold tracking-tighter ${colorClass}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.8, ease: "easeOut" }}
               >
-                {overall}%
+                <motion.span>{roundedScore}</motion.span>%
               </motion.div>
               <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">
                 {score.severity}
@@ -213,7 +248,7 @@ export const DataQuality: React.FC<DataQualityProps> = ({ rawDatasetId, setCurre
         </motion.section>
 
         {/* 02 — DATA HEALTH METRICS */}
-        <motion.section variants={itemVariants} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm">
+        <motion.section variants={itemVariants} className="glass-panel-premium p-8">
           <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">02 — Health Metrics</h2>
           
           <div className="grid grid-cols-2 gap-6">
@@ -255,7 +290,7 @@ export const DataQuality: React.FC<DataQualityProps> = ({ rawDatasetId, setCurre
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* 03 — QUALITY DISTRIBUTION */}
-        <motion.section variants={itemVariants} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm lg:col-span-1">
+        <motion.section variants={itemVariants} className="glass-panel-premium p-8 lg:col-span-1">
           <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">03 — Distribution</h2>
           <div className="space-y-4">
             {distributionData.map((d, i) => (
@@ -279,10 +314,10 @@ export const DataQuality: React.FC<DataQualityProps> = ({ rawDatasetId, setCurre
         </motion.section>
 
         {/* 04 — COLUMN HEALTH */}
-        <motion.section variants={itemVariants} className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-sm lg:col-span-2 flex flex-col">
+        <motion.section variants={itemVariants} className="glass-panel-premium p-8 lg:col-span-2 flex flex-col">
           <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80">04 — Column Health</h2>
           
-          <div className="overflow-x-auto overflow-y-auto max-h-[300px] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent flex-1 border border-slate-800/50 rounded-xl bg-slate-900/20">
+          <div className="overflow-x-auto overflow-y-auto max-h-[300px] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent flex-1 border-t border-[rgba(34,211,238,0.1)]">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="sticky top-0 bg-slate-950/90 backdrop-blur-md text-slate-500 uppercase tracking-widest text-[10px] font-mono font-bold">
                 <tr>
@@ -330,7 +365,7 @@ export const DataQuality: React.FC<DataQualityProps> = ({ rawDatasetId, setCurre
         {issues && issues.length > 0 ? (
           <div className="space-y-3">
             {issues.map((issue, idx) => (
-              <div key={idx} className="border border-slate-800/80 rounded-2xl bg-slate-900/30 overflow-hidden">
+              <div key={idx} className="glass-panel-premium bg-opacity-40 overflow-hidden">
                 <div 
                   className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/30 transition-colors"
                   onClick={() => setExpandedIssue(expandedIssue === idx ? null : idx)}
@@ -382,13 +417,13 @@ export const DataQuality: React.FC<DataQualityProps> = ({ rawDatasetId, setCurre
       </motion.section>
 
       {/* 06 — CONTINUE TO CLEANING */}
-      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-slate-800/60 mt-12">
+      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-[rgba(34,211,238,0.12)] mt-12">
         <button
           onClick={() => setCurrentStage('CLEANING')}
-          className="px-8 py-4 bg-white text-slate-950 hover:bg-slate-200 rounded-xl text-sm font-bold tracking-widest uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+          className="px-8 py-3.5 primary-glow-button rounded-full text-white text-[15px] font-sans font-semibold tracking-wide flex items-center gap-2"
         >
           CONTINUE TO CLEANING
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
         </button>

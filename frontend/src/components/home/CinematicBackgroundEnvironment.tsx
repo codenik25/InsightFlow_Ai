@@ -193,7 +193,10 @@ export const CinematicBackgroundEnvironment: React.FC = () => {
 
   return (
     <motion.div 
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#02050A]"
+      className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+      style={{
+        backgroundColor: '#02060D'
+      }}
       initial={{ scale: 1, x: 0, y: 0 }}
       animate={{
         scale: [1.00, 1.025, 1.00],
@@ -201,62 +204,62 @@ export const CinematicBackgroundEnvironment: React.FC = () => {
         y: [3, -3, 3]
       }}
       transition={{
-        duration: 22, // 18-22s scale, 20-25s drift combined approx
+        duration: 22,
         repeat: Infinity,
         ease: "easeInOut"
       }}
     >
       {/* =========================================
-          Z-0: DEEP NAVY ATMOSPHERE 
+          Z-1: EXACT USER-DEFINED ATMOSPHERIC LIGHT FIELDS 
           ========================================= */}
-      <div className="absolute inset-0 bg-[#02050A]" />
       
-      {/* =========================================
-          Z-1: LARGE ATMOSPHERIC LIGHT FIELDS 
-          ========================================= */}
-      {/* Behind core: Cyan/Blue glow. Not a hard circle, very large. */}
+      {/* CYAN */}
       <motion.div 
-        className="absolute top-1/2 left-[68%] -translate-x-1/2 -translate-y-1/2 w-[1400px] h-[1400px] rounded-full"
+        className="absolute inset-0"
         style={{
-          background: 'radial-gradient(circle at 68% 50%, rgba(20,140,190,0.16) 0%, rgba(10,60,100,0.07) 35%, transparent 70%)',
-          filter: 'blur(90px)',
+          background: 'radial-gradient(circle at 35% 45%, rgba(34,211,238,0.18), rgba(34,211,238,0.06) 30%, transparent 60%)',
           x: pX * 10, y: pY * 10
         }}
-        animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.05, 1] }}
-        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      {/* Outer right: Subtle violet */}
-      <motion.div 
-        className="absolute top-[40%] left-[85%] -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full"
-        style={{
-          background: 'radial-gradient(circle at center, rgba(139,92,246,0.05) 0%, transparent 60%)',
-          filter: 'blur(100px)',
-          x: pX * 12, y: pY * 12
-        }}
-        animate={{ opacity: [0.6, 0.9, 0.6] }}
+        animate={{ opacity: [0.8, 1, 0.8] }}
         transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
       />
-      {/* Left side protection: keep it extremely dark / atmospheric */}
-      <div className="absolute top-0 left-0 bottom-0 w-[40%] bg-gradient-to-r from-[#02050A] via-[#030812] to-transparent z-[1]" />
+
+      {/* BLUE */}
+      <motion.div 
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(circle at 78% 45%, rgba(59,130,246,0.15), rgba(59,130,246,0.05) 30%, transparent 60%)',
+          x: pX * 12, y: pY * 12
+        }}
+        animate={{ opacity: [0.7, 0.9, 0.7] }}
+        transition={{ duration: 30, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      {/* VIOLET */}
+      <motion.div 
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(circle at 55% 90%, rgba(168,85,247,0.12), rgba(168,85,247,0.04) 35%, transparent 65%)',
+          x: pX * 8, y: pY * 8
+        }}
+        animate={{ opacity: [0.85, 1, 0.85] }}
+        transition={{ duration: 35, repeat: Infinity, ease: 'easeInOut' }}
+      />
 
       {/* =========================================
-          Z-2: TECHNICAL GRID 
+          Z-2: EXACT USER-DEFINED TECHNICAL GRID 
           ========================================= */}
       <motion.div 
         className="absolute inset-0 z-[2]"
-        style={{ x: pX * 2, y: pY * 2 }} // Grid: 2px parallax
+        style={{ x: pX * 2, y: pY * 2 }}
       >
-        {/* Primary Grid 65px */}
-        <div className="absolute inset-0 opacity-[0.045]" style={{ backgroundImage: 'linear-gradient(rgba(34,211,238,1) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,1) 1px, transparent 1px)', backgroundSize: '65px 65px' }} />
-        {/* Micro Grid 22px */}
-        <div className="absolute inset-0 opacity-[0.018]" style={{ backgroundImage: 'linear-gradient(rgba(34,211,238,1) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,1) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
-        
-        {/* Occasional horizontal/vertical traces */}
-        <div className="absolute top-[30%] left-0 right-[20%] h-[1px] bg-gradient-to-r from-transparent via-[rgba(34,211,238,0.2)] to-transparent" />
-        <div className="absolute top-0 bottom-[10%] left-[68%] w-[1px] bg-gradient-to-b from-transparent via-[rgba(34,211,238,0.15)] to-transparent" />
-
-        {/* Mask to fade upper-left (Left Side Protection) and increase on right */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_50%,rgba(0,0,0,0)_10%,rgba(2,5,10,0.95)_90%)]" />
+        <div 
+          className="absolute inset-[-10%] w-[120%] h-[120%]" 
+          style={{ 
+            backgroundImage: `linear-gradient(rgba(34,211,238,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.035) 1px, transparent 1px)`, 
+            backgroundSize: '48px 48px' 
+          }} 
+        />
       </motion.div>
 
       {/* =========================================

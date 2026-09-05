@@ -178,19 +178,19 @@ export const DataInsights: React.FC<DataInsightsProps> = ({ processedDatasetId, 
 
       {/* 02 — INSIGHTS SUMMARY GRID */}
       <motion.section variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div className="bg-slate-900/40 border border-emerald-500/20 rounded-3xl p-8 backdrop-blur-sm">
+        <div className="glass-panel-premium p-8 border-emerald-500/20">
           <div className="text-emerald-400 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Positive Signals</div>
           <div className="text-4xl font-mono text-white tracking-tight">{summary.positive_count}</div>
         </div>
-        <div className="bg-slate-900/40 border border-amber-500/20 rounded-3xl p-8 backdrop-blur-sm">
+        <div className="glass-panel-premium p-8 border-amber-500/20">
           <div className="text-amber-400 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Warning Signals</div>
           <div className="text-4xl font-mono text-white tracking-tight">{summary.warning_count}</div>
         </div>
-        <div className="bg-slate-900/40 border border-rose-500/20 rounded-3xl p-8 backdrop-blur-sm">
+        <div className="glass-panel-premium p-8 border-rose-500/20">
           <div className="text-rose-400 font-mono text-[10px] font-bold tracking-widest uppercase mb-2">Critical Signals</div>
           <div className="text-4xl font-mono text-white tracking-tight">{summary.critical_count}</div>
         </div>
-        <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm flex flex-col justify-center items-center text-center">
+        <div className="glass-panel-premium p-8 flex flex-col justify-center items-center text-center">
           <button 
             onClick={loadInsights}
             className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest font-mono transition-colors"
@@ -207,11 +207,11 @@ export const DataInsights: React.FC<DataInsightsProps> = ({ processedDatasetId, 
         </h2>
         
         {sortedInsights.length === 0 ? (
-          <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-12 text-center">
+          <div className="glass-panel-premium p-12 text-center">
              <p className="text-slate-500 font-mono text-sm">No insight records were returned for this dataset.</p>
           </div>
         ) : (
-          <div className="bg-slate-900/40 border border-slate-800 rounded-3xl overflow-hidden backdrop-blur-sm">
+          <div className="glass-panel-premium overflow-hidden">
             {sortedInsights.map((item) => {
               const isExpanded = expandedId === item.id;
               return (
@@ -336,13 +336,13 @@ export const DataInsights: React.FC<DataInsightsProps> = ({ processedDatasetId, 
       </motion.section>
 
       {/* 04 — CONTINUE TO PREDICTIONS */}
-      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-slate-800/60 mt-12">
+      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-[rgba(34,211,238,0.12)] mt-12">
         <button
           onClick={() => setCurrentStage('PREDICTIONS')}
-          className="px-8 py-4 bg-white text-slate-950 hover:bg-slate-200 rounded-xl text-sm font-bold tracking-widest uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+          className="px-8 py-3.5 primary-glow-button rounded-full text-white text-[15px] font-sans font-semibold tracking-wide flex items-center gap-2"
         >
           CONTINUE TO PREDICTIONS
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
         </button>

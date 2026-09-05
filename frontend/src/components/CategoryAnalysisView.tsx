@@ -36,7 +36,7 @@ export const CategoryAnalysisView: React.FC<CategoryAnalysisViewProps> = ({ brea
     return '#3b82f6'; // Neutral Blue instead of Cyan for standard bars to reduce cyan overload
   };
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
       {breakdowns.map((item, idx) => {
         const isMean = item.aggregation_method === 'mean';
         const measureLabel = formatMeasureName(item.measure);
@@ -44,12 +44,12 @@ export const CategoryAnalysisView: React.FC<CategoryAnalysisViewProps> = ({ brea
         return (
           <div
             key={idx}
-            className="flex flex-col gap-6 py-4"
+            className="flex flex-col gap-6 p-6 min-h-[320px] bg-[rgba(4,12,25,0.4)] backdrop-blur-md rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-colors min-w-0"
           >
             {/* Header Title */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-800/50 pb-3 gap-2">
-              <h4 className="text-sm font-mono font-bold text-white tracking-widest uppercase">
-                {measureLabel} <span className="text-slate-600 font-normal">BY</span> {dimLabel}
+            <div className="flex flex-col gap-3 border-b border-slate-800/50 pb-4 min-w-0">
+              <h4 className="text-sm font-mono font-bold text-white tracking-widest uppercase leading-snug break-words whitespace-normal min-w-0" style={{ overflowWrap: 'anywhere' }}>
+                {measureLabel} <br/> <span className="text-slate-600 font-normal">BY</span> {dimLabel}
               </h4>
               <div className="text-[10px] text-slate-500 font-mono tracking-widest uppercase flex items-center gap-2">
                 <span>{isMean ? 'Overall Average' : 'Total Value'}</span>
@@ -59,15 +59,15 @@ export const CategoryAnalysisView: React.FC<CategoryAnalysisViewProps> = ({ brea
             </div>
 
             {/* Top vs Bottom Highlights */}
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-xs font-mono relative z-10 py-2">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-xs font-mono relative z-10 py-1 min-w-0" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
               {item.top_category && (
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-widest">
-                    <TrendingUp className="w-3 h-3" />
+                    <TrendingUp className="w-3 h-3 shrink-0" />
                     <span>{isMean ? 'Highest' : 'Top Performer'}</span>
                   </div>
-                  <div className="text-white font-bold text-sm truncate tracking-tight">{item.top_category.category_value}</div>
-                  <div className="text-slate-400 text-[10px]">
+                  <div className="text-white font-bold text-sm break-words whitespace-normal tracking-tight leading-tight min-w-0" style={{ overflowWrap: 'anywhere' }}>{item.top_category.category_value}</div>
+                  <div className="text-slate-400 text-[10px] break-words whitespace-normal min-w-0" style={{ overflowWrap: 'anywhere' }}>
                     {item.top_category.metric_value.toLocaleString()}
                     {!isMean && item.top_category.contribution_pct > 0 && ` (${item.top_category.contribution_pct}%)`}
                   </div>
@@ -75,13 +75,13 @@ export const CategoryAnalysisView: React.FC<CategoryAnalysisViewProps> = ({ brea
               )}
 
               {item.bottom_category && (
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[10px] uppercase tracking-widest">
-                    <TrendingDown className="w-3 h-3" />
+                    <TrendingDown className="w-3 h-3 shrink-0" />
                     <span>{isMean ? 'Lowest' : 'Lowest Performer'}</span>
                   </div>
-                  <div className="text-white font-bold text-sm truncate tracking-tight">{item.bottom_category.category_value}</div>
-                  <div className="text-slate-400 text-[10px]">
+                  <div className="text-white font-bold text-sm break-words whitespace-normal tracking-tight leading-tight min-w-0" style={{ overflowWrap: 'anywhere' }}>{item.bottom_category.category_value}</div>
+                  <div className="text-slate-400 text-[10px] break-words whitespace-normal min-w-0" style={{ overflowWrap: 'anywhere' }}>
                     {item.bottom_category.metric_value.toLocaleString()}
                     {!isMean && item.bottom_category.contribution_pct > 0 && ` (${item.bottom_category.contribution_pct}%)`}
                   </div>
@@ -90,7 +90,7 @@ export const CategoryAnalysisView: React.FC<CategoryAnalysisViewProps> = ({ brea
             </div>
 
             {/* Recharts Bar Chart */}
-            <div className="h-64 w-full relative z-10 mt-2">
+            <div className="h-[220px] lg:h-[250px] w-full relative z-10 mt-4 min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={item.top_5} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
                   <XAxis
@@ -110,7 +110,8 @@ export const CategoryAnalysisView: React.FC<CategoryAnalysisViewProps> = ({ brea
                     fontFamily="JetBrains Mono"
                     tickLine={false} 
                     axisLine={false} 
-                    width={120}
+                    width={100}
+                    tick={{ fill: '#cbd5e1', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'rgba(2,5,10,0.85)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '0.25rem', fontSize: '11px', backdropFilter: 'blur(12px)' }}

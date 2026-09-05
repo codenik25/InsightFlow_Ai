@@ -239,7 +239,7 @@ export const DataPredictions: React.FC<DataPredictionsProps> = ({ processedDatas
 
       {/* 02 — MODEL GENERATION / TASK SELECTION */}
       {taskDiscovery && (
-        <motion.section variants={itemVariants} className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 lg:p-8 backdrop-blur-sm">
+        <motion.section variants={itemVariants} className="glass-panel-premium p-6 lg:p-8">
           <h2 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80 flex items-center gap-2">
             <BrainCircuit className="w-4 h-4 text-cyan-400" /> Model Configuration
           </h2>
@@ -327,7 +327,7 @@ export const DataPredictions: React.FC<DataPredictionsProps> = ({ processedDatas
       {/* 03 — MODEL READINESS & METRICS */}
       {activeAnalysis && selectedModelDetails && (
         <motion.section variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-4 bg-slate-900/60 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden group">
+          <div className="lg:col-span-4 glass-panel-premium p-8 relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 opacity-50"></div>
             <div className="relative z-10 space-y-6">
               <div className="uppercase tracking-widest text-[10px] font-bold text-cyan-400 mb-2 border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 rounded-full w-fit">
@@ -357,7 +357,7 @@ export const DataPredictions: React.FC<DataPredictionsProps> = ({ processedDatas
               .filter(([_, v]) => v !== null && v !== undefined)
               .slice(0, 4)
               .map(([key, val]) => (
-                <div key={key} className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 flex flex-col justify-center backdrop-blur-sm relative overflow-hidden">
+                <div key={key} className="glass-panel-premium p-6 flex flex-col justify-center relative overflow-hidden">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 z-10">
                     {key.replace(/_/g, ' ')}
                   </span>
@@ -373,7 +373,7 @@ export const DataPredictions: React.FC<DataPredictionsProps> = ({ processedDatas
       {/* 04 — FEATURE IMPORTANCE & COMPARISON */}
       {activeAnalysis && (
         <motion.section variants={itemVariants} className="space-y-6">
-          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-2">
+          <div className="glass-panel-premium p-2">
             <button 
               onClick={() => setIsModelComparisonOpen(!isModelComparisonOpen)}
               className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-800/40 rounded-2xl transition-colors"
@@ -447,7 +447,7 @@ export const DataPredictions: React.FC<DataPredictionsProps> = ({ processedDatas
             </AnimatePresence>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm">
+          <div className="glass-panel-premium p-8">
             <h3 className="text-sm font-sans text-white tracking-widest uppercase mb-6 opacity-80 flex items-center gap-2">
               <Layers className="w-4 h-4 text-purple-400" /> Feature Set ({featureSummaryCounts.used})
             </h3>
@@ -475,7 +475,7 @@ export const DataPredictions: React.FC<DataPredictionsProps> = ({ processedDatas
 
       {/* 05 — PREDICTION WORKSPACE */}
       {activeAnalysis && selectedModelDetails && (
-        <motion.section variants={itemVariants} className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-8 relative overflow-hidden shadow-2xl">
+        <motion.section variants={itemVariants} className="glass-panel-premium p-8 space-y-8 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none"></div>
           
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-800/60 pb-6">
@@ -615,14 +615,14 @@ export const DataPredictions: React.FC<DataPredictionsProps> = ({ processedDatas
       )}
 
       {/* 06 — CONTINUE NAVIGATION */}
-      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-slate-800/60 mt-12">
+      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-[rgba(34,211,238,0.12)] mt-12">
         <button
           onClick={() => setCurrentStage('OPTIMIZATION')}
           disabled={!activeAnalysis}
-          className="px-8 py-4 bg-white text-slate-950 hover:bg-slate-200 disabled:opacity-50 disabled:hover:bg-white rounded-xl text-sm font-bold tracking-widest uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+          className="px-8 py-3.5 primary-glow-button disabled:opacity-50 disabled:hover:bg-white rounded-full text-white text-[15px] font-sans font-semibold tracking-wide flex items-center gap-2"
         >
           CONTINUE TO OPTIMIZATION
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
         </button>

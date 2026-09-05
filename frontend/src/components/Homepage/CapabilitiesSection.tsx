@@ -13,8 +13,8 @@ const capabilities = [
     desc: 'Automatically profile, organize, and understand business data before analysis begins.',
     icon: Database,
     color: '#22D3EE',
-    desktopPos: { left: 'calc(50% - 160px)', top: '0px' }, // Top Center
-    pathD: 'M 600 240 L 600 140', // From core top edge to module bottom
+    desktopPos: { left: '490px', top: '10px' },
+    pathD: 'M 600 185 L 600 95',
     flowIn: true
   },
   {
@@ -23,8 +23,8 @@ const capabilities = [
     desc: 'Detect meaningful signals across metrics, trends and operational activity.',
     icon: Activity,
     color: '#38BDF8',
-    desktopPos: { left: '20px', top: '160px' }, // Top Left
-    pathD: 'M 400 320 Q 250 240 250 240',
+    desktopPos: { left: '140px', top: '203px' },
+    pathD: 'M 386 315 Q 386 245 360 245',
     flowIn: true
   },
   {
@@ -33,8 +33,8 @@ const capabilities = [
     desc: 'Identify hidden relationships, anomalies and patterns conventional analytics can miss.',
     icon: Network,
     color: '#3B82F6',
-    desktopPos: { right: '20px', top: '160px' }, // Top Right
-    pathD: 'M 800 320 Q 950 240 950 240',
+    desktopPos: { left: '840px', top: '203px' },
+    pathD: 'M 814 315 Q 814 245 840 245',
     flowIn: true
   },
   {
@@ -43,8 +43,8 @@ const capabilities = [
     desc: 'Use historical signals and machine learning to understand what is likely to happen next.',
     icon: BrainCircuit,
     color: '#8B5CF6',
-    desktopPos: { left: '20px', top: '480px' }, // Bottom Left
-    pathD: 'M 400 530 Q 250 560 250 560',
+    desktopPos: { left: '140px', top: '563px' },
+    pathD: 'M 386 535 Q 386 605 360 605',
     flowIn: false
   },
   {
@@ -53,8 +53,8 @@ const capabilities = [
     desc: 'Compare possible actions and identify decisions most likely to improve business outcomes.',
     icon: TrendingUp,
     color: '#A855F7',
-    desktopPos: { right: '20px', top: '480px' }, // Bottom Right
-    pathD: 'M 800 530 Q 950 560 950 560',
+    desktopPos: { left: '840px', top: '563px' },
+    pathD: 'M 814 535 Q 814 605 840 605',
     flowIn: false
   },
   {
@@ -63,8 +63,8 @@ const capabilities = [
     desc: 'Apply business rules, constraints and validation before recommendations become actions.',
     icon: ShieldCheck,
     color: '#D946EF',
-    desktopPos: { left: 'calc(50% - 160px)', bottom: '0px' }, // Bottom Center
-    pathD: 'M 600 610 L 600 700',
+    desktopPos: { left: '490px', top: '755px' },
+    pathD: 'M 600 665 L 600 755',
     flowIn: false
   }
 ];
@@ -124,7 +124,17 @@ export const CapabilitiesSection: React.FC = () => {
           style={{ fontFamily: '"Space Grotesk", sans-serif' }}
         >
           <span className="text-white">Everything Your Data</span><br/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#22D3EE] via-[#3B82F6] to-[#8B5CF6] filter drop-shadow-[0_0_12px_rgba(59,130,246,0.3)]">
+          <span 
+            style={{
+              background: 'linear-gradient(90deg, #67E8F9 0%, #38BDF8 25%, #3B82F6 55%, #6366F1 78%, #A78BFA 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 0 30px rgba(56,189,248,0.10)',
+              display: 'inline-block',
+              opacity: 1
+            }}
+          >
             Needs to Become a Decision.
           </span>
         </motion.h2>
@@ -155,51 +165,24 @@ export const CapabilitiesSection: React.FC = () => {
           
           {capabilities.map(cap => {
             const isActive = activeStage === cap.id;
-            const pathId = `orbit-path-${cap.id}`;
             return (
               <g key={cap.id}>
                 {/* Base connection line */}
-                <path d={cap.pathD} fill="none" stroke="rgba(34,211,238,0.15)" strokeWidth="1" strokeDasharray="4 4" />
+                <path d={cap.pathD} fill="none" stroke="rgba(34,211,238,0.15)" strokeWidth="1" />
                 
                 {/* Active travelling energy pulse */}
                 {!prefersReducedMotion && (
-                  <>
-                    {/* The visible trail path that illuminates */}
-                    <motion.path 
-                      id={pathId}
-                      d={cap.pathD} 
-                      fill="none" 
-                      stroke={cap.color} 
-                      strokeWidth="2"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: isActive ? 0.8 : 0 }}
-                      transition={{ duration: 0.5 }}
-                      style={{ filter: 'drop-shadow(0 0 8px currentColor)' }}
-                    />
-                    
-                    {/* The moving bright particle */}
-                    {isActive && (
-                      <g filter="url(#orbitalGlow)">
-                        {/* 
-                           If flowIn is true (Data, Signal, Pattern), the signal goes FROM module TO core.
-                           So we draw the path from core to module, but animate backward (keyPoints="1;0").
-                           If flowIn is false, it goes from core to module (keyPoints="0;1").
-                        */}
-                        <animateMotion 
-                          dur="1.5s" 
-                          repeatCount="indefinite" 
-                          calcMode="spline" 
-                          keyTimes="0;1" 
-                          keySplines="0.25 0.1 0.25 1"
-                          keyPoints={cap.flowIn ? "1;0" : "0;1"} 
-                        >
-                          <mpath href={`#${pathId}`} />
-                        </animateMotion>
-                        <circle r="4" fill="#FFFFFF" />
-                        <circle r="8" fill={cap.color} opacity="0.6" />
-                      </g>
-                    )}
-                  </>
+                  <motion.path 
+                    d={cap.pathD} 
+                    fill="none" 
+                    stroke={cap.color} 
+                    strokeWidth="1.5"
+                    strokeDasharray="40 120"
+                    initial={{ strokeDashoffset: 0 }}
+                    animate={{ strokeDashoffset: cap.flowIn ? 160 : -160 }}
+                    transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+                    style={{ filter: 'drop-shadow(0 0 4px currentColor)', opacity: isActive ? 0.8 : 0.2 }}
+                  />
                 )}
               </g>
             );
@@ -220,7 +203,7 @@ export const CapabilitiesSection: React.FC = () => {
               initial={{ opacity: 0, scale: 0.96, y: 20 }}
               animate={isInView ? { opacity: 1, scale: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.4 + index * 0.1, ease: "easeOut" }}
-              className="absolute z-20 w-[320px]"
+              className="absolute z-20 w-[220px]"
               style={cap.desktopPos}
             >
                <CapabilityModule cap={cap} isActive={isActive} prefersReducedMotion={!!prefersReducedMotion} />
@@ -341,13 +324,14 @@ const CapabilityModule: React.FC<{ cap: any, isActive: boolean, prefersReducedMo
     <motion.div
       animate={prefersReducedMotion ? {} : { y: [-2, 2, -2] }}
       transition={{ duration: cap.cycle || 6, repeat: Infinity, ease: "easeInOut" }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className={`group relative w-full h-[150px] p-5 rounded-[16px] flex flex-col justify-start transition-all duration-300 overflow-hidden cursor-default
-        ${isActive ? 'bg-[#02050A]/60' : 'bg-[#02050A]/40'}`}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      className="group relative w-full h-[90px] p-3 flex flex-col justify-center transition-all duration-300 cursor-default"
       style={{
-        border: isActive ? `1px solid ${cap.color}60` : `1px solid rgba(67,215,255,0.25)`,
+        background: 'rgba(4,12,25,0.72)',
+        border: isActive ? `1px solid ${cap.color}80` : `1px solid rgba(34,211,238,0.28)`,
+        borderRadius: '14px',
         backdropFilter: 'blur(16px)',
-        boxShadow: isActive ? `0 0 20px ${cap.color}20, inset 0 0 10px ${cap.color}10` : '0 0 10px rgba(0,0,0,0.5)'
+        boxShadow: isActive ? `0 0 20px ${cap.color}20, inset 0 0 10px ${cap.color}10` : '0 4px 20px rgba(0,0,0,0.4)'
       }}
     >
       {/* Background ambient bloom on hover or active */}
@@ -358,26 +342,26 @@ const CapabilityModule: React.FC<{ cap: any, isActive: boolean, prefersReducedMo
       />
       
       {/* Number Label */}
-      <div className="absolute top-4 right-4 text-[10px] text-slate-500 tracking-widest font-bold" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+      <div className="absolute top-2 right-2 text-[9px] text-slate-500 tracking-widest font-bold" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
         0{cap.id + 1}
       </div>
 
-      <div className="flex items-center gap-3 mb-3 relative z-10">
+      <div className="flex items-center gap-2.5 mb-1.5 relative z-10">
         <div 
-          className="p-2 rounded-lg bg-[#02050A]/80 border border-white/5 transition-colors duration-300"
+          className="p-1.5 rounded-lg bg-[#02050A]/80 border border-white/5 transition-colors duration-300"
           style={{ 
             boxShadow: isActive ? `0 0 12px ${cap.color}40` : 'none',
             borderColor: isActive ? `${cap.color}40` : 'rgba(255,255,255,0.05)'
           }}
         >
-          <Icon className="w-4 h-4 transition-all duration-300" style={{ color: isActive ? cap.color : '#94A3B8' }} />
+          <Icon className="w-3.5 h-3.5 transition-all duration-300" style={{ color: isActive ? cap.color : '#94A3B8' }} />
         </div>
-        <h4 className="text-[14px] font-bold text-white tracking-tight" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+        <h4 className="text-[12px] font-bold text-white tracking-tight" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
           {cap.title}
         </h4>
       </div>
 
-      <p className="text-[12px] text-[#94A3B8] leading-relaxed relative z-10 font-sans" style={{ fontFamily: '"Inter", sans-serif' }}>
+      <p className="text-[10px] text-[#94A3B8] leading-tight relative z-10 font-sans line-clamp-2 pr-2" style={{ fontFamily: '"Inter", sans-serif' }}>
         {cap.desc}
       </p>
     </motion.div>

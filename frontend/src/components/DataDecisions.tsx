@@ -216,7 +216,7 @@ export const DataDecisions: React.FC<DataDecisionsProps> = ({ processedDatasetId
           
           {/* LEFT: DECISION SUMMARY */}
           <div className="space-y-6">
-             <div className="bg-slate-900/40 border border-indigo-500/30 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden h-full flex flex-col">
+             <div className="glass-panel-premium p-8 h-full flex flex-col relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none"></div>
                 <div className="relative z-10 flex-1 flex flex-col">
                    <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-800">
@@ -289,7 +289,7 @@ export const DataDecisions: React.FC<DataDecisionsProps> = ({ processedDatasetId
 
           {/* RIGHT: FORMALIZATION / OUTCOME */}
           <div className="space-y-6">
-             <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm relative h-full">
+             <div className="glass-panel-premium p-8 h-full relative">
                 <h3 className="text-[10px] font-bold font-mono text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-6">
                   <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Formalize Decision
                 </h3>
@@ -345,7 +345,7 @@ export const DataDecisions: React.FC<DataDecisionsProps> = ({ processedDatasetId
                   <button
                     type="submit"
                     disabled={formalizing}
-                    className="w-full mt-2 flex items-center justify-center gap-3 px-6 py-3.5 bg-indigo-600/90 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs uppercase tracking-widest font-bold transition-all shadow-[0_0_20px_rgba(79,70,229,0.15)]"
+                    className="w-full mt-2 flex items-center justify-center gap-3 px-6 py-3.5 primary-glow-button disabled:opacity-50 text-white rounded-full text-xs uppercase tracking-widest font-bold transition-all"
                   >
                     {formalizing ? 'RECORDING DECISION...' : 'FORMALIZE DECISION'}
                   </button>
@@ -383,7 +383,7 @@ export const DataDecisions: React.FC<DataDecisionsProps> = ({ processedDatasetId
         </motion.div>
       ) : (
         !loading && !error && (
-          <div className="p-8 rounded-2xl bg-slate-900/40 border border-slate-800 border-dashed text-center">
+          <div className="p-8 glass-panel-premium border-dashed text-center">
              <p className="text-slate-400 font-mono text-sm">No primary decision context found. Ensure recommendations have been generated.</p>
           </div>
         )
@@ -391,7 +391,7 @@ export const DataDecisions: React.FC<DataDecisionsProps> = ({ processedDatasetId
 
       {/* 03 — EVIDENCE CHAIN */}
       {decisionData?.evidence_chain && decisionData.evidence_chain.nodes.length > 0 && (
-        <motion.section variants={itemVariants} className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm">
+        <motion.section variants={itemVariants} className="glass-panel-premium p-8">
            <h3 className="text-[10px] font-bold font-mono text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-8">
              <LinkIcon className="w-3.5 h-3.5 text-indigo-400" /> Evidence Provenance Chain
            </h3>
@@ -427,14 +427,14 @@ export const DataDecisions: React.FC<DataDecisionsProps> = ({ processedDatasetId
       )}
 
       {/* 04 — CONTINUE NAVIGATION */}
-      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-slate-800/60 mt-12">
+      <motion.div variants={itemVariants} className="pt-12 flex justify-end border-t border-[rgba(34,211,238,0.12)] mt-12">
         <button
           onClick={() => setCurrentStage('GUARDRAILS')}
           disabled={!decisionData}
-          className="px-8 py-4 bg-white text-slate-950 hover:bg-slate-200 disabled:opacity-50 disabled:hover:bg-white rounded-xl text-sm font-bold tracking-widest uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+          className="px-8 py-3.5 primary-glow-button disabled:opacity-50 disabled:hover:bg-white rounded-full text-white text-[15px] font-sans font-semibold tracking-wide flex items-center gap-2"
         >
           CONTINUE TO GUARDRAILS
-          <ShieldCheck className="w-4 h-4" />
+          <ShieldCheck className="w-5 h-5 ml-1" />
         </button>
       </motion.div>
     </motion.div>
