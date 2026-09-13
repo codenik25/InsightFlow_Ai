@@ -1,4 +1,4 @@
-from typing import List, Optional, Any
+from typing import List, Optional
 from pathlib import Path
 import json
 
@@ -7,12 +7,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+
     # ============================================================
     # Application Settings
     # ============================================================
 
     PROJECT_NAME: str = "InsightFlow AI"
     VERSION: str = "0.1.0"
+
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
     DEBUG: bool = True
@@ -25,58 +27,58 @@ class Settings(BaseSettings):
     # CORS Settings
     # ============================================================
 
-    BACKEND_CORS_ORIGINS: List[str] = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-    ]
+    # Keep this as STRING so Render environment variables
+    # do not cause Pydantic parsing errors.
+    BACKEND_CORS_ORIGINS: str = (
+        "http://localhost:5173,"
+        "http://127.0.0.1:5173,"
+        "http://localhost:3000"
+    )
 
-    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
-    @classmethod
-    def assemble_cors_origins(cls, v: Any) -> List[str]:
+
+    @property
+    def cors_origins(self) -> List[str]:
         """
+        Converts BACKEND_CORS_ORIGINS into a list.
+
         Supports:
 
-        JSON format:
-        ["http://localhost:5173","https://example.com"]
-
-        Comma-separated format:
+        Comma separated:
         http://localhost:5173,https://example.com
+
+        JSON list:
+        ["http://localhost:5173","https://example.com"]
         """
 
-        if v is None:
+        value = self.BACKEND_CORS_ORIGINS
+
+        if not value:
             return []
 
-        if isinstance(v, list):
-            return v
+        value = value.strip()
 
-        if isinstance(v, str):
-            v = v.strip()
+        # JSON list format
+        if value.startswith("["):
 
-            if not v:
+            try:
+                origins = json.loads(value)
+
+                if isinstance(origins, list):
+                    return [
+                        str(origin).strip()
+                        for origin in origins
+                        if str(origin).strip()
+                    ]
+
+            except json.JSONDecodeError:
                 return []
 
-            # Handle JSON array
-            if v.startswith("["):
-                try:
-                    parsed = json.loads(v)
-
-                    if isinstance(parsed, list):
-                        return parsed
-
-                except json.JSONDecodeError:
-                    pass
-
-            # Handle comma-separated URLs
-            return [
-                origin.strip()
-                for origin in v.split(",")
-                if origin.strip()
-            ]
-
-        raise ValueError(
-            "BACKEND_CORS_ORIGINS must be a list or comma-separated string"
-        )
+        # Comma-separated format
+        return [
+            origin.strip()
+            for origin in value.split(",")
+            if origin.strip()
+        ]
 
 
     # ============================================================
@@ -88,6 +90,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "insightflow_user"
     POSTGRES_PASSWORD: str = "insightflow_password"
     POSTGRES_DB: str = "insightflow_db"
+
 
     DATABASE_URL: str = (
         "postgresql+psycopg://"
@@ -101,8 +104,11 @@ class Settings(BaseSettings):
     # ============================================================
 
     AI_PROVIDER: str = "none"
+
     AI_API_KEY: Optional[str] = None
+
     AI_MODEL: str = "gpt-4o"
+
     AI_TIMEOUT_SECONDS: float = 10.0
 
 
@@ -112,17 +118,21 @@ class Settings(BaseSettings):
 
     STORAGE_BACKEND: str = "local"
 
+
     @field_validator("STORAGE_BACKEND")
     @classmethod
     def validate_storage_backend(cls, v: str) -> str:
-        v = v.lower().strip()
 
-        if v not in ["local", "supabase"]:
+        value = v.lower().strip()
+
+        if value not in ["local", "supabase"]:
+
             raise ValueError(
-                "STORAGE_BACKEND must be either 'local' or 'supabase'"
+                "STORAGE_BACKEND must be either "
+                "'local' or 'supabase'"
             )
 
-        return v
+        return value
 
 
     # ============================================================
@@ -130,7 +140,9 @@ class Settings(BaseSettings):
     # ============================================================
 
     SUPABASE_URL: Optional[str] = None
+
     SUPABASE_SERVICE_KEY: Optional[str] = None
+
 
     @field_validator("SUPABASE_SERVICE_KEY")
     @classmethod
@@ -147,15 +159,19 @@ class Settings(BaseSettings):
 
         if storage_backend == "supabase":
 
-            supabase_url = info.data.get("SUPABASE_URL")
+            supabase_url = info.data.get(
+                "SUPABASE_URL"
+            )
 
             if not supabase_url:
+
                 raise ValueError(
                     "SUPABASE_URL is required when "
                     "STORAGE_BACKEND is 'supabase'"
                 )
 
             if not v:
+
                 raise ValueError(
                     "SUPABASE_SERVICE_KEY is required when "
                     "STORAGE_BACKEND is 'supabase'"
@@ -171,7 +187,9 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_BYTES: int = 52_428_800
 
     UPLOAD_DIR: str = "data/raw"
+
     PROCESSED_DIR: str = "data/processed"
+
     MODELS_DIR: str = "data/models"
 
 
@@ -181,69 +199,83 @@ class Settings(BaseSettings):
 
     @property
     def upload_dir_path(self) -> Path:
-        """Return the absolute path for uploaded raw files."""
 
         path = Path(self.UPLOAD_DIR)
 
         if not path.is_absolute():
+
             path = (
                 Path(__file__).resolve().parents[3]
                 / self.UPLOAD_DIR
             )
 
-        path.mkdir(parents=True, exist_ok=True)
+        path.mkdir(
+            parents=True,
+            exist_ok=True
+        )
 
         return path
 
 
     @property
     def processed_dir_path(self) -> Path:
-        """Return the absolute path for processed files."""
 
         path = Path(self.PROCESSED_DIR)
 
         if not path.is_absolute():
+
             path = (
                 Path(__file__).resolve().parents[3]
                 / self.PROCESSED_DIR
             )
 
-        path.mkdir(parents=True, exist_ok=True)
+        path.mkdir(
+            parents=True,
+            exist_ok=True
+        )
 
         return path
 
 
     @property
     def models_dir_path(self) -> Path:
-        """Return the absolute path for ML model artifacts."""
 
         path = Path(self.MODELS_DIR)
 
         if not path.is_absolute():
+
             path = (
                 Path(__file__).resolve().parents[3]
                 / self.MODELS_DIR
             )
 
-        path.mkdir(parents=True, exist_ok=True)
+        path.mkdir(
+            parents=True,
+            exist_ok=True
+        )
 
         return path
 
 
     # ============================================================
-    # Pydantic Settings Configuration
+    # Pydantic Configuration
     # ============================================================
 
     model_config = SettingsConfigDict(
+
         env_file=".env",
+
         env_file_encoding="utf-8",
+
         case_sensitive=True,
-        extra="ignore",
+
+        extra="ignore"
+
     )
 
 
 # ================================================================
-# Global Settings Instance
+# Global Settings
 # ================================================================
 
 settings = Settings()
