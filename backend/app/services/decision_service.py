@@ -1,6 +1,6 @@
 import os
 import uuid
-import joblib
+from app.services.storage_service import storage_service
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
@@ -241,13 +241,10 @@ class DecisionService:
         )
 
         # Load persisted model pipeline artifact for explainability inspection
-        artifact_filename = os.path.basename(analysis.model_artifact_path or "")
-        artifact_full_path = str(settings.models_dir_path / artifact_filename) if artifact_filename else ""
-        
         model_pipeline = None
-        if os.path.exists(artifact_full_path):
+        if analysis and analysis.model_artifact_path:
             try:
-                model_pipeline = joblib.load(artifact_full_path)
+                model_pipeline = storage_service.load_model(analysis.model_artifact_path)
             except Exception:
                 model_pipeline = None
 
@@ -405,16 +402,13 @@ class DecisionService:
             )
 
         feature_cols = analysis.feature_columns or []
-        artifact_filename = os.path.basename(analysis.model_artifact_path or "")
-        artifact_full_path = str(settings.models_dir_path / artifact_filename) if artifact_filename else ""
-
-        if not os.path.exists(artifact_full_path):
+        try:
+            model_pipeline = storage_service.load_model(analysis.model_artifact_path)
+        except Exception:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Model artifact file for analysis '{analysis_id}' not found.",
             )
-
-        model_pipeline = joblib.load(artifact_full_path)
         feature_importances = MLExplainabilityService.get_model_feature_importances(
             model_pipeline=model_pipeline, feature_columns=feature_cols
         )
@@ -514,13 +508,11 @@ class DecisionService:
             return scenario
 
         # Re-run prediction & contributions
-        artifact_filename = os.path.basename(analysis.model_artifact_path or "")
-        artifact_full_path = str(settings.models_dir_path / artifact_filename) if artifact_filename else ""
-        
+        # Re-run prediction & contributions
         model_pipeline = None
-        if os.path.exists(artifact_full_path):
+        if analysis and analysis.model_artifact_path:
             try:
-                model_pipeline = joblib.load(artifact_full_path)
+                model_pipeline = storage_service.load_model(analysis.model_artifact_path)
             except Exception:
                 model_pipeline = None
 
@@ -707,21 +699,15 @@ class DecisionService:
 
         # Extract model feature importances from trained model artifact
         feature_importances: Dict[str, float] = {}
-        if analysis:
-            artifact_filename = os.path.basename(analysis.model_artifact_path or "")
-            artifact_full_path = str(settings.models_dir_path / artifact_filename) if artifact_filename else ""
-            if not os.path.exists(artifact_full_path) and analysis.model_artifact_path and os.path.exists(analysis.model_artifact_path):
-                artifact_full_path = analysis.model_artifact_path
-
-            if os.path.exists(artifact_full_path):
-                try:
-                    model_pipeline = joblib.load(artifact_full_path)
-                    feature_importances = MLExplainabilityService.get_model_feature_importances(
-                        model_pipeline=model_pipeline,
-                        feature_columns=analysis.feature_columns or [],
-                    )
-                except Exception:
-                    feature_importances = {}
+        if analysis and analysis.model_artifact_path:
+            try:
+                model_pipeline = storage_service.load_model(analysis.model_artifact_path)
+                feature_importances = MLExplainabilityService.get_model_feature_importances(
+                    model_pipeline=model_pipeline,
+                    feature_columns=analysis.feature_columns or [],
+                )
+            except Exception:
+                feature_importances = {}
 
             if not feature_importances:
                 try:

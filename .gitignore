@@ -50,6 +50,7 @@ frontend/dist-ssr/
 
 # Environment variables
 .env
+backend/.env
 
 # Pytest & Coverage
 .pytest_cache/
@@ -69,3 +70,5 @@ data/models/
 
 # Local verification scripts
 scratch/
+
+.env.*

@@ -145,10 +145,10 @@ class DatasetService:
                 detail="Dataset is empty. CSV must contain at least 1 row and 1 header column."
             )
 
-        # Save file via storage service abstraction (data/raw/<uuid>.csv)
-        storage_key, sanitized_original_name, _ = storage_service.save_file(content, filename)
-
         dataset_id = str(uuid.uuid4())
+
+        # Save file via storage service abstraction (data/raw/<uuid>.csv)
+        storage_key, sanitized_original_name, _ = storage_service.save_file(content, filename, dataset_id=dataset_id)
         total_rows = len(df)
         total_cols = len(df.columns)
 

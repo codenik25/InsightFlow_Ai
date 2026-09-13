@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
+from app.services.storage_service import storage_service
 import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -45,10 +46,6 @@ from app.services.metric_discovery_service import MetricDiscoveryService
 from app.services.type_detector import TypeDetector
 from app.services.ml_feature_service import MLFeatureService
 
-
-
-def ensure_models_dir():
-    settings.models_dir_path.mkdir(parents=True, exist_ok=True)
 
 
 class TimeSeriesNaiveModel:
@@ -408,32 +405,22 @@ class MLTaskService:
             )
 
         analysis_id = str(uuid.uuid4())
-        ensure_models_dir()
-        artifact_rel_path = f"data/models/{analysis_id}.joblib"
-        artifact_full_path = str(settings.models_dir_path / f"{analysis_id}.joblib")
-
-        data_warnings: List[str] = []
-        if len(df) < 30:
-            data_warnings.append(
-                f"Prediction quality is limited by the available sample size ({len(df)} rows). Results should be interpreted with caution."
-            )
-
         # Separate pipeline execution based on task_type
         if task_type == "regression":
             response = cls._run_regression_pipeline(
-                df, target_column, included_features, feature_info_list, analysis_id, target_dataset.id, artifact_full_path, artifact_rel_path, data_warnings, roles
+                df, target_column, included_features, feature_info_list, analysis_id, target_dataset.id, data_warnings, roles
             )
         elif task_type == "classification":
             response = cls._run_classification_pipeline(
-                df, target_column, included_features, feature_info_list, analysis_id, target_dataset.id, artifact_full_path, artifact_rel_path, data_warnings, roles
+                df, target_column, included_features, feature_info_list, analysis_id, target_dataset.id, data_warnings, roles
             )
         elif task_type == "time_series_forecasting":
             response = cls._run_time_series_pipeline(
-                df, target_column, included_features, feature_info_list, analysis_id, target_dataset.id, artifact_full_path, artifact_rel_path, data_warnings, roles
+                df, target_column, included_features, feature_info_list, analysis_id, target_dataset.id, data_warnings, roles
             )
         elif task_type == "anomaly_detection":
             response = cls._run_anomaly_pipeline(
-                df, included_features, feature_info_list, analysis_id, target_dataset.id, artifact_full_path, artifact_rel_path, data_warnings, roles
+                df, included_features, feature_info_list, analysis_id, target_dataset.id, data_warnings, roles
             )
         else:
             raise HTTPException(
@@ -497,8 +484,6 @@ class MLTaskService:
         feature_summary: List[MLFeatureInfo],
         analysis_id: str,
         dataset_id: str,
-        artifact_full_path: str,
-        artifact_rel_path: str,
         data_warnings: List[str],
         roles: List[ColumnRoleInfo],
     ) -> MLAnalysisResponse:
@@ -604,7 +589,7 @@ class MLTaskService:
                 )
             )
 
-        joblib.dump(best_pipeline, artifact_full_path)
+        artifact_rel_path = storage_service.save_model(best_pipeline, analysis_id)
 
         selection_explanation = f"{best_name} selected because it achieved the lowest validation RMSE ({best_metrics.get('rmse')}) among evaluated candidate models."
 
@@ -637,8 +622,6 @@ class MLTaskService:
         feature_summary: List[MLFeatureInfo],
         analysis_id: str,
         dataset_id: str,
-        artifact_full_path: str,
-        artifact_rel_path: str,
         data_warnings: List[str],
         roles: List[ColumnRoleInfo],
     ) -> MLAnalysisResponse:
@@ -754,7 +737,7 @@ class MLTaskService:
                 )
             )
 
-        joblib.dump(best_pipeline, artifact_full_path)
+        artifact_rel_path = storage_service.save_model(best_pipeline, analysis_id)
 
         selection_explanation = f"{best_name} selected because it achieved the highest validation F1 score ({best_metrics.get('f1')}) among evaluated candidate models."
 
@@ -787,8 +770,6 @@ class MLTaskService:
         feature_summary: List[MLFeatureInfo],
         analysis_id: str,
         dataset_id: str,
-        artifact_full_path: str,
-        artifact_rel_path: str,
         data_warnings: List[str],
         roles: List[ColumnRoleInfo],
     ) -> MLAnalysisResponse:
@@ -869,7 +850,7 @@ class MLTaskService:
                 c.is_selected = True
                 c.selection_reason = f"{best_name} selected because it achieved the lowest chronological test RMSE ({best_metrics.get('rmse')}) among candidate forecasters."
 
-        joblib.dump(best_pipeline, artifact_full_path)
+        artifact_rel_path = storage_service.save_model(best_pipeline, analysis_id)
 
         selection_explanation = f"{best_name} selected because it achieved the lowest chronological test RMSE ({best_metrics.get('rmse')}) among candidate forecasters."
 
@@ -901,8 +882,6 @@ class MLTaskService:
         feature_summary: List[MLFeatureInfo],
         analysis_id: str,
         dataset_id: str,
-        artifact_full_path: str,
-        artifact_rel_path: str,
         data_warnings: List[str],
         roles: List[ColumnRoleInfo],
     ) -> MLAnalysisResponse:
@@ -925,7 +904,7 @@ class MLTaskService:
             "anomaly_percentage": cls._sanitize_metric(anomaly_pct, 2),
         }
 
-        joblib.dump(pipe, artifact_full_path)
+        artifact_rel_path = storage_service.save_model(pipe, analysis_id)
 
         candidate = MLModelCandidate(
             model_name="Isolation Forest",
@@ -1006,22 +985,13 @@ class MLTaskService:
                 detail=f"Model artifact for analysis '{analysis_id}' not found.",
             )
 
-        artifact_filename = os.path.basename(record.model_artifact_path)
-        artifact_full_path = str(settings.models_dir_path / artifact_filename)
-        if not os.path.exists(artifact_full_path):
+        try:
+            model_pipeline = storage_service.load_model(record.model_artifact_path)
+        except Exception:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Model artifact file '{record.model_artifact_path}' missing from storage.",
             )
-
-        if not inputs:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Prediction inputs cannot be empty. Must contain at least one record.",
-            )
-
-        # Load persisted trained pipeline artifact
-        model_pipeline = joblib.load(artifact_full_path)
 
         allowed_features = set(record.feature_columns or [])
 

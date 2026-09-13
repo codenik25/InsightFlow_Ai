@@ -1,6 +1,6 @@
 from typing import List, Union, Optional
 from pathlib import Path
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, ValidationInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -42,6 +42,28 @@ class Settings(BaseSettings):
     AI_API_KEY: Optional[str] = None
     AI_MODEL: str = "gpt-4o"
     AI_TIMEOUT_SECONDS: float = 10.0
+
+    # Storage Backend Configuration
+    STORAGE_BACKEND: str = "local"  # "local" or "supabase"
+
+    @field_validator("STORAGE_BACKEND")
+    @classmethod
+    def validate_storage_backend(cls, v: str) -> str:
+        if v not in ["local", "supabase"]:
+            raise ValueError("STORAGE_BACKEND must be either 'local' or 'supabase'")
+        return v
+
+    # Supabase Configuration
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_SERVICE_KEY: Optional[str] = None
+
+    @field_validator("SUPABASE_SERVICE_KEY")
+    @classmethod
+    def validate_supabase_credentials(cls, v: Optional[str], info: ValidationInfo) -> Optional[str]:
+        if info.data.get("STORAGE_BACKEND") == "supabase":
+            if not v or not info.data.get("SUPABASE_URL"):
+                raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_KEY are required when STORAGE_BACKEND is 'supabase'")
+        return v
 
     # File Ingestion & Storage Settings
     MAX_UPLOAD_SIZE_BYTES: int = 52_428_800  # 50 MB default max upload size

@@ -370,13 +370,13 @@ class CleaningService:
         df_cleaned.to_csv(csv_buffer, index=False)
         processed_bytes = csv_buffer.getvalue().encode("utf-8")
 
+        output_dataset_id = str(uuid.uuid4())
+        
         # Save processed CSV via StorageService abstraction into data/processed/<uuid>.csv
         proc_filename = f"cleaned_{raw_dataset.name}"
         storage_key, sanitized_name, file_size = storage_service.save_processed_file(
-            processed_bytes, proc_filename
+            processed_bytes, proc_filename, dataset_id=output_dataset_id
         )
-
-        output_dataset_id = str(uuid.uuid4())
         total_rows = len(df_cleaned)
         total_cols = len(df_cleaned.columns)
 
