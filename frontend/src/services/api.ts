@@ -39,7 +39,7 @@ import {
 } from '../types';
 
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://insightflow-api-0g8a.onrender.com';
 
 export async function fetchHealthStatus(): Promise<HealthStatus> {
   try {
@@ -574,7 +574,7 @@ export async function generateRecommendations(
   optimizationId?: string,
   maxRecommendations: number = 3
 ): Promise<RecommendationResponse> {
-  const url = optimizationId 
+  const url = optimizationId
     ? `${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/optimize/recommendations`
     : `${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/recommendations`;
 
