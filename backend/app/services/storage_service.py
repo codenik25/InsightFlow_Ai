@@ -482,13 +482,22 @@ class SupabaseStorageProvider(StorageProvider):
     ) -> None:
 
         try:
+            # Verify bucket existence to provide clear error message
+            try:
+                buckets = self.client.storage.list_buckets()
+                if not any(b.name == bucket for b in buckets):
+                    logger.error(f"Bucket '{bucket}' does not exist in Supabase.")
+                    raise ValueError(f"Bucket '{bucket}' does not exist.")
+            except Exception as bucket_exc:
+                if isinstance(bucket_exc, ValueError):
+                    raise bucket_exc
+                logger.warning(f"Failed to verify bucket existence, proceeding anyway: {bucket_exc}")
 
             bucket_client = (
                 self.client.storage.from_(
                     bucket
                 )
             )
-
 
             logger.info(
                 f"Uploading to Supabase: "
@@ -497,35 +506,37 @@ class SupabaseStorageProvider(StorageProvider):
                 f"size={len(content)} bytes"
             )
 
-
             response = bucket_client.upload(
-
                 path=path,
-
                 file=content,
-
                 file_options={
                     "content-type": content_type,
-                    "upsert": "true"
+                    "x-upsert": "true"
                 }
             )
-
 
             logger.info(
                 f"Supabase upload successful: "
                 f"{response}"
             )
 
+        except AttributeError as attr_exc:
+            logger.exception(
+                f"Supabase upload failed due to a known storage3 library bug. "
+                f"Bucket: {bucket}, Path: {path}. "
+                f"This usually means the bucket doesn't exist or RLS rejected it."
+            )
+            raise RuntimeError(
+                f"Failed to upload file to Supabase Storage. "
+                f"Storage3 Bug Encountered. Bucket='{bucket}', Path='{path}'"
+            ) from attr_exc
 
         except Exception as exc:
-
             logger.exception(
                 f"Supabase upload failed. "
                 f"Bucket: {bucket}, "
                 f"Path: {path}"
             )
-
-
             raise RuntimeError(
                 f"Failed to upload file to "
                 f"Supabase Storage. "
