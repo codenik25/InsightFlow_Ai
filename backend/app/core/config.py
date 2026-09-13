@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # Keep this as STRING so Render environment variables
     # do not cause Pydantic parsing errors.
-    BACKEND_CORS_ORIGINS: str = (
+    BACKEND_CORS_ORIGINS: List[str] = (
         "http://localhost:5173,"
         "http://127.0.0.1:5173,"
         "http://localhost:3000"
