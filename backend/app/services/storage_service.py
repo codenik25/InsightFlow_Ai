@@ -3,6 +3,8 @@ import re
 import uuid
 import tempfile
 import joblib
+import httpx
+from urllib.parse import quote
 
 from abc import ABC, abstractmethod
 from typing import Any
@@ -481,68 +483,68 @@ class SupabaseStorageProvider(StorageProvider):
         content_type: str
     ) -> None:
 
+        base_url = settings.SUPABASE_URL.rstrip("/")
+        encoded_bucket = quote(bucket, safe="")
+        encoded_path = quote(path, safe="/")
+        url = f"{base_url}/storage/v1/object/{encoded_bucket}/{encoded_path}"
+
+        headers = {
+            "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
+            "apikey": settings.SUPABASE_SERVICE_KEY,
+            "Content-Type": content_type,
+            "x-upsert": "true",
+        }
+
+        logger.info(
+            f"Uploading to Supabase REST API: "
+            f"bucket={bucket}, "
+            f"path={path}, "
+            f"size={len(content)} bytes"
+        )
+
         try:
-            # Verify bucket existence to provide clear error message
-            try:
-                buckets = self.client.storage.list_buckets()
-                if not any(b.name == bucket for b in buckets):
-                    logger.error(f"Bucket '{bucket}' does not exist in Supabase.")
-                    raise ValueError(f"Bucket '{bucket}' does not exist.")
-            except Exception as bucket_exc:
-                if isinstance(bucket_exc, ValueError):
-                    raise bucket_exc
-                logger.warning(f"Failed to verify bucket existence, proceeding anyway: {bucket_exc}")
+            response = httpx.post(url, headers=headers, content=content, timeout=60.0)
 
-            bucket_client = (
-                self.client.storage.from_(
-                    bucket
+            if not response.is_success:
+                logger.error(
+                    f"Supabase REST API upload failed. "
+                    f"Status Code: {response.status_code}, "
+                    f"Response Body: {response.text}, "
+                    f"Bucket: {bucket}, "
+                    f"Path: {path}"
                 )
-            )
+                raise RuntimeError(
+                    f"Failed to upload file to Supabase Storage REST API. "
+                    f"Status Code={response.status_code}, "
+                    f"Bucket='{bucket}', "
+                    f"Path='{path}', "
+                    f"Response='{response.text}'"
+                )
 
             logger.info(
-                f"Uploading to Supabase: "
-                f"bucket={bucket}, "
-                f"path={path}, "
-                f"size={len(content)} bytes"
+                f"Supabase REST API upload successful: "
+                f"Status Code: {response.status_code}"
             )
 
-            response = bucket_client.upload(
-                path=path,
-                file=content,
-                file_options={
-                    "content-type": content_type,
-                    "x-upsert": "true"
-                }
-            )
-
-            logger.info(
-                f"Supabase upload successful: "
-                f"{response}"
-            )
-
-        except AttributeError as attr_exc:
+        except httpx.RequestError as exc:
             logger.exception(
-                f"Supabase upload failed due to a known storage3 library bug. "
-                f"Bucket: {bucket}, Path: {path}. "
-                f"This usually means the bucket doesn't exist or RLS rejected it."
+                f"Network error while communicating with Supabase Storage. "
+                f"Bucket: {bucket}, Path: {path}"
             )
             raise RuntimeError(
-                f"Failed to upload file to Supabase Storage. "
-                f"Storage3 Bug Encountered. Bucket='{bucket}', Path='{path}'"
-            ) from attr_exc
-
+                f"Network error communicating with Supabase Storage REST API. "
+                f"Bucket='{bucket}', Path='{path}', Error='{str(exc)}'"
+            ) from exc
+        except RuntimeError:
+            raise
         except Exception as exc:
             logger.exception(
-                f"Supabase upload failed. "
-                f"Bucket: {bucket}, "
-                f"Path: {path}"
+                f"Unexpected error during Supabase REST API upload. "
+                f"Bucket: {bucket}, Path: {path}"
             )
             raise RuntimeError(
-                f"Failed to upload file to "
-                f"Supabase Storage. "
-                f"Bucket='{bucket}', "
-                f"Path='{path}', "
-                f"Error='{str(exc)}'"
+                f"Unexpected error communicating with Supabase Storage REST API. "
+                f"Bucket='{bucket}', Path='{path}', Error='{str(exc)}'"
             ) from exc
 
 
