@@ -26,7 +26,10 @@ class KPIService:
             return clean_s
 
         col_lower = str(col_name).lower().replace("-", "_")
+        is_pct_col = any(s in col_lower for s in ['_pct', 'pct', 'percent'])
         for rule in QualityService.SEMANTIC_RANGE_RULES:
+            if is_pct_col and rule.get("max") == 1.0:
+                continue
             if any(kw == col_lower or kw in col_lower for kw in rule["keywords"]):
                 if rule.get("min") is not None:
                     clean_s = clean_s[clean_s >= rule["min"]]

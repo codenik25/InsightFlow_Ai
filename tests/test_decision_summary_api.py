@@ -68,7 +68,7 @@ def test_decision_summary_retrieval_and_isolation():
 
     # Generate Recommendations for Dataset A (via Phase 7.2B RecommendationService -> decision_recommendation_evaluations)
     rec_res_a = client.post(
-        f"/api/v1/datasets/{proc_id_a}/decision/recommendations",
+        f"/api/v1/datasets/{proc_id_a}/decision/optimize/recommendations",
         json={"optimization_id": opt_id_a, "max_recommendations": 3},
     )
     assert rec_res_a.status_code == 201

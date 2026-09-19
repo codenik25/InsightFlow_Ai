@@ -14,11 +14,8 @@ from app.core.config import settings
 from app.core.logging import logger
 
 
-try:
-    from supabase import create_client
-except ImportError:
-    create_client = None
-
+# Supabase python SDK `storage3` is unreliable and throws `AttributeError: 'dict' object has no attribute 'text'`.
+# We bypass the SDK completely and use httpx for direct REST API communication.
 
 def sanitize_filename(filename: str) -> str:
     """
@@ -172,7 +169,7 @@ class LocalStorageProvider(StorageProvider):
         file_size = len(content)
 
         storage_key = (
-            f"raw/{internal_filename}"
+            f"data/raw/{internal_filename}"
         )
 
         logger.info(
@@ -227,7 +224,7 @@ class LocalStorageProvider(StorageProvider):
         file_size = len(content)
 
         storage_key = (
-            f"processed/{internal_filename}"
+            f"data/processed/{internal_filename}"
         )
 
         logger.info(
@@ -435,12 +432,6 @@ class SupabaseStorageProvider(StorageProvider):
 
     def __init__(self):
 
-        if create_client is None:
-
-            raise ImportError(
-                "Supabase package is not installed."
-            )
-
 
         if (
             not settings.SUPABASE_URL
@@ -460,11 +451,7 @@ class SupabaseStorageProvider(StorageProvider):
         )
 
 
-        self.client = create_client(
-            settings.SUPABASE_URL,
-            settings.SUPABASE_SERVICE_KEY
-        )
-
+        # self.client is removed, we use httpx directly.
 
         self.datasets_bucket = (
             "insightflow-datasets"
@@ -475,6 +462,14 @@ class SupabaseStorageProvider(StorageProvider):
         )
 
 
+    @property
+    def _base_url(self) -> str:
+        base = (settings.SUPABASE_URL or "").strip().rstrip("/")
+        if base.endswith("/rest/v1"):
+            base = base[:-len("/rest/v1")].rstrip("/")
+        return base
+
+
     def _safe_upload(
         self,
         bucket: str,
@@ -483,7 +478,7 @@ class SupabaseStorageProvider(StorageProvider):
         content_type: str
     ) -> None:
 
-        base_url = settings.SUPABASE_URL.rstrip("/")
+        base_url = self._base_url
         encoded_bucket = quote(bucket, safe="")
         encoded_path = quote(path, safe="/")
         url = f"{base_url}/storage/v1/object/{encoded_bucket}/{encoded_path}"
@@ -683,21 +678,30 @@ class SupabaseStorageProvider(StorageProvider):
                 )
             )
 
+            base_url = self._base_url
+            encoded_bucket = quote(self.datasets_bucket, safe="")
+            encoded_path = quote(clean_key, safe="/")
+            url = f"{base_url}/storage/v1/object/{encoded_bucket}/{encoded_path}"
 
-            response = (
-                self.client
-                .storage
-                .from_(
-                    self.datasets_bucket
+            headers = {
+                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
+                "apikey": settings.SUPABASE_SERVICE_KEY,
+            }
+
+            response = httpx.get(url, headers=headers, timeout=60.0)
+
+            if not response.is_success:
+                logger.error(
+                    f"Supabase REST API download failed. "
+                    f"Status Code: {response.status_code}, "
+                    f"Bucket: {self.datasets_bucket}, "
+                    f"Path: {clean_key}"
                 )
-                .download(
-                    clean_key
+                raise FileNotFoundError(
+                    f"Storage object '{storage_key}' not found."
                 )
-            )
 
-
-            return response
-
+            return response.content
 
         except Exception as exc:
 
@@ -728,16 +732,29 @@ class SupabaseStorageProvider(StorageProvider):
                 )
             )
 
+            base_url = self._base_url
+            encoded_bucket = quote(self.datasets_bucket, safe="")
+            encoded_path = quote(clean_key, safe="/")
+            url = f"{base_url}/storage/v1/object/{encoded_bucket}/{encoded_path}"
 
-            self.client.storage.from_(
-                self.datasets_bucket
-            ).remove([
-                clean_key
-            ])
+            headers = {
+                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
+                "apikey": settings.SUPABASE_SERVICE_KEY,
+            }
 
+            response = httpx.delete(url, headers=headers, timeout=30.0)
+
+            if not response.is_success:
+                logger.error(
+                    f"Supabase REST API delete failed. "
+                    f"Status Code: {response.status_code}, "
+                    f"Bucket: {self.datasets_bucket}, "
+                    f"Path: {clean_key}"
+                )
+                return False
 
             logger.info(
-                f"Deleted Supabase file: "
+                f"Deleted Supabase file via REST: "
                 f"{clean_key}"
             )
 
@@ -841,22 +858,29 @@ class SupabaseStorageProvider(StorageProvider):
 
         try:
 
-            content = (
-                self.client
-                .storage
-                .from_(
-                    self.models_bucket
-                )
-                .download(
-                    storage_key
-                )
-            )
+            base_url = self._base_url
+            encoded_bucket = quote(self.models_bucket, safe="")
+            encoded_path = quote(storage_key, safe="/")
+            url = f"{base_url}/storage/v1/object/{encoded_bucket}/{encoded_path}"
 
+            headers = {
+                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
+                "apikey": settings.SUPABASE_SERVICE_KEY,
+            }
+
+            response = httpx.get(url, headers=headers, timeout=60.0)
+
+            if not response.is_success:
+                raise FileNotFoundError(
+                    f"Model '{storage_key}' not found."
+                )
+
+            content = response.content
 
         except Exception as exc:
 
             logger.exception(
-                f"Failed to download model "
+                f"Failed to download ML model "
                 f"'{storage_key}'"
             )
 

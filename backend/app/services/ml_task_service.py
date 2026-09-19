@@ -24,6 +24,8 @@ try:
     from xgboost import XGBRegressor, XGBClassifier
     HAS_XGBOOST = True
 except ImportError:
+    XGBRegressor = None
+    XGBClassifier = None
     HAS_XGBOOST = False
 
 from app.core.config import settings
@@ -83,7 +85,7 @@ class XGBClassifierWrapper:
     def __init__(self, n_estimators: int = 50, random_state: int = 42):
         self.n_estimators = n_estimators
         self.random_state = random_state
-        if HAS_XGBOOST:
+        if HAS_XGBOOST and XGBClassifier is not None:
             self.clf = XGBClassifier(
                 n_estimators=self.n_estimators,
                 random_state=self.random_state,
@@ -405,6 +407,13 @@ class MLTaskService:
             )
 
         analysis_id = str(uuid.uuid4())
+        data_warnings: List[str] = []
+        matching_candidates = [c for c in discovery_resp.candidate_tasks if c.task_type == task_type]
+        if matching_candidates:
+            data_warnings.extend(matching_candidates[0].warnings)
+        if len(df) < 30 and not any("Small" in w for w in data_warnings):
+            data_warnings.append(f"Small dataset size ({len(df)} rows); evaluation accuracy will be exploratory.")
+
         # Separate pipeline execution based on task_type
         if task_type == "regression":
             response = cls._run_regression_pipeline(
@@ -437,7 +446,7 @@ class MLTaskService:
             feature_columns=included_features,
             model_name=response.model_name,
             model_version=response.model_version,
-            model_artifact_path=artifact_rel_path,
+            model_artifact_path=response.model_artifact_path,
             feature_schema={"features": included_features, "target": target_column},
             preprocessing_config={"pipeline": "StandardScaler + OneHotEncoder / SimpleImputer"},
             random_seed=42,
@@ -448,8 +457,23 @@ class MLTaskService:
             result_data=response.model_dump(),
             selection_reason=response.selection_reason,
         )
-        db.add(analysis_record)
-        db.commit()
+        try:
+            db.add(analysis_record)
+            db.commit()
+        except Exception as db_exc:
+            db.rollback()
+            from app.core.logging import logger
+            logger.error(f"Database commit failed for ML Analysis {analysis_id}. Rolling back storage upload. Error: {str(db_exc)}")
+            # Cleanup orphaned storage file defensively so cleanup failure does not hide DB error
+            if response.model_artifact_path:
+                try:
+                    storage_service.delete_file(response.model_artifact_path)
+                except Exception as cleanup_exc:
+                    logger.error(f"Failed to cleanup orphaned model artifact '{response.model_artifact_path}': {str(cleanup_exc)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to persist ML analysis record to database."
+            )
 
         return response
 
@@ -512,7 +536,7 @@ class MLTaskService:
             ("Linear Regression", LinearRegression()),
             ("Random Forest Regressor", RandomForestRegressor(n_estimators=50, random_state=42)),
         ]
-        if HAS_XGBOOST:
+        if HAS_XGBOOST and XGBRegressor is not None:
             candidate_models.append(
                 ("XGBoost Regressor", XGBRegressor(n_estimators=50, random_state=42, learning_rate=0.1, max_depth=3))
             )
@@ -948,7 +972,7 @@ class MLTaskService:
         responses = []
         for r in records:
             if r.result_data:
-                responses.append(MLAnalysisResponse(**r.result_data))
+                responses.append(MLAnalysisResponse.model_validate(r.result_data))
         return responses
 
     @classmethod
@@ -964,7 +988,7 @@ class MLTaskService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"ML Analysis '{analysis_id}' not found for dataset '{dataset_id}'.",
             )
-        return MLAnalysisResponse(**record.result_data)
+        return MLAnalysisResponse.model_validate(record.result_data)
 
     @classmethod
     def predict(

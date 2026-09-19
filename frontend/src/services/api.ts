@@ -39,7 +39,7 @@ import {
 } from '../types';
 
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://insightflow-api-0g8a.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export async function fetchHealthStatus(): Promise<HealthStatus> {
   try {
@@ -352,21 +352,41 @@ export async function runMLAnalysis(
   taskType?: string,
   targetColumn?: string
 ): Promise<MLAnalysisResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/ml/analyze`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify({
-      task_type: taskType || null,
-      target_column: targetColumn || null,
-    }),
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/ml/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        task_type: taskType || null,
+        target_column: targetColumn || null,
+      }),
+    });
+  } catch (err: any) {
+    throw new Error(`Network Error: Unable to reach the backend or CORS issue. (${err.message || 'Failed to fetch'})`);
+  }
 
   if (!response.ok) {
-    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
-    throw new Error(errData.detail || `Failed to run ML analysis (${response.status})`);
+    let errorMessage = `HTTP error ${response.status}`;
+    try {
+      const errData = await response.json();
+      errorMessage = errData.detail || errData.message || errData.error || errorMessage;
+    } catch (e) {
+      // Failed to parse JSON, stick with generic status message
+    }
+    
+    if (response.status === 404) {
+      throw new Error(`Endpoint or resource not found (404): ${errorMessage}`);
+    } else if (response.status === 422) {
+      throw new Error(`Validation Error (422): ${errorMessage}`);
+    } else if (response.status >= 500) {
+      throw new Error(`Server Error (${response.status}): ${errorMessage}`);
+    } else {
+      throw new Error(`API Error (${response.status}): ${errorMessage}`);
+    }
   }
 
   return await response.json();
@@ -405,18 +425,38 @@ export async function runMLPrediction(
   analysisId: string,
   inputs: Record<string, any>[]
 ): Promise<PredictionResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/ml/${analysisId}/predict`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify({ inputs }),
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/v1/datasets/${datasetId}/ml/${analysisId}/predict`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ inputs }),
+    });
+  } catch (err: any) {
+    throw new Error(`Network Error: Unable to reach the backend or CORS issue. (${err.message || 'Failed to fetch'})`);
+  }
 
   if (!response.ok) {
-    const errData = await response.json().catch(() => ({ detail: `HTTP error ${response.status}` }));
-    throw new Error(errData.detail || `Prediction failed with status ${response.status}`);
+    let errorMessage = `HTTP error ${response.status}`;
+    try {
+      const errData = await response.json();
+      errorMessage = errData.detail || errData.message || errData.error || errorMessage;
+    } catch (e) {
+      // Failed to parse JSON
+    }
+    
+    if (response.status === 404) {
+      throw new Error(`Endpoint or resource not found (404): ${errorMessage}`);
+    } else if (response.status === 422) {
+      throw new Error(`Validation Error (422): ${errorMessage}`);
+    } else if (response.status >= 500) {
+      throw new Error(`Server Error (${response.status}): ${errorMessage}`);
+    } else {
+      throw new Error(`API Error (${response.status}): ${errorMessage}`);
+    }
   }
 
   return await response.json();
@@ -574,9 +614,7 @@ export async function generateRecommendations(
   optimizationId?: string,
   maxRecommendations: number = 3
 ): Promise<RecommendationResponse> {
-  const url = optimizationId
-    ? `${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/optimize/recommendations`
-    : `${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/recommendations`;
+  const url = `${API_BASE_URL}/api/v1/datasets/${datasetId}/decision/optimize/recommendations`;
 
   const response = await fetch(url, {
     method: 'POST',

@@ -1,5 +1,5 @@
 from typing import List, Optional, Any
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.recommendation import (
@@ -15,21 +15,16 @@ router = APIRouter()
 
 @router.post(
     "/{dataset_id}/decision/optimize/recommendations",
+    response_model=RecommendationResponse,
+    status_code=status.HTTP_201_CREATED,
     summary="Generate evidence-backed executive decision recommendations from optimizations",
 )
 def generate_executive_recommendations(
     dataset_id: str,
-    response: Response,
     payload: Optional[RecommendationRequest] = None,
-    scenario_id: Optional[str] = None,
     db: Session = Depends(get_db),
-) -> Any:
+) -> RecommendationResponse:
     """Transform optimization scenarios into evidence-backed, trade-off analyzed executive recommendations."""
-    if scenario_id is not None:
-        response.status_code = status.HTTP_200_OK
-        return DecisionService.generate_recommendations(db=db, dataset_id=dataset_id, scenario_id=scenario_id)
-
-    response.status_code = status.HTTP_201_CREATED
     if payload is None:
         payload = RecommendationRequest()
 

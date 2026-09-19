@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 from pathlib import Path
 import json
 
@@ -27,58 +27,50 @@ class Settings(BaseSettings):
     # CORS Settings
     # ============================================================
 
-    # Keep this as STRING so Render environment variables
-    # do not cause Pydantic parsing errors.
-    BACKEND_CORS_ORIGINS: List[str] = (
-        "http://localhost:5173,"
-        "http://127.0.0.1:5173,"
-        "http://localhost:3000"
-    )
+    BACKEND_CORS_ORIGINS: List[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+    ]
 
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Any) -> List[str]:
+        """
+        Parses BACKEND_CORS_ORIGINS from comma-separated string,
+        JSON array string, or list into a List[str].
+        Prevents SettingsError and Pydantic validation errors.
+        """
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return []
+            if v.startswith("["):
+                try:
+                    origins = json.loads(v)
+                    if isinstance(origins, list):
+                        return [
+                            str(origin).strip()
+                            for origin in origins
+                            if str(origin).strip()
+                        ]
+                except json.JSONDecodeError:
+                    pass
+            return [
+                origin.strip()
+                for origin in v.split(",")
+                if origin.strip()
+            ]
+        elif isinstance(v, (list, tuple)):
+            return [str(origin).strip() for origin in v if str(origin).strip()]
+        return v
 
     @property
     def cors_origins(self) -> List[str]:
-        """
-        Converts BACKEND_CORS_ORIGINS into a list.
-
-        Supports:
-
-        Comma separated:
-        http://localhost:5173,https://example.com
-
-        JSON list:
-        ["http://localhost:5173","https://example.com"]
-        """
-
-        value = self.BACKEND_CORS_ORIGINS
-
-        if not value:
-            return []
-
-        value = value.strip()
-
-        # JSON list format
-        if value.startswith("["):
-
-            try:
-                origins = json.loads(value)
-
-                if isinstance(origins, list):
-                    return [
-                        str(origin).strip()
-                        for origin in origins
-                        if str(origin).strip()
-                    ]
-
-            except json.JSONDecodeError:
-                return []
-
-        # Comma-separated format
-        return [
-            origin.strip()
-            for origin in value.split(",")
-            if origin.strip()
-        ]
+        """Provides backwards-compatible access to cors origins as a list."""
+        if isinstance(self.BACKEND_CORS_ORIGINS, list):
+            return self.BACKEND_CORS_ORIGINS
+        return []
 
 
     # ============================================================
@@ -142,6 +134,17 @@ class Settings(BaseSettings):
     SUPABASE_URL: Optional[str] = None
 
     SUPABASE_SERVICE_KEY: Optional[str] = None
+
+    @field_validator("SUPABASE_URL", mode="before")
+    @classmethod
+    def sanitize_supabase_url(cls, v: Any) -> Optional[str]:
+        """Strip trailing slash and /rest/v1 if inadvertently configured."""
+        if v and isinstance(v, str):
+            clean = v.strip().rstrip("/")
+            if clean.endswith("/rest/v1"):
+                clean = clean[:-len("/rest/v1")].rstrip("/")
+            return clean
+        return v
 
 
     @field_validator("SUPABASE_SERVICE_KEY")

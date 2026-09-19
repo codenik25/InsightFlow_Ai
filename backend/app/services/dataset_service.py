@@ -174,9 +174,22 @@ class DatasetService:
             profile_data=profile.model_dump(),
         )
 
-        db.add(dataset_record)
-        db.commit()
-        db.refresh(dataset_record)
+        try:
+            db.add(dataset_record)
+            db.commit()
+            db.refresh(dataset_record)
+        except Exception as db_exc:
+            db.rollback()
+            logger.error(f"Database commit failed for dataset {dataset_id}. Rolling back storage upload. Error: {str(db_exc)}")
+            # Cleanup orphaned storage file defensively so cleanup failure does not hide DB error
+            try:
+                storage_service.delete_file(storage_key)
+            except Exception as cleanup_exc:
+                logger.error(f"Failed to cleanup orphaned storage file '{storage_key}': {str(cleanup_exc)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to persist dataset record to database."
+            )
 
         logger.info(f"Dataset '{sanitized_original_name}' (ID: {dataset_id}) successfully uploaded & profiled ({total_rows} rows, {total_cols} cols).")
         return profile

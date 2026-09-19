@@ -110,7 +110,7 @@ def test_final_runtime_e2e_pipeline_verification():
 
     # 12. Decision Recommendations Generation
     res_recs = client.post(
-        f"/api/v1/datasets/{proc_dataset_id}/decision/recommendations",
+        f"/api/v1/datasets/{proc_dataset_id}/decision/optimize/recommendations",
         json={"optimization_id": opt_id, "max_recommendations": 3},
     )
     print(f"Recs Status: {res_recs.status_code}, Body: {res_recs.text}")

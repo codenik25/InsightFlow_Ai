@@ -48,7 +48,10 @@ class OptimizationService:
         matched_max: Optional[float] = None
 
         # 1. Match against QualityService.SEMANTIC_RANGE_RULES
+        is_pct_col = any(s in col_lower for s in ['_pct', 'pct', 'percent'])
         for rule in QualityService.SEMANTIC_RANGE_RULES:
+            if is_pct_col and rule.get("max") == 1.0:
+                continue
             if any(kw == col_lower or kw in col_lower for kw in rule["keywords"]):
                 r_min = rule.get("min")
                 r_max = rule.get("max")

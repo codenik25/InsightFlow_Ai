@@ -68,7 +68,7 @@ def _setup_generic_dataset():
     opt_id = opt_res.json()["optimization_id"]
 
     rec_res = client.post(
-        f"/api/v1/datasets/{proc_id}/decision/recommendations",
+        f"/api/v1/datasets/{proc_id}/decision/optimize/recommendations",
         json={"optimization_id": opt_id, "max_recommendations": 3},
     )
     recs = rec_res.json()["recommendations"]

@@ -19,16 +19,28 @@ class QualityService:
 
     SEMANTIC_RANGE_RULES = [
         {
-            "keywords": ["occupancy_rate", "occupancy_pct", "occupancy_ratio"],
+            "keywords": ["occupancy_pct", "occupancy_percentage", "bed_occupancy_pct"],
             "min": 0.0,
             "max": 100.0,
             "description": "Occupancy percentage must be between 0.0 and 100.0.",
         },
         {
-            "keywords": ["readmission_rate", "readmission_pct", "readmission_ratio"],
+            "keywords": ["occupancy_rate", "occupancy_ratio"],
+            "min": 0.0,
+            "max": 1.0,
+            "description": "Occupancy rate must be between 0.0 and 1.0.",
+        },
+        {
+            "keywords": ["readmission_rate_pct", "readmission_pct", "readmission_percentage"],
             "min": 0.0,
             "max": 100.0,
             "description": "Readmission percentage must be between 0.0 and 100.0.",
+        },
+        {
+            "keywords": ["readmission_rate", "readmission_ratio"],
+            "min": 0.0,
+            "max": 1.0,
+            "description": "Readmission rate must be between 0.0 and 1.0.",
         },
         {
             "keywords": ["patient_satisfaction", "satisfaction_score", "satisfaction_pct"],
@@ -153,8 +165,11 @@ class QualityService:
                 # Semantic / Domain range validation for valid numeric values
                 valid_num_s = converted.dropna()
                 col_lower = col_name.lower().replace('-', '_')
+                is_pct_col = any(s in col_lower for s in ['_pct', 'pct', 'percent'])
 
                 for rule in cls.SEMANTIC_RANGE_RULES:
+                    if is_pct_col and rule.get("max") == 1.0:
+                        continue
                     if any(kw == col_lower or kw in col_lower for kw in rule["keywords"]):
                         domain_invalid_cnt = 0
                         invalid_samples = []
