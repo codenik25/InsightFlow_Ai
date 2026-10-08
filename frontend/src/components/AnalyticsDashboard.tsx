@@ -5,6 +5,7 @@ import { EDAResponse, InsightResponse } from '../types';
 import { fetchEDA, generateEDA, fetchInsights, generateInsights } from '../services/api';
 import { KpiCardsGrid } from './KpiCardsGrid';
 import { PremiumChartWorkspace } from './PremiumChartWorkspace';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface AnalyticsDashboardProps {
   datasetId: string;
@@ -79,17 +80,18 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ datasetI
 
   if (isLoading) {
     return (
-      <div className="bg-[rgba(4,12,25,0.6)] backdrop-blur-md border border-slate-800 rounded-xl p-12 text-center text-xs text-slate-400 flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="relative w-16 h-16 mb-6">
-          <div className="absolute inset-0 rounded-full border border-slate-800" />
-          <div className="absolute inset-0 rounded-full border-t border-accent-cyan animate-spin" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-accent-cyan" />
-          </div>
-        </div>
-        <span className="font-bold text-white uppercase tracking-widest text-sm mb-2">Analyzing Processed Dataset</span>
-        <p className="text-slate-500 max-w-md">Discovering metrics, calculating trends, and rendering visual workspaces.</p>
-      </div>
+      <ContinuousIntelligenceEngine
+        mode="analysis"
+        active={isLoading}
+        isFullScreen={true}
+        title="ANALYZING PROCESSED DATASET"
+        description="Discovering dimensional distributions, calculating correlations, trend lines, and rendering visual workspaces..."
+        metrics={[
+          { label: 'DATASET', value: datasetId.slice(0, 8) },
+          { label: 'ANALYTICS', value: 'COMPUTING' },
+          { label: 'STATE', value: 'CONTINUOUS' }
+        ]}
+      />
     );
   }
 

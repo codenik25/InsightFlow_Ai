@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, useMotionValue, useTransform, animate, useReducedMotion } from 'framer-motion';
 import { fetchDatasetQuality, fetchDatasetProfile } from '../services/api';
 import { DatasetQualityResponse, DatasetProfileData } from '../types';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface DataQualityProps {
   rawDatasetId: string | null;
@@ -76,56 +77,71 @@ export const DataQuality: React.FC<DataQualityProps> = ({ rawDatasetId, setCurre
 
   if (!rawDatasetId) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-center">
-        <h3 className="text-xl font-sans text-white mb-2 tracking-tight">NO DATASET SELECTED</h3>
-        <p className="text-slate-400 mb-6 font-mono text-sm">Please return to Upload and ingest a dataset.</p>
-        <button 
-          onClick={() => setCurrentStage('UPLOAD')}
-          className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold tracking-wider uppercase border border-slate-700 transition-colors"
-        >
-          ← BACK TO UPLOAD
-        </button>
+      <div className="flex flex-col items-center justify-center min-h-[380px] text-center bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 max-w-2xl mx-auto backdrop-blur-md">
+        <div className="w-14 h-14 rounded-2xl bg-slate-800/70 border border-slate-700/60 flex items-center justify-center mb-5 text-accent-cyan shadow-[0_0_20px_rgba(34,211,238,0.15)]">
+          <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-sans font-semibold text-white mb-2 tracking-tight">NO DATASET SELECTED</h3>
+        <p className="text-slate-400 mb-6 font-mono text-sm max-w-md">Select or upload a dataset to begin quality analysis.</p>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setCurrentStage('UPLOAD')}
+            className="px-6 py-2.5 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan rounded-xl text-sm font-bold tracking-wider uppercase border border-accent-cyan/30 transition-colors"
+          >
+            ← GO TO UPLOAD
+          </button>
+          <button 
+            onClick={() => setCurrentStage('DATASETS')}
+            className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold tracking-wider uppercase border border-slate-700 transition-colors"
+          >
+            DATASET REGISTRY
+          </button>
+        </div>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-8 max-w-5xl mx-auto">
-        <div className="h-16 bg-slate-800/50 rounded-2xl border border-slate-700/50 w-64"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-64 bg-slate-800/50 rounded-2xl border border-slate-700/50"></div>
-          <div className="h-64 bg-slate-800/50 rounded-2xl border border-slate-700/50"></div>
-        </div>
-        <div className="h-48 bg-slate-800/50 rounded-2xl border border-slate-700/50"></div>
-      </div>
+      <ContinuousIntelligenceEngine
+        mode="quality"
+        isLoading={loading}
+        isFullScreen={false}
+        minHeight="540px"
+        error={error}
+        onRetry={loadData}
+      />
     );
   }
 
-  if (error) {
+  if (error || !quality || !profile) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-center bg-slate-900/50 border border-rose-500/20 rounded-3xl p-8 max-w-2xl mx-auto">
-        <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center mb-4">
-          <svg className="w-6 h-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      <div className="flex flex-col items-center justify-center min-h-[380px] text-center bg-slate-900/40 border border-amber-500/20 rounded-3xl p-8 max-w-2xl mx-auto backdrop-blur-md">
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-5 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
+          <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
-        <h3 className="text-xl font-sans text-white mb-2 tracking-tight">UNABLE TO LOAD DATA QUALITY</h3>
-        <p className="text-slate-400 mb-6 font-mono text-sm max-w-md">{error}</p>
-        <button 
-          onClick={loadData}
-          className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold tracking-wider uppercase border border-slate-700 transition-colors"
-        >
-          RETRY
-        </button>
-      </div>
-    );
-  }
-
-  if (!quality || !profile) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 text-center">
-        <h3 className="text-xl font-sans text-white mb-2 tracking-tight">DATA QUALITY UNAVAILABLE</h3>
+        <h3 className="text-xl font-sans font-semibold text-white mb-2 tracking-tight">DATASET UNAVAILABLE</h3>
+        <p className="text-slate-400 mb-6 font-mono text-sm max-w-md">
+          The selected dataset is no longer available.
+        </p>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setCurrentStage('UPLOAD')}
+            className="px-6 py-2.5 bg-accent-cyan/15 hover:bg-accent-cyan/25 text-accent-cyan rounded-xl text-sm font-bold tracking-wider uppercase border border-accent-cyan/30 transition-colors shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+          >
+            Choose Another Dataset
+          </button>
+          <button 
+            onClick={() => setCurrentStage('DATASETS')}
+            className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold tracking-wider uppercase border border-slate-700 transition-colors"
+          >
+            Dataset Registry
+          </button>
+        </div>
       </div>
     );
   }

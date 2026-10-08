@@ -1,7 +1,7 @@
 import io
 import uuid
 import pandas as pd
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from fastapi import UploadFile, HTTPException, status
 from app.core.config import settings
@@ -15,15 +15,20 @@ from app.services.profiling_service import ProfilingService
 
 class DatasetService:
     @staticmethod
-    def list_datasets(db: Session, skip: int = 0, limit: int = 100) -> list[Dataset]:
-        """Fetch list of metadata for stored datasets."""
-        stmt = select(Dataset).offset(skip).limit(limit).order_by(Dataset.created_at.desc())
+    def list_datasets(db: Session, skip: int = 0, limit: int = 100, project_id: str | None = None) -> list[Dataset]:
+        """Fetch list of metadata for stored datasets, optionally filtered by project_id."""
+        stmt = select(Dataset)
+        if project_id:
+            stmt = stmt.where(Dataset.project_id == project_id)
+        stmt = stmt.offset(skip).limit(limit).order_by(Dataset.created_at.desc())
         return list(db.scalars(stmt).all())
 
     @staticmethod
-    def count_datasets(db: Session) -> int:
-        """Count total dataset entries."""
+    def count_datasets(db: Session, project_id: str | None = None) -> int:
+        """Count total dataset entries, optionally filtered by project_id."""
         stmt = select(Dataset)
+        if project_id:
+            stmt = stmt.where(Dataset.project_id == project_id)
         return len(list(db.scalars(stmt).all()))
 
     @staticmethod
@@ -72,7 +77,12 @@ class DatasetService:
         return dataset
 
     @classmethod
-    def ingest_and_profile_csv(cls, db: Session, file: UploadFile) -> DatasetProfileResponse:
+    def ingest_and_profile_csv(
+        cls,
+        db: Session,
+        file: UploadFile,
+        project_id: str | None = None,
+    ) -> DatasetProfileResponse:
         """Validate, store, parse, profile, and persist CSV file."""
         if not file or not file.filename:
             raise HTTPException(
@@ -160,9 +170,43 @@ class DatasetService:
             file_size_bytes=file_size,
         )
 
+        # Resolve project_id if not provided, or validate it exists if provided
+        resolved_project_id = project_id
+        if resolved_project_id:
+            from app.models.project import Project
+            target_proj = db.scalar(select(Project).where(Project.id == resolved_project_id))
+            if not target_proj:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Target project '{resolved_project_id}' not found.",
+                )
+        else:
+            from app.models.project import Project
+            default_proj = db.scalar(select(Project).order_by(Project.created_at.asc()))
+            if default_proj:
+                resolved_project_id = default_proj.id
+
+
+        # Determine deterministic version number for raw datasets scoped to logical dataset lineage in this project
+        version_num = 1
+        version_query = select(func.max(Dataset.version)).where(
+            func.lower(Dataset.name) == func.lower(sanitized_original_name),
+            Dataset.is_processed == False,
+        )
+        if resolved_project_id:
+            version_query = version_query.where(Dataset.project_id == resolved_project_id)
+        else:
+            version_query = version_query.where(Dataset.project_id.is_(None))
+
+        max_v = db.scalar(version_query)
+        if max_v is not None and max_v >= 1:
+            version_num = int(max_v) + 1
+
         # Persist Dataset record into Database
         dataset_record = Dataset(
             id=dataset_id,
+            project_id=resolved_project_id,
+            version=version_num,
             name=sanitized_original_name,
             description=f"CSV Dataset uploaded on {filename}",
             file_path=storage_key,

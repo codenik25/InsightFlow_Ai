@@ -9,6 +9,7 @@ import {
   CleaningApplyResponse, IssueDetail, ColumnProfile 
 } from '../types';
 import { previewCleaningPlan, applyCleaningPlan } from '../services/api';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface CinematicCleaningWorkflowProps {
   datasetId: string;
@@ -144,17 +145,10 @@ export const CinematicCleaningWorkflow: React.FC<CinematicCleaningWorkflowProps>
     }
 
     setErrorMsg(null);
-    setProcessingState('preparing');
+    setProcessingState('applying');
     
     try {
-      await new Promise(r => setTimeout(r, 800));
-      setProcessingState('applying');
-      
       const res = await applyCleaningPlan(datasetId, plan);
-      
-      setProcessingState('validating');
-      await new Promise(r => setTimeout(r, 600));
-      
       setApplyResult(res);
       setProcessingState('success');
     } catch (err: any) {
@@ -230,25 +224,19 @@ export const CinematicCleaningWorkflow: React.FC<CinematicCleaningWorkflowProps>
 
   if (processingState !== 'idle' && processingState !== 'error') {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center min-h-[50vh]">
-        <div className="relative w-32 h-32 mb-8">
-          <div className="absolute inset-0 rounded-full border-2 border-slate-800" />
-          <motion.div 
-            className="absolute inset-0 rounded-full border-2 border-accent-cyan"
-            style={{ clipPath: 'polygon(50% 0, 100% 0, 100% 50%, 50% 50%)' }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Wand2 className="w-10 h-10 text-accent-cyan" />
-          </div>
-        </div>
-        <h3 className="text-2xl font-bold text-white tracking-widest uppercase mb-2">
-          {processingState === 'preparing' && 'PREPARING CLEANING PLAN...'}
-          {processingState === 'applying' && 'APPLYING TRANSFORMATIONS...'}
-          {processingState === 'validating' && 'VALIDATING PROCESSED DATA...'}
-        </h3>
-        <p className="text-slate-400 text-sm">Please wait while the AI generates your new processed artifact.</p>
+      <div className="w-full h-full flex flex-col items-center justify-center min-h-[50vh] py-8">
+        <ContinuousIntelligenceEngine
+          mode="cleaning"
+          active={true}
+          title="TRANSFORMING & CLEANING DATASET"
+          description={`Executing ${approvedCount} approved operations: imputation, type enforcement, outlier handling, and standardization...`}
+          metrics={[
+            { label: 'OPERATIONS', value: `${approvedCount} RULES` },
+            { label: 'TRANSFORMATION', value: 'CONTINUOUS' },
+            { label: 'INTEGRITY', value: 'VALIDATING' },
+            { label: 'ISOLATION', value: 'SANDBOXED' }
+          ]}
+        />
       </div>
     );
   }

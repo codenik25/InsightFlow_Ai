@@ -47,6 +47,7 @@ from app.services.eda_service import EDAService
 from app.services.metric_discovery_service import MetricDiscoveryService
 from app.services.type_detector import TypeDetector
 from app.services.ml_feature_service import MLFeatureService
+from app.services.analysis_run_service import AnalysisRunService
 
 
 
@@ -345,8 +346,57 @@ class MLTaskService:
         datetime_column: Optional[str] = None,
     ) -> MLAnalysisResponse:
         """Run model analysis pipeline, evaluate baseline candidates, persist model artifact, and record result."""
-
         target_dataset = EDAService.resolve_target_dataset(db=db, dataset_id=dataset_id)
+
+        run = AnalysisRunService.start_run(
+            db=db,
+            dataset_id=target_dataset.id,
+            run_type="PREDICTION",
+            configuration={
+                "task_type": task_type,
+                "target_column": target_column,
+                "datetime_column": datetime_column,
+            },
+            input_artifacts={
+                "dataset_id": target_dataset.id,
+                "target_column": target_column,
+                "datetime_column": datetime_column,
+            },
+        )
+        try:
+            resp = cls._execute_run_analysis(
+                db=db,
+                target_dataset=target_dataset,
+                task_type=task_type,
+                target_column=target_column,
+                datetime_column=datetime_column,
+            )
+            output_artifacts = {
+                "analysis_id": resp.id,
+                "task_type": resp.task_type,
+                "model_name": resp.model_name,
+                "target_column": resp.target_column,
+                "candidates_count": len(resp.candidate_models),
+            }
+            AnalysisRunService.complete_run(
+                db=db,
+                run_id=run.id,
+                output_artifacts=output_artifacts,
+            )
+            return resp
+        except Exception as exc:
+            AnalysisRunService.fail_run(db=db, run_id=run.id, error_message=str(exc))
+            raise
+
+    @classmethod
+    def _execute_run_analysis(
+        cls,
+        db: Session,
+        target_dataset: Dataset,
+        task_type: Optional[str] = None,
+        target_column: Optional[str] = None,
+        datetime_column: Optional[str] = None,
+    ) -> MLAnalysisResponse:
         df = DatasetService.load_dataset_dataframe(target_dataset)
         roles = MetricDiscoveryService.discover_column_roles(df)
 

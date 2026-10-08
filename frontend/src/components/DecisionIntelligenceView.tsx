@@ -24,6 +24,7 @@ import {
   evaluateWhatIfScenario,
   compareWhatIfScenario,
 } from '../services/api';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface DecisionIntelligenceViewProps {
   datasetId: string;
@@ -230,9 +231,18 @@ export const DecisionIntelligenceView: React.FC<DecisionIntelligenceViewProps> =
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 space-y-4">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-400 text-sm">Loading Prediction Explainability & Decision Optimization Engine...</p>
+      <div className="py-8">
+        <ContinuousIntelligenceEngine
+          mode="optimization"
+          active={loading}
+          title="INITIALIZING DECISION OPTIMIZATION ENGINE"
+          description="Extracting model constraints, decision parameters, explainability artifacts, and scenario boundaries..."
+          metrics={[
+            { label: 'DATASET', value: datasetId.slice(0, 8) },
+            { label: 'OPTIMIZATION', value: 'CONSTRAINED' },
+            { label: 'ENGINE', value: 'CONTINUOUS' }
+          ]}
+        />
       </div>
     );
   }

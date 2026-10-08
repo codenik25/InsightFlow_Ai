@@ -401,6 +401,8 @@ class CleaningService:
             status="processed",
             profile_data=profile.model_dump(),
             parent_id=raw_dataset.id,
+            project_id=raw_dataset.project_id,
+            version=raw_dataset.version,
             is_processed=True,
         )
         db.add(processed_dataset)

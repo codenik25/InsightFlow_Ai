@@ -21,7 +21,8 @@ def setup_logging() -> None:
 
     # Reduce noisy logs from third party libraries
     logging.getLogger("uvicorn.access").setLevel(log_level)
-    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING if not settings.DEBUG else logging.INFO)
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+
 
 
 logger = logging.getLogger("insightflow")

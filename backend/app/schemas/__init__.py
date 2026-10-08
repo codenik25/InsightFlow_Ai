@@ -1,5 +1,36 @@
 from app.schemas.health import HealthCheckResponse
-from app.schemas.dataset import DatasetBase, DatasetCreate, DatasetResponse, DatasetListResponse
+from app.schemas.workspace import (
+    WorkspaceBase,
+    WorkspaceCreate,
+    WorkspaceUpdate,
+    WorkspaceResponse,
+)
+from app.schemas.project import (
+    ProjectBase,
+    ProjectCreate,
+    ProjectUpdate,
+    ProjectResponse,
+    ProjectWithDatasetsResponse,
+)
+from app.schemas.dataset import (
+    DatasetBase,
+    DatasetCreate,
+    DatasetResponse,
+    DatasetListResponse,
+    DatasetRegistryItem,
+)
+from app.schemas.comparison import (
+    ComparisonSummary,
+    SchemaChange,
+    QualityChangeDetail,
+    MetricChange,
+    DistributionChange,
+    InsightImpact,
+    PredictionImpact,
+    DatasetComparisonResponse,
+    DatasetVersionItem,
+    DatasetVersionListResponse,
+)
 from app.schemas.profile import (
     NumericStats,
     CategoricalValueCount,
@@ -116,6 +147,28 @@ from app.schemas.ai_evaluation import (
     AIEvaluationResponse,
 )
 
+from app.schemas.analysis_run import (
+    AnalysisRunBase,
+    AnalysisRunResponse,
+    AnalysisRunListResponse,
+)
+from app.schemas.insight_memory import (
+    InsightMemoryBase,
+    InsightMemoryCounters,
+    InsightTimelineCell,
+    InsightTimelineItem,
+    DownstreamReviewItem,
+    InsightImpactItem,
+    InsightMemoryListResponse,
+    InsightImpactComparisonResponse,
+)
+from app.schemas.evidence import (
+    EvidenceNode as GraphEvidenceNode,
+    EvidenceEdgeSchema,
+    EvidenceGraphResponse,
+    EvidenceChainResponse,
+)
+
 __all__ = [
     "HealthCheckResponse",
     "DatasetBase",
@@ -215,6 +268,21 @@ __all__ = [
     "EvaluationMetricScore",
     "AIEvaluationRequest",
     "AIEvaluationResponse",
+    "AnalysisRunBase",
+    "AnalysisRunResponse",
+    "AnalysisRunListResponse",
+    "InsightMemoryBase",
+    "InsightMemoryCounters",
+    "InsightTimelineCell",
+    "InsightTimelineItem",
+    "DownstreamReviewItem",
+    "InsightImpactItem",
+    "InsightMemoryListResponse",
+    "InsightImpactComparisonResponse",
+    "GraphEvidenceNode",
+    "EvidenceEdgeSchema",
+    "EvidenceGraphResponse",
+    "EvidenceChainResponse",
 ]
 
 

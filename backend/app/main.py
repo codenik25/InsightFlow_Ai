@@ -1,7 +1,9 @@
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.logging import setup_logging, logger
 from app.api.health import router as health_router
@@ -38,7 +40,40 @@ def create_application() -> FastAPI:
             allow_headers=["*"],
         )
 
-    # Global Exception Handler
+    # Security Headers & Observability Timing Middleware
+    @app.middleware("http")
+    async def security_and_timing_middleware(request: Request, call_next):
+        start_time = time.perf_counter()
+        
+        response = await call_next(request)
+        
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        
+        # Standard security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["X-Response-Time-Ms"] = str(duration_ms)
+
+        # Lightweight structured logging without logging auth headers or payload secrets
+        if not request.url.path.endswith("/health/live"):
+            logger.info(
+                f"{request.method} {request.url.path} status={response.status_code} duration={duration_ms}ms"
+            )
+        
+        return response
+
+    # Explicit HTTP Exception Handler
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+            headers=exc.headers,
+        )
+
+    # Global Safe Exception Handler (Sanitizes stack traces and secrets)
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
         logger.error(f"Unhandled exception on {request.method} {request.url}: {str(exc)}", exc_info=True)
@@ -51,11 +86,13 @@ def create_application() -> FastAPI:
             },
         )
 
-    # Include API Routers
+    # Include API Routers (Root health and /api health)
+    app.include_router(health_router)
     app.include_router(health_router, prefix="/api")
     app.include_router(api_v1_router, prefix="/api/v1")
 
     return app
+
 
 
 app = create_application()

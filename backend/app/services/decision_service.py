@@ -29,6 +29,7 @@ from app.services.dataset_service import DatasetService
 from app.services.eda_service import EDAService
 from app.services.ml_task_service import MLTaskService
 from app.services.ml_explainability_service import MLExplainabilityService
+from app.services.analysis_run_service import AnalysisRunService
 
 
 class DecisionService:
@@ -202,6 +203,49 @@ class DecisionService:
                 detail="Decision Intelligence requires a processed dataset. Raw datasets are protected.",
             )
 
+        run = AnalysisRunService.start_run(
+            db=db,
+            dataset_id=target_dataset.id,
+            run_type="DECISION",
+            configuration={
+                "name": payload.name,
+                "feature_changes": payload.feature_changes,
+                "ml_analysis_id": payload.ml_analysis_id,
+                "mode": "scenario_simulation",
+            },
+            input_artifacts={
+                "dataset_id": target_dataset.id,
+                "feature_changes": payload.feature_changes,
+            },
+        )
+        try:
+            resp = cls._execute_evaluate_scenario(
+                db=db, target_dataset=target_dataset, payload=payload
+            )
+            output_artifacts = {
+                "scenario_id": resp.id,
+                "target_column": resp.target_column,
+                "predicted_outcome": resp.predicted_outcome,
+                "predicted_delta": resp.predicted_delta,
+                "confidence_score": resp.confidence_score,
+            }
+            AnalysisRunService.complete_run(
+                db=db,
+                run_id=run.id,
+                output_artifacts=output_artifacts,
+            )
+            return resp
+        except Exception as exc:
+            AnalysisRunService.fail_run(db=db, run_id=run.id, error_message=str(exc))
+            raise
+
+    @classmethod
+    def _execute_evaluate_scenario(
+        cls,
+        db: Session,
+        target_dataset: Dataset,
+        payload: ScenarioCreateRequest,
+    ) -> ScenarioResponse:
         df = DatasetService.load_dataset_dataframe(target_dataset)
 
         # Select target ML analysis
@@ -660,6 +704,51 @@ class DecisionService:
                 detail="Decision Intelligence requires a processed dataset. Raw datasets are protected.",
             )
 
+        run = AnalysisRunService.start_run(
+            db=db,
+            dataset_id=target_dataset.id,
+            run_type="RECOMMENDATION",
+            configuration={
+                "scenario_id": scenario_id,
+                "ml_analysis_id": ml_analysis_id,
+                "mode": "decision_recommendations",
+            },
+            input_artifacts={
+                "dataset_id": target_dataset.id,
+                "scenario_id": scenario_id,
+                "ml_analysis_id": ml_analysis_id,
+            },
+        )
+        try:
+            resp = cls._execute_generate_recommendations(
+                db=db,
+                target_dataset=target_dataset,
+                scenario_id=scenario_id,
+                ml_analysis_id=ml_analysis_id,
+            )
+            output_artifacts = {
+                "recommendations_count": len(resp),
+                "scenario_id": scenario_id,
+                "ml_analysis_id": ml_analysis_id,
+            }
+            AnalysisRunService.complete_run(
+                db=db,
+                run_id=run.id,
+                output_artifacts=output_artifacts,
+            )
+            return resp
+        except Exception as exc:
+            AnalysisRunService.fail_run(db=db, run_id=run.id, error_message=str(exc))
+            raise
+
+    @classmethod
+    def _execute_generate_recommendations(
+        cls,
+        db: Session,
+        target_dataset: Dataset,
+        scenario_id: Optional[str] = None,
+        ml_analysis_id: Optional[str] = None,
+    ) -> List[DecisionRecommendationResponse]:
         # Fetch active scenario if provided
         scenario = None
         if scenario_id:

@@ -28,6 +28,10 @@ class Dataset(Base):
     parent_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("datasets.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    project_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("projects.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, index=True)
     is_processed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, nullable=False
@@ -35,4 +39,6 @@ class Dataset(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
     )
+
+    project = relationship("Project", back_populates="datasets")
 

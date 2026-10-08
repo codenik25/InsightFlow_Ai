@@ -22,6 +22,17 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def validate_debug_mode(cls, v: Any, info: ValidationInfo) -> bool:
+        """Ensure debug mode defaults to False in production."""
+        env = (info.data.get("ENVIRONMENT") or "development").lower()
+        if env == "production":
+            if v is None or v is True:
+                return False
+            if isinstance(v, str):
+                return v.lower() in ("1", "true") and False
+        return bool(v)
 
     # ============================================================
     # CORS Settings
@@ -65,12 +76,28 @@ class Settings(BaseSettings):
             return [str(origin).strip() for origin in v if str(origin).strip()]
         return v
 
+    @field_validator("BACKEND_CORS_ORIGINS")
+    @classmethod
+    def validate_cors_production(cls, origins: List[str], info: ValidationInfo) -> List[str]:
+        """Prohibit wildcard origins in production."""
+        env = (info.data.get("ENVIRONMENT") or "development").lower()
+        if env == "production" and "*" in origins:
+            raise ValueError(
+                "Unrestricted CORS origin '*' is prohibited in production when credentials are enabled."
+            )
+        return origins
+
     @property
     def cors_origins(self) -> List[str]:
         """Provides backwards-compatible access to cors origins as a list."""
         if isinstance(self.BACKEND_CORS_ORIGINS, list):
             return self.BACKEND_CORS_ORIGINS
         return []
+
+    @property
+    def is_production(self) -> bool:
+        """Returns True if running in production mode."""
+        return self.ENVIRONMENT.lower() == "production"
 
 
     # ============================================================

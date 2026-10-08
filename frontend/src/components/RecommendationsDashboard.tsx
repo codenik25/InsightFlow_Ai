@@ -8,6 +8,7 @@ import {
   generateRecommendations,
   fetchRecommendations,
 } from '../services/api';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface RecommendationsDashboardProps {
   datasetId: string;
@@ -54,9 +55,18 @@ export const RecommendationsDashboard: React.FC<RecommendationsDashboardProps> =
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <RefreshCw className="w-8 h-8 animate-spin text-purple-400" />
-        <p className="text-sm font-medium text-slate-300 tracking-widest uppercase">Loading Decision Recommendations...</p>
+      <div className="py-8">
+        <ContinuousIntelligenceEngine
+          mode="recommendation"
+          active={loading}
+          title="SYNTHESIZING STRATEGIC RECOMMENDATIONS"
+          description="Correlating predictive scenario evaluations, ROI projections, operational feasibility bounds, and trade-off matrices..."
+          metrics={[
+            { label: 'DATASET', value: datasetId.slice(0, 8) },
+            { label: 'ENGINE', value: 'RECOMMENDER' },
+            { label: 'STATUS', value: 'CONTINUOUS' }
+          ]}
+        />
       </div>
     );
   }

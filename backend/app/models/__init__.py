@@ -1,4 +1,7 @@
 from app.models.base import Base
+from app.models.user import User
+from app.models.workspace import Workspace
+from app.models.project import Project
 from app.models.dataset import Dataset
 from app.models.transformation_log import TransformationLog
 from app.models.eda_result import EDAAnalysis
@@ -18,9 +21,19 @@ from app.models.decision_audit import DecisionAuditEvent
 from app.models.decision_approval import DecisionApproval
 from app.models.decision_action import DecisionActionLog
 from app.models.decision_ai_evaluation import DecisionAIEvaluation
+from app.models.analysis_run import AnalysisRun
+from app.models.insight_memory import InsightMemory
+from app.models.evidence_edge import EvidenceEdge
+from app.models.decision_learning_signal import DecisionLearningSignal
+from app.models.decision_governance import DecisionGovernanceEvent
+from app.models.decision_execution import DecisionExecution, DecisionExecutionEvent
+from app.models.decision_knowledge import DecisionKnowledgeEntry
 
 __all__ = [
     "Base",
+    "User",
+    "Workspace",
+    "Project",
     "Dataset",
     "TransformationLog",
     "EDAAnalysis",
@@ -40,6 +53,14 @@ __all__ = [
     "DecisionApproval",
     "DecisionActionLog",
     "DecisionAIEvaluation",
+    "AnalysisRun",
+    "InsightMemory",
+    "EvidenceEdge",
+    "DecisionLearningSignal",
+    "DecisionGovernanceEvent",
+    "DecisionExecution",
+    "DecisionExecutionEvent",
+    "DecisionKnowledgeEntry",
 ]
 
 

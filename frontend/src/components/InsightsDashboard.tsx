@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { InsightResponse } from '../types';
 import { fetchInsights, generateInsights } from '../services/api';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface InsightsDashboardProps {
   datasetId: string;
@@ -72,10 +73,18 @@ export const InsightsDashboard: React.FC<InsightsDashboardProps> = ({ datasetId,
 
   if (isLoading) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-xs text-slate-400 space-y-3 flex flex-col items-center justify-center">
-        <RefreshCw className="w-6 h-6 animate-spin text-amber-400" />
-        <span className="font-semibold text-slate-200 text-sm">Evaluating Evidence & Generating Automated Business Insights...</span>
-        <p className="text-slate-500 max-w-md">Processing top performers, time-series trends, data quality logs, and bivariate correlations.</p>
+      <div className="py-8">
+        <ContinuousIntelligenceEngine
+          mode="insights"
+          active={isLoading}
+          title="SYNTHESIZING BUSINESS INSIGHTS & PATTERNS"
+          description="Evaluating multi-source evidence, bivariate correlations, time-series anomaly trends, and automated recommendations..."
+          metrics={[
+            { label: 'DATASET', value: datasetId.slice(0, 8) },
+            { label: 'SYNTHESIS', value: 'PATTERNS' },
+            { label: 'STATUS', value: 'CONTINUOUS' }
+          ]}
+        />
       </div>
     );
   }

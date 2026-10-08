@@ -24,6 +24,7 @@ from app.services.eda_service import EDAService
 
 
 from app.services.quality_service import QualityService
+from app.services.analysis_run_service import AnalysisRunService
 
 
 class DecisionGuardrailService:
@@ -153,6 +154,7 @@ class DecisionGuardrailService:
         db: Session,
         dataset_id: str,
         recommendation_id: str,
+        is_batch: bool = False,
     ) -> DecisionGuardrailResponse:
         """Evaluate feasibility, realism, risk, confidence, and decision readiness guardrails for a specific recommendation."""
         # 1. Resolve Processed Dataset (raw protection)
@@ -163,6 +165,53 @@ class DecisionGuardrailService:
                 detail="Decision guardrail evaluation requires a processed dataset. Raw datasets are protected.",
             )
 
+        if is_batch:
+            return cls._execute_evaluate_recommendation(
+                db=db, target_dataset=target_dataset, recommendation_id=recommendation_id
+            )
+
+        run = AnalysisRunService.start_run(
+            db=db,
+            dataset_id=target_dataset.id,
+            run_type="GUARDRAIL",
+            configuration={
+                "recommendation_id": recommendation_id,
+                "mode": "single_recommendation_guardrails",
+            },
+            input_artifacts={
+                "dataset_id": target_dataset.id,
+                "recommendation_id": recommendation_id,
+            },
+        )
+        try:
+            resp = cls._execute_evaluate_recommendation(
+                db=db, target_dataset=target_dataset, recommendation_id=recommendation_id
+            )
+            output_artifacts = {
+                "guardrail_id": resp.id,
+                "feasibility_score": resp.feasibility_score,
+                "decision_readiness_score": resp.decision_readiness_score,
+                "decision_status": resp.decision_status,
+                "passed_rules_count": len(resp.passed_rules),
+                "violated_rules_count": len(resp.violated_rules),
+            }
+            AnalysisRunService.complete_run(
+                db=db,
+                run_id=run.id,
+                output_artifacts=output_artifacts,
+            )
+            return resp
+        except Exception as exc:
+            AnalysisRunService.fail_run(db=db, run_id=run.id, error_message=str(exc))
+            raise
+
+    @classmethod
+    def _execute_evaluate_recommendation(
+        cls,
+        db: Session,
+        target_dataset: Dataset,
+        recommendation_id: str,
+    ) -> DecisionGuardrailResponse:
         # 2. Load Target Recommendation Record (support DecisionRecommendation & DecisionRecommendationEvaluation)
         stmt_rec1 = select(DecisionRecommendation).where(
             DecisionRecommendation.id == recommendation_id,
@@ -180,7 +229,7 @@ class DecisionGuardrailService:
         if not rec_record:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Recommendation '{recommendation_id}' not found for dataset '{dataset_id}'.",
+                detail=f"Recommendation '{recommendation_id}' not found for dataset '{target_dataset.id}'.",
             )
 
         # 3. Resolve Associated Metadata (ML Analysis, Optimization, Scenario)
@@ -845,17 +894,45 @@ class DecisionGuardrailService:
                 detail=f"No stored decision recommendations found for dataset '{dataset_id}'. Generate recommendations first.",
             )
 
-        evaluations = []
-        for r in all_recs:
-            eval_res = cls.evaluate_recommendation(db=db, dataset_id=target_dataset.id, recommendation_id=r.id)
-            evaluations.append(eval_res)
-
-        return GuardrailBatchResponse(
+        run = AnalysisRunService.start_run(
+            db=db,
             dataset_id=target_dataset.id,
-            recommendations_count=len(evaluations),
-            evaluations=evaluations,
-            generated_at=datetime.now(timezone.utc),
+            run_type="GUARDRAIL",
+            configuration={"mode": "batch_guardrails"},
+            input_artifacts={
+                "dataset_id": target_dataset.id,
+                "recommendations_count": len(all_recs),
+            },
         )
+        try:
+            evaluations = []
+            for r in all_recs:
+                eval_res = cls.evaluate_recommendation(
+                    db=db, dataset_id=target_dataset.id, recommendation_id=r.id, is_batch=True
+                )
+                evaluations.append(eval_res)
+
+            resp = GuardrailBatchResponse(
+                dataset_id=target_dataset.id,
+                recommendations_count=len(evaluations),
+                evaluations=evaluations,
+                generated_at=datetime.now(timezone.utc),
+            )
+            output_artifacts = {
+                "evaluations_count": len(evaluations),
+                "ready_count": sum(1 for e in evaluations if e.decision_status == "READY"),
+                "review_required_count": sum(1 for e in evaluations if e.decision_status == "REVIEW_REQUIRED"),
+                "blocked_count": sum(1 for e in evaluations if e.decision_status == "BLOCKED"),
+            }
+            AnalysisRunService.complete_run(
+                db=db,
+                run_id=run.id,
+                output_artifacts=output_artifacts,
+            )
+            return resp
+        except Exception as exc:
+            AnalysisRunService.fail_run(db=db, run_id=run.id, error_message=str(exc))
+            raise
 
     @classmethod
     def get_guardrails_for_dataset(

@@ -8,16 +8,193 @@ export interface HealthStatus {
   details?: string;
 }
 
+export interface Workspace {
+  id: string;
+  name: string;
+  description?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Project {
+  id: string;
+  workspace_id: string;
+  name: string;
+  description?: string | null;
+  dataset_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DatasetRegistryItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  project_id?: string | null;
+  file_path?: string | null;
+  file_size_bytes?: number | null;
+  row_count?: number | null;
+  column_count?: number | null;
+  mime_type?: string | null;
+  status: 'UPLOADING' | 'PROCESSING' | 'READY' | 'FAILED' | string;
+  is_processed: boolean;
+  parent_id?: string | null;
+  quality_score?: number | null;
+  version?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectWithDatasets extends Project {
+  datasets: DatasetRegistryItem[];
+}
+
+export interface ComparisonSummary {
+  base_dataset_id: string;
+  base_version: number;
+  base_name: string;
+  comparison_dataset_id: string;
+  comparison_version: number;
+  comparison_name: string;
+  rows_base: number;
+  rows_comparison: number;
+  rows_change: number;
+  rows_change_pct: number;
+  columns_base: number;
+  columns_comparison: number;
+  columns_added_count: number;
+  columns_removed_count: number;
+  quality_base?: number | null;
+  quality_comparison?: number | null;
+  quality_change?: number | null;
+  missing_cells_base: number;
+  missing_cells_comparison: number;
+  missing_cells_change: number;
+  duplicate_rows_base: number;
+  duplicate_rows_comparison: number;
+  duplicate_rows_change: number;
+}
+
+export interface SchemaChange {
+  column: string;
+  change_type: 'added' | 'removed' | 'type_changed' | 'unchanged' | string;
+  base_type?: string | null;
+  comparison_type?: string | null;
+}
+
+export interface QualityChangeDetail {
+  previous_score?: number | null;
+  current_score?: number | null;
+  delta?: number | null;
+  status: 'improved' | 'degraded' | 'stable' | string;
+  missing_percentage_delta: number;
+  duplicate_percentage_delta: number;
+}
+
+export interface MetricChange {
+  column: string;
+  base_mean?: number | null;
+  comparison_mean?: number | null;
+  mean_change_pct?: number | null;
+  base_median?: number | null;
+  comparison_median?: number | null;
+  median_change_pct?: number | null;
+  base_std?: number | null;
+  comparison_std?: number | null;
+  base_min?: number | null;
+  comparison_min?: number | null;
+  base_max?: number | null;
+  comparison_max?: number | null;
+  is_significant: boolean;
+  significance_reason?: string | null;
+}
+
+export interface DistributionChange {
+  column: string;
+  column_type: 'numeric' | 'categorical' | string;
+  new_categories: string[];
+  disappeared_categories: string[];
+  shift_description: string;
+  is_significant: boolean;
+}
+
+export interface InsightImpact {
+  insight_id: string;
+  title: string;
+  category: string;
+  severity: string;
+  status: 'SUPPORTED' | 'CHANGED' | 'NO LONGER OBSERVED' | 'INSUFFICIENT DATA' | string;
+  explanation: string;
+}
+
+export interface PredictionImpact {
+  total_models: number;
+  schema_status: 'MODEL INPUT SCHEMA CHANGED' | 'SCHEMA UNCHANGED' | 'NO MODELS TRAINED' | string;
+  refresh_recommended: boolean;
+  affected_features: string[];
+  missing_targets: string[];
+  details: string;
+}
+
+export interface DatasetComparisonResponse {
+  base_dataset_id: string;
+  comparison_dataset_id: string;
+  summary: ComparisonSummary;
+  schema_changes: SchemaChange[];
+  quality_changes: QualityChangeDetail;
+  metric_changes: MetricChange[];
+  distribution_changes: DistributionChange[];
+  significant_changes: string[];
+  insight_impacts: InsightImpact[];
+  prediction_impact: PredictionImpact;
+}
+
+export interface DatasetVersionItem {
+  id: string;
+  project_id?: string | null;
+  version: number;
+  name: string;
+  description?: string | null;
+  row_count?: number | null;
+  column_count?: number | null;
+  file_size_bytes?: number | null;
+  quality_score?: number | null;
+  status: string;
+  is_processed: boolean;
+  parent_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DatasetFamilyGroup {
+  lineage_name: string;
+  total_versions: number;
+  versions: DatasetVersionItem[];
+}
+
+export interface DatasetVersionListResponse {
+  project_id?: string | null;
+  lineage_name?: string | null;
+  total_versions: number;
+  versions: DatasetVersionItem[];
+  lineages?: string[];
+  families?: DatasetFamilyGroup[];
+}
+
 export interface DatasetItem {
   id: string;
   name: string;
   description?: string | null;
+  project_id?: string | null;
+  version?: number;
   file_path?: string | null;
   file_size_bytes?: number | null;
   row_count?: number | null;
   column_count?: number | null;
   mime_type?: string | null;
   status: string;
+  is_processed?: boolean;
+  parent_id?: string | null;
   created_at: string;
   updated_at: string;
   profile_data?: DatasetProfileData | null;
@@ -857,6 +1034,83 @@ export interface DecisionOutcome {
   evaluated_at: string;
 }
 
+// ============================================================================
+// Phase 6 — Decision Outcome & Learning Loop Types
+// ============================================================================
+
+export type DecisionOutcomeStatus =
+  | 'PENDING'
+  | 'OBSERVED'
+  | 'MATCHED'
+  | 'DIFFERED'
+  | 'MATERIALLY_DIFFERED';
+
+export type DecisionLearningSignal =
+  | 'PREDICTION_ACCURACY'
+  | 'OUTCOME_DEVIATION'
+  | 'SCENARIO_DEVIATION'
+  | 'ASSUMPTION_CHANGE'
+  | 'DATA_DRIFT_RELEVANT'
+  | 'UNAVAILABLE';
+
+export interface DecisionOutcomePhase6 {
+  id: string;
+  project_id?: string | null;
+  decision_id: string;
+  recommendation_id?: string | null;
+  dataset_id: string;
+  expected_metric: string;
+  expected_value: number;
+  actual_metric?: string | null;
+  actual_value?: number | null;
+  absolute_delta?: number | null;
+  relative_delta?: number | null;
+  threshold_used: number;
+  outcome_status: DecisionOutcomeStatus;
+  learning_signal: DecisionLearningSignal;
+  learning_summary?: string | null;
+  source_dataset_id?: string | null;
+  source_dataset_version?: number | null;
+  source_dataset_name?: string | null;
+  source_analysis_run_id?: string | null;
+  notes?: string | null;
+  recorded_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DecisionOutcomeCreatePhase6Payload {
+  actual_metric?: string;
+  actual_value: number;
+  material_difference_threshold?: number;
+  source_dataset_id?: string;
+  source_dataset_version?: number;
+  source_analysis_run_id?: string;
+  notes?: string;
+}
+
+export interface DecisionOutcomeFromVersionPayload {
+  source_dataset_id: string;
+  metric_name?: string;
+  material_difference_threshold?: number;
+  notes?: string;
+}
+
+export interface DecisionOutcomesListResponse {
+  decision_id: string;
+  project_id?: string | null;
+  expected_metric: string;
+  expected_value: number;
+  threshold_used: number;
+  current_status: DecisionOutcomeStatus;
+  learning_signal: DecisionLearningSignal;
+  learning_summary?: string | null;
+  latest_outcome?: DecisionOutcomePhase6 | null;
+  outcomes_count: number;
+  history: DecisionOutcomePhase6[];
+}
+
+
 export interface DecisionMemoryItem {
   outcome_id: string;
   recommendation_id: string;
@@ -982,7 +1236,698 @@ export interface AnomalyAnalysisResponse {
   created_at?: string;
 }
 
+export interface AnalysisRun {
+  id: string;
+  project_id?: string | null;
+  project_name?: string | null;
+  dataset_id: string;
+  dataset_name?: string | null;
+  dataset_version: number;
+  processed_dataset_id?: string | null;
+  processed_dataset_name?: string | null;
+  run_type: string;
+  status: 'RUNNING' | 'COMPLETED' | 'FAILED' | string;
+  configuration?: Record<string, any> | null;
+  input_artifacts?: Record<string, any> | null;
+  output_artifacts?: Record<string, any> | null;
+  error_message?: string | null;
+  started_at: string;
+  completed_at?: string | null;
+  duration_ms?: number | null;
+  created_at: string;
+}
 
+export interface AnalysisRunListResponse {
+  runs: AnalysisRun[];
+  total: number;
+  project_id?: string | null;
+  dataset_id?: string | null;
+}
 
+export interface InsightMemory {
+  id: string;
+  project_id: string;
+  dataset_lineage: string;
+  insight_fingerprint: string;
+  category: string;
+  title: string;
+  affected_columns?: string[];
+  latest_insight_id?: string | null;
+  first_seen_run_id: string;
+  latest_run_id: string;
+  first_seen_version: number;
+  latest_seen_version: number;
+  status: 'NEW' | 'PERSISTED' | 'STRENGTHENED' | 'WEAKENED' | 'DISAPPEARED' | string;
+  strength_baseline?: number | null;
+  strength_latest?: number | null;
+  delta_magnitude?: number | null;
+  impact_summary?: string | null;
+  last_seen_at: string;
+  created_at: string;
+  updated_at: string;
+}
 
+export interface InsightMemoryCounters {
+  total: number;
+  new_count: number;
+  persisted_count: number;
+  strengthened_count: number;
+  weakened_count: number;
+  disappeared_count: number;
+}
+
+export interface InsightTimelineCell {
+  version: number;
+  observed: boolean;
+  status: 'NEW' | 'PERSISTED' | 'STRENGTHENED' | 'WEAKENED' | 'DISAPPEARED' | 'NOT_OBSERVED' | string;
+  strength?: number | null;
+  run_id?: string | null;
+}
+
+export interface InsightTimelineItem {
+  fingerprint: string;
+  title: string;
+  category: string;
+  current_status: string;
+  first_seen_version: number;
+  latest_seen_version: number;
+  cells: InsightTimelineCell[];
+}
+
+export interface DownstreamReviewItem {
+  recommendation_id: string;
+  title: string;
+  target_metric: string;
+  linked_insight_id?: string | null;
+  linked_insight_title?: string | null;
+  linked_insight_status: string;
+  review_required: boolean;
+  reason: string;
+}
+
+export interface InsightImpactItem {
+  fingerprint: string;
+  title: string;
+  category: string;
+  status: 'NEW' | 'PERSISTED' | 'STRENGTHENED' | 'WEAKENED' | 'DISAPPEARED' | string;
+  baseline_strength?: number | null;
+  comparison_strength?: number | null;
+  delta_magnitude?: number | null;
+  explanation: string;
+}
+
+export interface InsightMemoryListResponse {
+  project_id: string;
+  dataset_lineage?: string | null;
+  versions: number[];
+  counters: InsightMemoryCounters;
+  items: InsightMemory[];
+  timeline: InsightTimelineItem[];
+}
+
+export interface InsightImpactComparisonResponse {
+  project_id: string;
+  dataset_lineage: string;
+  base_dataset_id: string;
+  base_version: number;
+  comparison_dataset_id: string;
+  comparison_version: number;
+  counters: InsightMemoryCounters;
+  impacts: InsightImpactItem[];
+  downstream_reviews: DownstreamReviewItem[];
+}
+
+// Phase 5: Decision Evidence Graph + Traceability
+export type EvidenceNodeType =
+  | 'DATASET_VERSION'
+  | 'ANALYSIS_RUN'
+  | 'INSIGHT'
+  | 'PREDICTION'
+  | 'OPTIMIZATION'
+  | 'RECOMMENDATION'
+  | 'DECISION'
+  | 'GUARDRAIL';
+
+export type EvidenceRelationshipType =
+  | 'DERIVED_FROM'
+  | 'PRODUCED'
+  | 'BASED_ON'
+  | 'SUPPORTED'
+  | 'GENERATED_FROM'
+  | 'OPTIMIZED_FROM'
+  | 'EVALUATED_BY'
+  | 'RESULTED_IN'
+  | 'REVIEWED_BY';
+
+export interface EvidenceNode {
+  id: string;
+  type: EvidenceNodeType | string;
+  label: string;
+  status?: string | null;
+  dataset_version?: number | null;
+  run_id?: string | null;
+  metadata?: Record<string, any>;
+}
+
+export interface EvidenceEdge {
+  id?: string;
+  source: string;
+  source_type: string;
+  target: string;
+  target_type: string;
+  relationship_type: EvidenceRelationshipType | string;
+  metadata?: Record<string, any>;
+}
+
+export interface EvidenceGraphResponse {
+  project_id: string;
+  dataset_id?: string | null;
+  root_node_id?: string | null;
+  root?: EvidenceNode | null;
+  nodes: EvidenceNode[];
+  edges: EvidenceEdge[];
+  counters?: Record<string, number>;
+}
+
+export interface EvidenceChainResponse {
+  decision_id?: string | null;
+  recommendation_id?: string | null;
+  project_id: string;
+  dataset_lineage?: string | null;
+  nodes: EvidenceNode[];
+  edges: EvidenceEdge[];
+  summary?: {
+    total_nodes?: number;
+    total_edges?: number;
+    has_insight_support?: boolean;
+    has_optimization?: boolean;
+    has_guardrail?: boolean;
+    [key: string]: any;
+  };
+}
+
+// =====================================================================
+// Phase 7 — Decision Performance Intelligence Types
+// =====================================================================
+
+export interface PerformanceSummary {
+  total_decisions: number;
+  decisions_with_decision_records: number;
+  decisions_with_outcomes: number;
+  decisions_with_actual_outcomes: number;
+  pending_outcomes: number;
+  matched_outcomes: number;
+  differed_outcomes: number;
+  materially_differed_outcomes: number;
+  outcome_coverage_rate: number;
+  match_rate: number;
+  material_difference_rate: number;
+  average_absolute_delta?: number | null;
+  average_relative_delta?: number | null;
+  median_relative_delta?: number | null;
+}
+
+export interface MetricPerformanceItem {
+  metric_name: string;
+  total_decisions: number;
+  observed_outcomes: number;
+  pending_outcomes: number;
+  matched_outcomes: number;
+  differed_outcomes: number;
+  material_deviations: number;
+  mean_relative_delta?: number | null;
+  median_relative_delta?: number | null;
+  mean_absolute_delta?: number | null;
+  min_relative_delta?: number | null;
+  max_relative_delta?: number | null;
+  match_rate: number;
+  material_difference_rate: number;
+  status: 'NO_OUTCOMES' | 'LIMITED_OBSERVATIONS' | 'STABLE_RANGE' | 'MATERIAL_DEVIATION' | 'REPEATED_DEVIATION' | 'OBSERVED' | string;
+  source_outcome_ids: string[];
+}
+
+export interface TrendPeriodItem {
+  period_start: string;
+  period_label: string;
+  observed_outcomes: number;
+  average_relative_delta?: number | null;
+  material_deviations: number;
+  matched_outcomes: number;
+  differed_outcomes: number;
+  status: 'OBSERVED' | 'INSUFFICIENT_OBSERVATIONS' | string;
+}
+
+export interface LearningSignalsAggregation {
+  prediction_accuracy: number;
+  outcome_deviation: number;
+  scenario_deviation: number;
+  assumption_change: number;
+  data_drift_relevant: number;
+  unavailable: number;
+  total_signals: number;
+}
+
+export interface RepeatedDeviationFinding {
+  finding_type: string;
+  metric_name: string;
+  statement: string;
+  sample_count: number;
+  observed_count: number;
+  material_deviation_count: number;
+  deviation_rate: number;
+  threshold_used: number;
+  time_range: {
+    start?: string | null;
+    end?: string | null;
+  };
+  source_outcome_ids: string[];
+}
+
+export interface ModelPerformanceItem {
+  ml_analysis_id: string;
+  model_name: string;
+  target_column: string;
+  task_type?: string | null;
+  observed_outcomes: number;
+  mean_absolute_error?: number | null;
+  mean_relative_error?: number | null;
+  material_deviations: number;
+  source_outcome_ids: string[];
+}
+
+export interface ScenarioPerformanceItem {
+  scenario_id: string;
+  scenario_name: string;
+  target_metric: string;
+  total_decisions: number;
+  observed_outcomes: number;
+  mean_relative_delta?: number | null;
+  material_deviations: number;
+  matched_outcomes: number;
+  source_outcome_ids: string[];
+}
+
+export interface DecisionPerformanceResponse {
+  project_id: string;
+  project_name?: string | null;
+  status: 'NO_DECISION_DATA' | 'NO_OBSERVED_OUTCOMES' | 'INSUFFICIENT_OBSERVATIONS' | 'OBSERVED' | string;
+  summary: PerformanceSummary;
+  metrics: MetricPerformanceItem[];
+  trends: TrendPeriodItem[];
+  signals: LearningSignalsAggregation;
+  observations: RepeatedDeviationFinding[];
+  models: ModelPerformanceItem[];
+  scenarios: ScenarioPerformanceItem[];
+  min_observations_used: number;
+  threshold_used: number;
+}
+
+// ============================================================================
+// Phase 8: Decision Learning & Improvement Signals Interfaces
+// ============================================================================
+
+export interface DecisionLearningSignalRecord {
+  id: string;
+  project_id: string;
+  signal_type:
+    | 'PREDICTION_DEVIATION'
+    | 'OUTCOME_DEVIATION'
+    | 'SCENARIO_DEVIATION'
+    | 'ASSUMPTION_CHANGE'
+    | 'DATA_DRIFT_RELEVANT'
+    | 'OUTCOME_COVERAGE_GAP'
+    | 'MODEL_PERFORMANCE_VARIANCE'
+    | string;
+  metric_name?: string | null;
+  source_outcome_ids: string[];
+  source_decision_ids: string[];
+  source_ml_analysis_ids?: string[] | null;
+  source_dataset_ids?: string[] | null;
+  source_dataset_versions?: number[] | null;
+  sample_count: number;
+  observed_count: number;
+  threshold_used?: number | null;
+  severity: 'INFO' | 'REVIEW' | 'HIGH' | string;
+  status: 'NEW' | 'ACKNOWLEDGED' | 'INVESTIGATING' | 'RESOLVED' | 'DISMISSED' | string;
+  title: string;
+  description: string;
+  evidence_summary: Record<string, any>;
+  fingerprint: string;
+  review_notes?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type DecisionLearningSignalItem = DecisionLearningSignalRecord;
+
+export interface DecisionLearningSignalUpdate {
+  status: 'NEW' | 'ACKNOWLEDGED' | 'INVESTIGATING' | 'RESOLVED' | 'DISMISSED' | string;
+  review_notes?: string | null;
+  reviewed_by?: string | null;
+}
+
+export interface DecisionLearningSignalsListResponse {
+  project_id: string;
+  total_signals: number;
+  by_severity: Record<string, number>;
+  by_status: Record<string, number>;
+  signals: DecisionLearningSignalRecord[];
+}
+
+// ---------------------------------------------------------------------------
+// Phase 9: Decision Governance & Control Plane Types
+// ---------------------------------------------------------------------------
+
+export type GovernanceStatus =
+  | 'DRAFT'
+  | 'UNDER_REVIEW'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'ESCALATED'
+  | 'ON_HOLD'
+  | 'EXECUTED'
+  | 'CLOSED'
+  | string;
+
+export type GovernanceAction =
+  | 'START_REVIEW'
+  | 'SUBMIT_FOR_APPROVAL'
+  | 'APPROVE'
+  | 'REJECT'
+  | 'ESCALATE'
+  | 'PUT_ON_HOLD'
+  | 'RETURN_TO_REVIEW'
+  | 'EXECUTE'
+  | 'CLOSE'
+  | string;
+
+export interface GovernanceReadinessCheck {
+  check_id:
+    | 'EVIDENCE_AVAILABLE'
+    | 'OUTCOME_AVAILABLE'
+    | 'PERFORMANCE_AVAILABLE'
+    | 'LEARNING_SIGNALS_REVIEWED'
+    | 'GUARDRAILS_AVAILABLE'
+    | 'REVIEWER_ASSIGNED'
+    | string;
+  name: string;
+  status: 'READY' | 'INCOMPLETE' | 'NOT_APPLICABLE' | string;
+  details: string;
+}
+
+export interface GovernanceEscalationAssessment {
+  escalation_recommended: boolean;
+  reasons: string[];
+}
+
+export interface GovernanceIssue {
+  severity: 'HIGH' | 'WARNING' | 'INFO' | string;
+  issue_type: string;
+  description: string;
+  entity_ref?: Record<string, any> | null;
+}
+
+export interface GovernanceEvent {
+  id: string;
+  decision_id: string;
+  from_status: string;
+  to_status: string;
+  action: string;
+  actor: string;
+  review_notes?: string | null;
+  created_at: string;
+  evidence_snapshot?: Record<string, any> | null;
+}
+
+export interface DecisionGovernanceResponse {
+  decision_id: string;
+  project_id: string;
+  dataset_id: string;
+  status: GovernanceStatus;
+  reviewer?: string | null;
+  review_notes?: string | null;
+  last_updated?: string | null;
+  created_at?: string | null;
+  allowed_actions: GovernanceAction[];
+  readiness_checks: GovernanceReadinessCheck[];
+  escalation: GovernanceEscalationAssessment;
+  active_issues: GovernanceIssue[];
+  evidence_summary: Record<string, any>;
+  history: GovernanceEvent[];
+}
+
+export interface GovernanceTransitionPayload {
+  action?: GovernanceAction | null;
+  target_status?: GovernanceStatus | null;
+  reviewer: string;
+  review_notes?: string | null;
+  metadata?: Record<string, any>;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 10: Controlled Decision Execution & Closed-Loop Monitoring Types
+// ---------------------------------------------------------------------------
+
+export type ExecutionStatus =
+  | 'NOT_READY'
+  | 'READY'
+  | 'PENDING_CONFIRMATION'
+  | 'CONFIRMED'
+  | 'EXECUTING'
+  | 'EXECUTED'
+  | 'EXECUTION_FAILED'
+  | 'NOT_EXECUTED'
+  | 'OUTCOME_MONITORING'
+  | 'CLOSED'
+  | string;
+
+export interface ExecutionReadinessCheck {
+  check_key: string;
+  name: string;
+  passed: boolean;
+  details: string;
+  is_blocking: boolean;
+}
+
+export interface ExecutionEventResponse {
+  id: string;
+  execution_id: string;
+  decision_id: string;
+  project_id: string;
+  event_type: string;
+  from_status: string;
+  to_status: string;
+  actor: string;
+  rationale: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+export interface DecisionExecutionResponse {
+  execution_id?: string | null;
+  decision_id: string;
+  project_id: string;
+  dataset_id: string;
+  recommendation_id?: string | null;
+  status: ExecutionStatus;
+  governance_status: string;
+  is_approved: boolean;
+  approved_by?: string | null;
+  requested_by?: string | null;
+  confirmed_by?: string | null;
+  executed_by?: string | null;
+  requested_at?: string | null;
+  confirmed_at?: string | null;
+  completed_at?: string | null;
+  execution_reference?: string | null;
+  execution_result?: Record<string, any> | null;
+  failure_reason?: string | null;
+  readiness_checks: ExecutionReadinessCheck[];
+  can_request_execution: boolean;
+  can_confirm_execution: boolean;
+  can_mark_failed: boolean;
+  can_mark_not_executed: boolean;
+  valid_next_actions: string[];
+  outcome_link?: Record<string, any> | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface ExecutionRequestPayload {
+  requested_by: string;
+  rationale: string;
+  execution_parameters?: Record<string, any>;
+}
+
+export interface ExecutionConfirmPayload {
+  confirmed_by: string;
+  rationale: string;
+  execution_reference?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface ExecutionFailPayload {
+  failed_by: string;
+  failure_reason: string;
+  metadata?: Record<string, any>;
+}
+
+export interface ExecutionNotExecutedPayload {
+  actor: string;
+  reason: string;
+  metadata?: Record<string, any>;
+}
+
+export interface DecisionExecutionHistoryResponse {
+  execution_id?: string | null;
+  decision_id: string;
+  project_id: string;
+  total_events: number;
+  events: ExecutionEventResponse[];
+}
+
+// =====================================================================
+// Phase 13 — Enterprise Decision Reporting & Audit Types
+// =====================================================================
+
+export interface ReportMetadata {
+  report_id: string;
+  scope: 'INDIVIDUAL_DECISION' | 'PROJECT';
+  project_id: string;
+  generated_at: string;
+  data_as_of: string;
+}
+
+export interface AuditTimelineEvent {
+  timestamp: string;
+  event_type: string;
+  actor?: string | null;
+  source_id: string;
+  description: string;
+}
+
+export interface IndividualDecisionReportResponse {
+  metadata: ReportMetadata;
+  decision_identity: Record<string, any>;
+  decision_summary: Record<string, any>;
+  dataset_and_lineage: Record<string, any>;
+  analytical_evidence: Record<string, any>;
+  governance_audit: Record<string, any>;
+  execution_audit: Record<string, any>;
+  outcome_audit: Record<string, any>;
+  performance_summary: Record<string, any>;
+  learning_summary: Record<string, any>;
+  audit_timeline: AuditTimelineEvent[];
+  source_references: Record<string, any>;
+}
+
+export interface ProjectDecisionReportResponse {
+  metadata: ReportMetadata;
+  project_summary: Record<string, any>;
+  portfolio_distributions: Record<string, any>;
+  operations_and_capacity: Record<string, any>;
+  portfolio_concentration: Record<string, any>;
+  shared_dependencies: Array<Record<string, any>>;
+  recurring_deviations: Array<Record<string, any>>;
+  learning_signals_summary: Record<string, any>;
+  decision_inventory: Array<Record<string, any>>;
+}
+
+// =====================================================================
+// Phase 14 — Decision Knowledge & Operating Memory Types
+// =====================================================================
+
+export type KnowledgeCategory =
+  | 'OBSERVATION'
+  | 'DECISION_LESSON'
+  | 'OUTCOME_LESSON'
+  | 'OPERATIONAL_NOTE'
+  | 'ASSUMPTION'
+  | 'CONSTRAINT';
+
+export type KnowledgeEntryType = 'HUMAN_RECORDED' | 'SYSTEM_DERIVED';
+
+export interface DecisionKnowledgeEntry {
+  id: string;
+  project_id: string;
+  decision_id?: string | null;
+  dataset_id?: string | null;
+  title: string;
+  content: string;
+  category: KnowledgeCategory | string;
+  source_type: string;
+  source_id?: string | null;
+  entry_type: KnowledgeEntryType | string;
+  created_by?: string | null;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectKnowledgeListResponse {
+  project_id: string;
+  total_entries: number;
+  total_human_recorded: number;
+  total_system_derived: number;
+  entries: DecisionKnowledgeEntry[];
+}
+
+export interface KnowledgeEntryCreatePayload {
+  title: string;
+  content: string;
+  category: KnowledgeCategory | string;
+  source_type?: string;
+  source_id?: string | null;
+  decision_id?: string | null;
+  dataset_id?: string | null;
+  created_by?: string | null;
+}
+
+export interface KnowledgeEntryUpdatePayload {
+  title?: string;
+  content?: string;
+  category?: KnowledgeCategory | string;
+  is_archived?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Authentication & Existing Datasets Types
+// ---------------------------------------------------------------------------
+
+export interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  created_at: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  access_token: string;
+  token_type: string;
+}
+
+export interface ExistingDatasetSummary {
+  id: string;
+  name: string;
+  file_size_bytes?: number | null;
+  row_count?: number | null;
+  column_count?: number | null;
+  status: string;
+  quality_score?: number | null;
+  version: number;
+  is_processed: boolean;
+  created_at: string;
+  updated_at: string;
+  project_id?: string | null;
+}
+
+export interface ExistingDatasetListResponse {
+  total: number;
+  items: ExistingDatasetSummary[];
+}
 

@@ -241,7 +241,7 @@ class KPIService:
         breakdowns: List[CategoryBreakdown] = []
 
         dimensions = [r.column for r in roles if r.role == "categorical_dimension"][:5]
-        measures = [r.column for r in roles if r.role == "measure"][:5]
+        measures = [r.column for r in roles if r.role == "measure"]
 
         for dim in dimensions:
             for m in measures:

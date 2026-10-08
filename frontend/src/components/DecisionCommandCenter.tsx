@@ -4,6 +4,9 @@ import { fetchDecisionCommandCenter, generateRecommendations } from '../services
 import { AIDecisionBriefCard } from './AIDecisionBriefCard';
 import { DecisionMemorySection } from './DecisionMemorySection';
 import { ScoreGauge } from './ui/ScoreGauge';
+import { EvidenceGraphView } from './EvidenceGraphView';
+import { DecisionOutcomeView } from './DecisionOutcomeView';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface DecisionCommandCenterProps {
   datasetId: string;
@@ -20,6 +23,8 @@ export const DecisionCommandCenter: React.FC<DecisionCommandCenterProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showTraceModal, setShowTraceModal] = useState<boolean>(false);
+  const [showOutcomeModal, setShowOutcomeModal] = useState<boolean>(false);
 
   useEffect(() => {
     loadCommandCenter();
@@ -64,9 +69,18 @@ export const DecisionCommandCenter: React.FC<DecisionCommandCenterProps> = ({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 space-y-4">
-        <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-gray-400 font-mono">Aggregating Decision Intelligence Evidence Chain...</p>
+      <div className="py-8">
+        <ContinuousIntelligenceEngine
+          mode="decision"
+          active={loading}
+          title="AGGREGATING COMMAND CENTER INTELLIGENCE"
+          description="Linking executive brief, active guardrails, recommendation provenance, and memory signals..."
+          metrics={[
+            { label: 'DATASET', value: datasetId.slice(0, 8) },
+            { label: 'EVIDENCE CHAIN', value: 'AGGREGATING' },
+            { label: 'STATUS', value: 'CONTINUOUS' }
+          ]}
+        />
       </div>
     );
   }
@@ -144,6 +158,20 @@ export const DecisionCommandCenter: React.FC<DecisionCommandCenterProps> = ({
               <div>Dataset ID: {data.processed_dataset_id.slice(0, 8)}...</div>
               <div>Generated: {new Date(data.generated_at).toLocaleTimeString()}</div>
             </div>
+            <button
+              onClick={() => setShowTraceModal(true)}
+              className="bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-xs px-3.5 py-2 rounded-lg border border-rose-500/40 font-mono font-bold transition-colors flex items-center space-x-1.5 shadow-[0_0_12px_rgba(244,63,94,0.15)]"
+              title="Trace multi-hop decision evidence graph"
+            >
+              <span>🕸️ Evidence Chain</span>
+            </button>
+            <button
+              onClick={() => setShowOutcomeModal(true)}
+              className="bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 text-xs px-3.5 py-2 rounded-lg border border-teal-500/40 font-mono font-bold transition-colors flex items-center space-x-1.5 shadow-[0_0_12px_rgba(20,184,166,0.15)]"
+              title="Monitor decision outcomes & learning loop"
+            >
+              <span>⚖️ Outcome Loop</span>
+            </button>
             <button
               onClick={loadCommandCenter}
               className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-3.5 py-2 rounded-lg border border-gray-700 transition-colors flex items-center space-x-1"
@@ -324,10 +352,19 @@ export const DecisionCommandCenter: React.FC<DecisionCommandCenterProps> = ({
 
         {/* Section F: Visual Evidence Provenance Chain */}
         <div className="bg-gray-900/90 border border-gray-800 rounded-2xl p-6">
-          <h3 className="text-base font-bold text-white mb-1 flex items-center space-x-2">
-            <span>🔗</span>
-            <span>Evidence Provenance Flowchart</span>
-          </h3>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-base font-bold text-white flex items-center space-x-2">
+              <span>🔗</span>
+              <span>Evidence Provenance Flowchart</span>
+            </h3>
+            <button
+              onClick={() => setShowTraceModal(true)}
+              className="px-2.5 py-1 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 hover:bg-indigo-900 text-[10px] font-mono font-bold transition-all flex items-center gap-1"
+            >
+              <span>🕸️</span>
+              <span>Open Interactive Graph</span>
+            </button>
+          </div>
           <p className="text-xs text-gray-400 mb-4">
             Sequential lineage linking primary recommendation to upstream analytical evidence.
           </p>
@@ -453,6 +490,48 @@ export const DecisionCommandCenter: React.FC<DecisionCommandCenterProps> = ({
               CONTINUE TO GUARDRAILS →
             </span>
           </button>
+        </div>
+      )}
+
+      {/* Phase 5 Evidence Chain Trace Modal */}
+      {showTraceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl bg-[#030914] border border-rose-500/40 shadow-[0_25px_60px_rgba(0,0,0,0.9)] custom-scrollbar relative">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🕸️</span>
+                <h3 className="text-base font-bold text-white font-sans">
+                  Decision Evidence Graph & Traceability — {data.dataset_name}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowTraceModal(false)}
+                className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white font-mono text-xs transition-colors"
+              >
+                ✕ CLOSE
+              </button>
+            </div>
+
+            <EvidenceGraphView
+              datasetId={datasetId}
+              datasetName={data.dataset_name}
+              initialDecisionId={primary?.recommendation_id}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Phase 6 Decision Outcome & Learning Loop Modal */}
+      {showOutcomeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl bg-[#030914] border border-teal-500/40 shadow-[0_25px_60px_rgba(0,0,0,0.9)] custom-scrollbar relative">
+            <DecisionOutcomeView
+              decisionId={primary?.recommendation_id || chain?.recommendation_id || ''}
+              datasetId={datasetId}
+              datasetName={data.dataset_name}
+              onClose={() => setShowOutcomeModal(false)}
+            />
+          </div>
         </div>
       )}
     </div>

@@ -10,3 +10,14 @@ class HealthCheckResponse(BaseModel):
     timestamp: datetime = Field(...)
     database_connected: bool = Field(...)
     details: str | None = Field(None, json_schema_extra={"example": "Database connection operational"})
+
+
+class ReadinessResponse(BaseModel):
+    status: str = Field(..., json_schema_extra={"example": "ready"})
+    project_name: str = Field(..., json_schema_extra={"example": "InsightFlow AI"})
+    version: str = Field(..., json_schema_extra={"example": "0.1.0"})
+    environment: str = Field(..., json_schema_extra={"example": "development"})
+    database_connected: bool = Field(...)
+    timestamp: datetime = Field(...)
+    details: str = Field(..., json_schema_extra={"example": "PostgreSQL database operational"})
+

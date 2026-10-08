@@ -19,6 +19,7 @@ from app.schemas.recommendation import (
     RecommendationResponse,
 )
 from app.services.eda_service import EDAService
+from app.services.analysis_run_service import AnalysisRunService
 
 
 class RecommendationService:
@@ -47,6 +48,47 @@ class RecommendationService:
                 detail="Decision recommendations require a processed dataset. Raw datasets are protected.",
             )
 
+        run = AnalysisRunService.start_run(
+            db=db,
+            dataset_id=target_dataset.id,
+            run_type="RECOMMENDATION",
+            configuration={
+                "optimization_id": payload.optimization_id,
+                "max_recommendations": payload.max_recommendations,
+                "mode": "executive_recommendations",
+            },
+            input_artifacts={
+                "dataset_id": target_dataset.id,
+                "optimization_id": payload.optimization_id,
+            },
+        )
+        try:
+            resp = cls._execute_generate_recommendations(
+                db=db, target_dataset=target_dataset, payload=payload
+            )
+            output_artifacts = {
+                "recommendations_count": len(resp.recommendations),
+                "overall_confidence": resp.overall_confidence,
+                "optimization_id": resp.optimization_id,
+            }
+            AnalysisRunService.complete_run(
+                db=db,
+                run_id=run.id,
+                output_artifacts=output_artifacts,
+            )
+            return resp
+        except Exception as exc:
+            AnalysisRunService.fail_run(db=db, run_id=run.id, error_message=str(exc))
+            raise
+
+    @classmethod
+    def _execute_generate_recommendations(
+        cls,
+        db: Session,
+        target_dataset: Dataset,
+        payload: RecommendationRequest,
+    ) -> RecommendationResponse:
+        dataset_id = target_dataset.id
         # 3. Load Stored Optimization Record
         if payload.optimization_id:
             stmt_opt = select(DecisionOptimization).where(

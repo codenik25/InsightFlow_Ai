@@ -14,6 +14,7 @@ from app.services.metric_discovery_service import MetricDiscoveryService
 from app.services.kpi_service import KPIService
 from app.services.trend_service import TrendService
 from app.services.relationship_service import RelationshipService
+from app.services.analysis_run_service import AnalysisRunService
 
 
 class EDAService:
@@ -56,57 +57,86 @@ class EDAService:
     @classmethod
     def generate_eda(cls, db: Session, dataset_id: str) -> EDAResponse:
         target_dataset = cls.resolve_target_dataset(db=db, dataset_id=dataset_id)
-        df = DatasetService.load_dataset_dataframe(target_dataset)
 
-        # 1. Discover Column Roles
-        roles = MetricDiscoveryService.discover_column_roles(df)
-
-        # 2. Dataset Overview KPIs
-        overview_kpis = KPIService.compute_dataset_overview_kpis(df, roles)
-
-        # 3. Discovered Measure KPIs
-        discovered_kpis = KPIService.discover_measure_kpis(df, roles)
-
-        # 4. Category Breakdowns & Top/Bottom Analysis
-        category_breakdowns = KPIService.discover_category_breakdowns(df, roles)
-
-        # 5. Time-Series Trends
-        trends = TrendService.evaluate_trends(df, roles)
-
-        # 6. Bivariate Relationships (Pearson Correlation)
-        relationships = RelationshipService.evaluate_relationships(df, roles)
-
-        # 7. Distribution Statistics
-        distributions = RelationshipService.evaluate_distributions(df, roles)
-
-        eda_id = str(uuid.uuid4())
-        created_at_str = datetime.now(timezone.utc).isoformat()
-
-        response = EDAResponse(
-            id=eda_id,
+        run = AnalysisRunService.start_run(
+            db=db,
             dataset_id=target_dataset.id,
-            created_at=created_at_str,
-            column_roles=roles,
-            overview_kpis=overview_kpis,
-            discovered_kpis=discovered_kpis,
-            category_breakdowns=category_breakdowns,
-            trends=trends,
-            relationships=relationships,
-            distributions=distributions,
+            run_type="EDA",
+            configuration={"mode": "automated_eda"},
+            input_artifacts={
+                "dataset_id": target_dataset.id,
+                "row_count": target_dataset.row_count,
+                "column_count": target_dataset.column_count,
+            },
         )
+        try:
+            df = DatasetService.load_dataset_dataframe(target_dataset)
 
-        # Persist / update in database under target_dataset.id
-        analysis_record = EDAAnalysis(
-            id=eda_id,
-            dataset_id=target_dataset.id,
-            analysis_version="1.0",
-            result_data=response.model_dump(),
-            status="completed",
-        )
-        db.add(analysis_record)
-        db.commit()
+            # 1. Discover Column Roles
+            roles = MetricDiscoveryService.discover_column_roles(df)
 
-        return response
+            # 2. Dataset Overview KPIs
+            overview_kpis = KPIService.compute_dataset_overview_kpis(df, roles)
+
+            # 3. Discovered Measure KPIs
+            discovered_kpis = KPIService.discover_measure_kpis(df, roles)
+
+            # 4. Category Breakdowns & Top/Bottom Analysis
+            category_breakdowns = KPIService.discover_category_breakdowns(df, roles)
+
+            # 5. Time-Series Trends
+            trends = TrendService.evaluate_trends(df, roles)
+
+            # 6. Bivariate Relationships (Pearson Correlation)
+            relationships = RelationshipService.evaluate_relationships(df, roles)
+
+            # 7. Distribution Statistics
+            distributions = RelationshipService.evaluate_distributions(df, roles)
+
+            eda_id = str(uuid.uuid4())
+            created_at_str = datetime.now(timezone.utc).isoformat()
+
+            response = EDAResponse(
+                id=eda_id,
+                dataset_id=target_dataset.id,
+                created_at=created_at_str,
+                column_roles=roles,
+                overview_kpis=overview_kpis,
+                discovered_kpis=discovered_kpis,
+                category_breakdowns=category_breakdowns,
+                trends=trends,
+                relationships=relationships,
+                distributions=distributions,
+            )
+
+            # Persist / update in database under target_dataset.id
+            analysis_record = EDAAnalysis(
+                id=eda_id,
+                dataset_id=target_dataset.id,
+                analysis_version="1.0",
+                result_data=response.model_dump(),
+                status="completed",
+            )
+            db.add(analysis_record)
+            db.commit()
+
+            AnalysisRunService.complete_run(
+                db=db,
+                run_id=run.id,
+                output_artifacts={
+                    "eda_id": eda_id,
+                    "discovered_kpis_count": len(discovered_kpis),
+                    "trends_count": len(trends),
+                    "relationships_count": len(relationships),
+                    "distributions_count": len(distributions),
+                    "category_breakdowns_count": len(category_breakdowns),
+                },
+            )
+
+            return response
+        except Exception as exc:
+            AnalysisRunService.fail_run(db=db, run_id=run.id, error_message=str(exc))
+            raise
 
     @classmethod
     def get_eda(cls, db: Session, dataset_id: str) -> EDAResponse:

@@ -24,6 +24,7 @@ from app.services.type_detector import TypeDetector
 from app.services.decision_service import DecisionService
 from app.services.ml_task_service import MLTaskService
 from app.services.quality_service import QualityService
+from app.services.analysis_run_service import AnalysisRunService
 
 
 class OptimizationService:
@@ -364,6 +365,50 @@ class OptimizationService:
                 detail="Decision Optimization requires a processed dataset. Raw datasets are protected.",
             )
 
+        run = AnalysisRunService.start_run(
+            db=db,
+            dataset_id=target_dataset.id,
+            run_type="OPTIMIZATION",
+            configuration={
+                "objective": payload.objective if isinstance(payload.objective, str) else str(payload.objective),
+                "analysis_id": payload.analysis_id,
+                "max_scenarios": payload.max_scenarios,
+                "feature_constraints": {k: v.model_dump() for k, v in payload.feature_constraints.items()} if payload.feature_constraints else {},
+            },
+            input_artifacts={
+                "dataset_id": target_dataset.id,
+                "analysis_id": payload.analysis_id,
+            },
+        )
+        try:
+            resp = cls._execute_run_optimization(
+                db=db, target_dataset=target_dataset, payload=payload
+            )
+            output_artifacts = {
+                "optimization_id": resp.optimization_id,
+                "ml_analysis_id": resp.ml_analysis_id,
+                "target_column": resp.target_column,
+                "scenarios_count": len(resp.scenarios),
+                "best_scenario_predicted_target": resp.best_scenario.predicted_target if resp.best_scenario else None,
+            }
+            AnalysisRunService.complete_run(
+                db=db,
+                run_id=run.id,
+                output_artifacts=output_artifacts,
+            )
+            return resp
+        except Exception as exc:
+            AnalysisRunService.fail_run(db=db, run_id=run.id, error_message=str(exc))
+            raise
+
+    @classmethod
+    def _execute_run_optimization(
+        cls,
+        db: Session,
+        target_dataset: Dataset,
+        payload: OptimizationRequest,
+    ) -> OptimizationResponse:
+        dataset_id = target_dataset.id
         # 2. Validate ML Analysis Ownership & Dataset Lineage
         if payload.analysis_id:
             stmt = select(MLAnalysis).where(

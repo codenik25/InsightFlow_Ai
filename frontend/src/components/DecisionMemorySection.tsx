@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DecisionMemoryResponse, DecisionPerformanceSummary, DecisionRecommendationSummary } from '../types';
 import { fetchDecisionMemory, fetchDecisionPerformance, recordDecisionOutcome } from '../services/api';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface DecisionMemorySectionProps {
   datasetId: string;
@@ -100,9 +101,18 @@ export const DecisionMemorySection: React.FC<DecisionMemorySectionProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-6 flex flex-col items-center justify-center space-y-2">
-        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-xs font-mono text-gray-400">Loading Decision Memory & Performance History...</p>
+      <div className="py-6">
+        <ContinuousIntelligenceEngine
+          mode="memory"
+          active={loading}
+          title="LOADING DECISION MEMORY & OUTCOME REGISTRY"
+          description="Synthesizing historical outcome deviations, model fidelity scores, and institutional memory entries..."
+          metrics={[
+            { label: 'DATASET', value: datasetId.slice(0, 8) },
+            { label: 'MEMORY', value: 'INDEXING' },
+            { label: 'STATE', value: 'CONTINUOUS' }
+          ]}
+        />
       </div>
     );
   }

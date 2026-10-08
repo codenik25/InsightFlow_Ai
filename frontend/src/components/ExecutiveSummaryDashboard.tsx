@@ -10,7 +10,6 @@ import {
   Database,
   CheckCircle2,
   BarChart3,
-  RefreshCw,
   FileCode,
 } from 'lucide-react';
 import { ExecutiveReport } from '../types';
@@ -20,6 +19,7 @@ import {
   getReportMarkdownExportUrl,
   getReportJsonExportUrl,
 } from '../services/api';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface ExecutiveSummaryDashboardProps {
   datasetId: string;
@@ -57,9 +57,18 @@ export const ExecutiveSummaryDashboard: React.FC<ExecutiveSummaryDashboardProps>
 
   if (loading) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-400 space-y-4">
-        <RefreshCw className="w-8 h-8 text-amber-400 animate-spin mx-auto" />
-        <p className="text-sm font-mono">Synthesizing Executive Report across Quality, EDA & Business Insights...</p>
+      <div className="py-8">
+        <ContinuousIntelligenceEngine
+          mode="audit"
+          active={loading}
+          title="SYNTHESIZING EXECUTIVE INTELLIGENCE REPORT"
+          description="Synthesizing multi-modal summary across data quality, exploratory analysis, correlation patterns, and business risks..."
+          metrics={[
+            { label: 'DATASET', value: datasetId.slice(0, 8) },
+            { label: 'SYNTHESIS', value: 'CROSS-DOMAIN' },
+            { label: 'STATUS', value: 'CONTINUOUS' }
+          ]}
+        />
       </div>
     );
   }

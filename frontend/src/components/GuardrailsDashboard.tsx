@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 import {
   
   
@@ -115,10 +116,13 @@ export const GuardrailsDashboard: React.FC<GuardrailsDashboardProps> = ({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 space-y-4">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-400 text-sm">Loading Prediction Explainability & Decision Optimization Engine...</p>
-      </div>
+      <ContinuousIntelligenceEngine
+        mode="guardrails"
+        isLoading={loading}
+        isFullScreen={false}
+        minHeight="520px"
+        error={error}
+      />
     );
   }
 

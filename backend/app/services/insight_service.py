@@ -19,6 +19,7 @@ from app.services.dataset_service import DatasetService
 from app.services.kpi_service import KPIService
 from app.services.eda_service import EDAService
 from app.services.metric_family_service import MetricFamilyService
+from app.services.analysis_run_service import AnalysisRunService
 
 
 class InsightService:
@@ -220,6 +221,51 @@ class InsightService:
         # Resolve target processed dataset using existing EDAService validation
         target_dataset = EDAService.resolve_target_dataset(db=db, dataset_id=dataset_id)
 
+        run = AnalysisRunService.start_run(
+            db=db,
+            dataset_id=target_dataset.id,
+            run_type="INSIGHTS",
+            configuration={"max_top_insights": max_top_insights},
+            input_artifacts={"dataset_id": target_dataset.id},
+        )
+        try:
+            resp = cls._execute_generate_insights(
+                db=db, target_dataset=target_dataset, max_top_insights=max_top_insights
+            )
+            output_artifacts = {
+                "total_insights": resp.summary.total,
+                "critical_count": resp.summary.critical_count,
+                "warning_count": resp.summary.warning_count,
+                "positive_count": resp.summary.positive_count,
+                "opportunity_count": resp.summary.opportunity_count,
+                "insights": [
+                    ins.model_dump() if hasattr(ins, "model_dump") else ins
+                    for ins in resp.insights
+                ],
+            }
+            AnalysisRunService.complete_run(
+                db=db,
+                run_id=run.id,
+                output_artifacts=output_artifacts,
+            )
+            from app.services.insight_memory_service import InsightMemoryService
+            InsightMemoryService.record_run_insights(
+                db=db,
+                project_id=target_dataset.project_id,
+                dataset=target_dataset,
+                run=run,
+                insights=resp.insights,
+            )
+            return resp
+        except Exception as exc:
+            AnalysisRunService.fail_run(db=db, run_id=run.id, error_message=str(exc))
+            raise
+
+    @classmethod
+    def _execute_generate_insights(
+        cls, db: Session, target_dataset: Dataset, max_top_insights: int = 50
+    ) -> InsightResponse:
+        """Internal execution for insight generation."""
         # Retrieve computed EDA response (guaranteed on processed dataset)
         eda = EDAService.get_eda(db=db, dataset_id=target_dataset.id)
 

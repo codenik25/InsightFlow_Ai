@@ -21,6 +21,7 @@ import {
   PredictionResponse,
 } from '../types';
 import { fetchMLTasks, runMLAnalysis, fetchMLAnalyses, runMLPrediction } from '../services/api';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface MLInsightsDashboardProps {
   datasetId: string;
@@ -168,9 +169,18 @@ export const MLInsightsDashboard: React.FC<MLInsightsDashboardProps> = ({ datase
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <RefreshCw className="w-8 h-8 animate-spin text-cyan-400" />
-        <p className="text-sm font-medium text-slate-300 tracking-widest uppercase">Initializing Predictive Command Center...</p>
+      <div className="py-8">
+        <ContinuousIntelligenceEngine
+          mode="prediction"
+          active={isLoading}
+          title="INITIALIZING PREDICTIVE COMMAND CENTER"
+          description="Discovering candidate ML tasks, analyzing feature matrix, validating schema constraints, and preparing models..."
+          metrics={[
+            { label: 'DATASET', value: datasetId.slice(0, 8) },
+            { label: 'PREDICTIVE ENGINE', value: 'INITIALIZING' },
+            { label: 'STATUS', value: 'CONTINUOUS' }
+          ]}
+        />
       </div>
     );
   }

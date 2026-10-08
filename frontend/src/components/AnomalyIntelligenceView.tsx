@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { AnomalyAnalysisResponse } from '../types';
 import { fetchAnomalyResult, runAnomalyAnalysis } from '../services/api';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 
 interface AnomalyIntelligenceViewProps {
@@ -52,10 +53,18 @@ export const AnomalyIntelligenceView: React.FC<AnomalyIntelligenceViewProps> = (
 
   if (loading) {
     return (
-      <div className="card-panel py-12 text-center space-y-3">
-        <RefreshCw className="w-6 h-6 animate-spin text-rose-400 mx-auto" />
-        <p className="text-sm font-medium text-slate-300">Running Isolation Forest Anomaly Detection...</p>
-        <p className="text-xs text-slate-500">Evaluating multi-dimensional feature space, computing normalized anomaly scores, and attributing feature deviations.</p>
+      <div className="py-8">
+        <ContinuousIntelligenceEngine
+          mode="quality"
+          active={loading}
+          title="RUNNING ISOLATION FOREST ANOMALY DETECTION"
+          description="Evaluating multi-dimensional feature space, computing normalized anomaly scores, and attributing feature deviations..."
+          metrics={[
+            { label: 'DATASET', value: datasetId.slice(0, 8) },
+            { label: 'ALGORITHM', value: 'ISOLATION FOREST' },
+            { label: 'ANOMALY SCAN', value: 'CONTINUOUS' }
+          ]}
+        />
       </div>
     );
   }

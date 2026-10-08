@@ -45,7 +45,7 @@ class TrendService:
                 granularity = "monthly"
                 freq = "M"
 
-            for m in measures[:5]:
+            for m in measures:
                 sub_df = df[valid_mask].copy()
                 sub_df["_dt"] = clean_dt[valid_mask]
                 valid_m = KPIService.filter_valid_numeric_series(sub_df[m], m)

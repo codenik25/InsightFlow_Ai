@@ -20,18 +20,26 @@ from app.core.logging import logger
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize filename to prevent directory traversal
-    and remove unsafe characters.
+    and remove unsafe characters across Windows and POSIX path conventions.
     """
+    if not filename:
+        return "uploaded_file.csv"
 
-    basename = os.path.basename(filename)
+    # Normalize backslashes and forward slashes, then take final path element
+    clean_base = filename.replace("\\", "/").rstrip("/").split("/")[-1]
+
+    # Strip directory traversal patterns
+    clean_base = re.sub(r"\.\.+", "", clean_base)
 
     clean = re.sub(
         r"[^a-zA-Z0-9._-]",
         "_",
-        basename
+        clean_base
     )
 
+    clean = clean.strip("._-")
     return clean if clean else "uploaded_file.csv"
+
 
 
 class StorageProvider(ABC):
@@ -461,6 +469,8 @@ class SupabaseStorageProvider(StorageProvider):
             "insightflow-models"
         )
 
+        self._local_fallback = LocalStorageProvider()
+
 
     @property
     def _base_url(self) -> str:
@@ -574,34 +584,37 @@ class SupabaseStorageProvider(StorageProvider):
         )
 
 
-        self._safe_upload(
+        try:
+            self._safe_upload(
+                bucket=self.datasets_bucket,
+                path=storage_key,
+                content=content,
+                content_type="text/csv"
+            )
 
-            bucket=self.datasets_bucket,
+            file_size = len(content)
 
-            path=storage_key,
+            logger.info(
+                f"Saved dataset "
+                f"'{sanitized_name}' "
+                f"to Supabase: "
+                f"'{storage_key}'"
+            )
 
-            content=content,
-
-            content_type="text/csv"
-        )
-
-
-        file_size = len(content)
-
-
-        logger.info(
-            f"Saved dataset "
-            f"'{sanitized_name}' "
-            f"to Supabase: "
-            f"'{storage_key}'"
-        )
-
-
-        return (
-            storage_key,
-            sanitized_name,
-            file_size
-        )
+            return (
+                storage_key,
+                sanitized_name,
+                file_size
+            )
+        except Exception as exc:
+            logger.warning(
+                f"Supabase dataset upload failed ({exc}). Falling back to local storage."
+            )
+            return self._local_fallback.save_file(
+                content=content,
+                original_filename=original_filename,
+                dataset_id=dataset_id,
+            )
 
 
     def save_processed_file(
@@ -615,12 +628,10 @@ class SupabaseStorageProvider(StorageProvider):
             original_filename
         )
 
-
         file_ext = (
             os.path.splitext(sanitized_name)[1].lower()
             or ".csv"
         )
-
 
         internal_filename = (
             f"{dataset_id}{file_ext}"
@@ -628,40 +639,41 @@ class SupabaseStorageProvider(StorageProvider):
             else f"{uuid.uuid4()}{file_ext}"
         )
 
-
         storage_key = (
             f"processed/{dataset_id or 'unknown'}"
             f"/{internal_filename}"
         )
 
+        try:
+            self._safe_upload(
+                bucket=self.datasets_bucket,
+                path=storage_key,
+                content=content,
+                content_type="text/csv"
+            )
 
-        self._safe_upload(
+            file_size = len(content)
 
-            bucket=self.datasets_bucket,
+            logger.info(
+                f"Saved processed dataset "
+                f"to Supabase: "
+                f"'{storage_key}'"
+            )
 
-            path=storage_key,
-
-            content=content,
-
-            content_type="text/csv"
-        )
-
-
-        file_size = len(content)
-
-
-        logger.info(
-            f"Saved processed dataset "
-            f"to Supabase: "
-            f"'{storage_key}'"
-        )
-
-
-        return (
-            storage_key,
-            sanitized_name,
-            file_size
-        )
+            return (
+                storage_key,
+                sanitized_name,
+                file_size
+            )
+        except Exception as exc:
+            logger.warning(
+                f"Supabase processed dataset upload failed ({exc}). Falling back to local storage."
+            )
+            return self._local_fallback.save_processed_file(
+                content=content,
+                original_filename=original_filename,
+                dataset_id=dataset_id,
+            )
 
 
     def get_file_bytes(
@@ -704,18 +716,15 @@ class SupabaseStorageProvider(StorageProvider):
             return response.content
 
         except Exception as exc:
-
-            logger.exception(
-                f"Failed to download "
-                f"'{storage_key}'"
+            logger.warning(
+                f"Failed to download '{storage_key}' from Supabase ({exc}). Attempting local storage fallback."
             )
-
-
-            raise FileNotFoundError(
-                f"Storage object "
-                f"'{storage_key}' "
-                f"not found."
-            ) from exc
+            try:
+                return self._local_fallback.get_file_bytes(storage_key)
+            except Exception:
+                raise FileNotFoundError(
+                    f"Storage object '{storage_key}' not found."
+                ) from exc
 
 
     def delete_file(
@@ -815,30 +824,26 @@ class SupabaseStorageProvider(StorageProvider):
                 content = file.read()
 
 
-            self._safe_upload(
-
-                bucket=self.models_bucket,
-
-                path=storage_key,
-
-                content=content,
-
-                content_type=(
-                    "application/"
-                    "octet-stream"
+            try:
+                self._safe_upload(
+                    bucket=self.models_bucket,
+                    path=storage_key,
+                    content=content,
+                    content_type="application/octet-stream",
                 )
-            )
 
+                logger.info(
+                    f"Saved ML model "
+                    f"'{analysis_id}' "
+                    f"to Supabase"
+                )
 
-            logger.info(
-                f"Saved ML model "
-                f"'{analysis_id}' "
-                f"to Supabase"
-            )
-
-
-            return storage_key
-
+                return storage_key
+            except Exception as exc:
+                logger.warning(
+                    f"Supabase save_model upload failed ({exc}). Falling back to local storage provider."
+                )
+                return self._local_fallback.save_model(model=model, analysis_id=analysis_id)
 
         finally:
 
@@ -878,17 +883,15 @@ class SupabaseStorageProvider(StorageProvider):
             content = response.content
 
         except Exception as exc:
-
-            logger.exception(
-                f"Failed to download ML model "
-                f"'{storage_key}'"
+            logger.warning(
+                f"Failed to download ML model '{storage_key}' from Supabase ({exc}). Attempting local storage fallback."
             )
-
-
-            raise FileNotFoundError(
-                f"Model '{storage_key}' "
-                f"not found."
-            ) from exc
+            try:
+                return self._local_fallback.load_model(storage_key)
+            except Exception:
+                raise FileNotFoundError(
+                    f"Model '{storage_key}' not found."
+                ) from exc
 
 
         fd, temp_path = (

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ArrowLeft, Download, RefreshCw, Sparkles, Layers, Lightbulb, FileText, BrainCircuit, Compass, ShieldCheck, TrendingUp, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Download, Sparkles, Layers, Lightbulb, FileText, BrainCircuit, Compass, ShieldCheck, TrendingUp, ShieldAlert } from 'lucide-react';
 
 import { DatasetProfileData, DatasetQualityResponse, TransformationLogItem } from '../types';
 import { ColumnProfileTable } from './ColumnProfileTable';
@@ -16,6 +16,7 @@ import { AnomalyIntelligenceView } from './AnomalyIntelligenceView';
 import { DecisionIntelligenceView } from './DecisionIntelligenceView';
 import { DecisionCommandCenter } from './DecisionCommandCenter';
 import { fetchDatasetQuality, fetchTransformationHistory, getDownloadUrl } from '../services/api';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 interface DatasetProfileViewProps {
   profile: DatasetProfileData;
@@ -279,9 +280,18 @@ export const DatasetProfileView: React.FC<DatasetProfileViewProps> = ({ profile,
 
           {/* 2. DATA QUALITY SCORE (Phase 2) */}
           {isLoadingQuality ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin text-sky-400" />
-              <span>Evaluating Data Quality Score...</span>
+            <div className="py-2">
+              <ContinuousIntelligenceEngine
+                mode="quality"
+                active={isLoadingQuality}
+                title="EVALUATING DATA QUALITY INTEGRITY"
+                description="Executing automated quality heuristics, completeness checks, skewness detection, and anomaly scoring..."
+                metrics={[
+                  { label: 'DATASET', value: profile.dataset_id.slice(0, 8) },
+                  { label: 'HEURISTICS', value: 'ACTIVE' },
+                  { label: 'SCAN', value: 'CONTINUOUS' }
+                ]}
+              />
             </div>
           ) : qualityData ? (
             <DataQualityCard qualityData={qualityData} />

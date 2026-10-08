@@ -3,7 +3,6 @@ import {
   TrendingUp,
   Calendar,
   AlertTriangle,
-  RefreshCw,
   Sparkles,
   BarChart2,
   ArrowUpRight,
@@ -11,6 +10,7 @@ import {
 } from 'lucide-react';
 import { ForecastAnalysisResponse } from '../types';
 import { runForecastAnalysis } from '../services/api';
+import { ContinuousIntelligenceEngine } from './ContinuousIntelligenceEngine';
 
 
 interface DemandForecastViewProps {
@@ -43,10 +43,18 @@ export const DemandForecastView: React.FC<DemandForecastViewProps> = ({ datasetI
 
   if (loading) {
     return (
-      <div className="card-panel py-12 text-center space-y-3">
-        <RefreshCw className="w-6 h-6 animate-spin text-sky-400 mx-auto" />
-        <p className="text-sm font-medium text-slate-300">Generating Demand Forecast Pipeline...</p>
-        <p className="text-xs text-slate-500">Detecting temporal column, engineering lags/rolling windows, and computing uncertainty intervals.</p>
+      <div className="py-8">
+        <ContinuousIntelligenceEngine
+          mode="prediction"
+          active={loading}
+          title="GENERATING DEMAND FORECAST PIPELINE"
+          description="Detecting temporal periodicity, engineering lag & rolling window features, and computing uncertainty intervals..."
+          metrics={[
+            { label: 'DATASET', value: datasetId.slice(0, 8) },
+            { label: 'HORIZON', value: `${horizon} DAYS` },
+            { label: 'FORECASTING', value: 'CONTINUOUS' }
+          ]}
+        />
       </div>
     );
   }
