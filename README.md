@@ -1,722 +1,802 @@
-# InsightFlow AI
+from pathlib import Path
 
-> **From raw data to validated decisions.**
+readme = r"""# InsightFlow AI
 
-InsightFlow AI is an end-to-end **AI Decision Intelligence Platform**
-that transforms real-world datasets into actionable, evidence-backed,
-and validated business decisions.
+> **An AI-powered Decision Intelligence Platform that transforms raw datasets into traceable, governed, outcome-aware decisions.**
 
-Instead of stopping at dashboards, InsightFlow connects the complete
-decision journey:
+InsightFlow AI is an end-to-end analytical decision platform built for moving from **data ingestion** to **evidence-backed decisions** without losing lineage, reproducibility, governance, or auditability.
 
-**Upload → Overview → Data Quality → Cleaning → Analysis → Insights →
-Predictions → Optimization → Recommendations → Decisions → Guardrails**
+Instead of stopping at dashboards or predictions, InsightFlow connects the analytical lifecycle:
 
-The platform is designed around a simple question:
-
-> **What should we do next---and can we trust that decision?**
-
-------------------------------------------------------------------------
-
-## Why InsightFlow?
-
-Traditional analytics tools are excellent at explaining what happened:
-
--   Revenue increased.
--   Costs changed.
--   A correlation exists.
--   A model predicts a future value.
-
-But organizations ultimately need to answer:
-
-**What action should we take?**
-
-InsightFlow bridges the gap between analytics and action by combining
-data quality, exploratory analysis, AI-generated insights, predictive
-modeling, scenario optimization, recommendations, decision
-formalization, and guardrail validation into one connected workflow.
-
-------------------------------------------------------------------------
-
-## Core Workflow
-
-### 01 --- Upload
-
-Upload a real-world CSV dataset through the platform.
-
--   Uses the existing dataset ingestion API.
--   Creates a real dataset record.
--   Keeps the original uploaded dataset available for traceability.
-
-### 02 --- Overview
-
-Build an initial understanding of the dataset.
-
--   Dataset name
--   Row and column counts
--   File information
--   Dataset composition
--   Column profile
--   Real sample rows
-
-### 03 --- Data Quality
-
-Evaluate whether the dataset is reliable enough for downstream analysis.
-
-The quality layer checks signals such as:
-
--   Missing values
--   Duplicate records
--   Invalid/semantic values
--   Consistency issues
--   Overall quality score
-
-The quality score and diagnostics are based on backend analysis rather
-than frontend-generated values.
-
-### 04 --- Cleaning
-
-Clean the dataset without modifying the original artifact.
-
-Supported cleaning operations include:
-
--   Duplicate removal
--   Missing-value handling
--   Cleaning-plan configuration
-
-The cleaned dataset is stored as a **separate processed artifact**.
-
-This creates an explicit distinction between:
-
-``` text
-Raw Dataset
-     ↓
+```text
+Dataset
+   ↓
+Quality
+   ↓
 Cleaning
-     ↓
-Processed Dataset
+   ↓
+Analysis
+   ↓
+Insights
+   ↓
+Predictions
+   ↓
+Optimization
+   ↓
+Recommendations
+   ↓
+Decisions
+   ↓
+Guardrails
+   ↓
+Evidence
+   ↓
+Outcomes
+   ↓
+Performance
+   ↓
+Learning
+   ↓
+Governance
+   ↓
+Controlled Execution
+   ↓
+Audit / Knowledge
 ```
 
-Downstream analytical stages use the processed dataset.
+---
 
-### 05 --- Analysis / Visualization
+## Why InsightFlow AI?
 
-Explore the processed dataset through analytical visualizations.
+Traditional analytics tools often answer:
 
-The analysis layer includes:
+> **"What happened?"**
 
--   KPI summaries
--   Distribution analysis
--   Correlation analysis
--   Category-level comparisons
--   Relationships between variables
--   Statistical shape/distribution information
--   Department/category performance
+InsightFlow is designed to go further:
 
-The visualization workspace is designed to remain readable across large
-analytical sections without allowing charts to overflow their
-containers.
+> **"What did the data reveal?"**  
+> **"What decision does that evidence support?"**  
+> **"Why was that decision made?"**  
+> **"What happened afterward?"**  
+> **"What can we learn from the outcome?"**
 
-### 06 --- Insights
+The platform therefore combines analytical processing with **traceability, decision governance, outcome monitoring, and learning signals**.
 
-Convert analytical findings into prioritized business insights.
+---
 
-Insights can include categories such as:
+## Core Capabilities
 
--   Performance
--   Trend
--   Correlation
--   Data Quality
--   Opportunity
+### Dataset Workspace
 
-Each insight can expose supporting context such as:
+- Workspace and project organization
+- Dataset registry
+- Raw dataset preservation
+- Processed dataset artifacts
+- Dataset lineage
+- Dataset versioning
+- Version comparison and "What Changed?" analysis
 
--   Observation
--   Severity
--   Priority
--   Explanation
--   Dimension
--   Metric
--   Top value
--   Contribution
--   Correlation
--   Sample size
+### Analytical Pipeline
 
-The objective is to move from:
-
-**"Here is a chart."**
-
-to:
-
-**"Here is what matters."**
-
-### 07 --- Predictions
-
-Move from understanding historical behavior to estimating future
-outcomes.
-
-The prediction layer supports:
-
--   ML task selection
--   Model generation
--   Model metrics
--   Feature summaries
--   Prediction inputs
--   Real prediction responses
-
-The frontend consumes the existing ML APIs and does not fabricate
-prediction results.
-
-### 08 --- Optimization
-
-Explore possible actions instead of only predicting outcomes.
-
-Optimization works with:
-
--   Business objectives
--   Controllable features
--   Feature constraints
--   Scenario generation
--   Baseline prediction
--   Scenario prediction
--   Absolute change
--   Percentage change
--   Feasibility
--   Best scenario selection
-
-This changes the question from:
-
-> "What will happen?"
-
-to:
-
-> "What happens if we change something?"
-
-### 09 --- Recommendations
-
-Turn analytical and optimization evidence into actionable
-recommendations.
-
-Recommendations can include:
-
--   Recommendation type
--   Priority
--   Target metric
--   Baseline value
--   Projected value
--   Absolute delta
--   Percentage delta
--   Rationale
--   Trade-offs
--   Confidence
--   Evidence chain
-
-Recommendations are connected to the underlying decision workflow rather
-than being static UI text.
-
-### 10 --- Decisions
-
-Formalize the selected decision and preserve its evidence chain.
-
-The decision layer connects:
-
--   Recommendation
--   Optimization
--   Scenario
--   Supporting evidence
--   Decision outcome
-
-This creates traceability between the original data and the final
-action.
-
-### 11 --- Guardrails
-
-A recommendation is not automatically a good decision.
-
-Guardrails provide a final validation layer for formalized decisions.
-
-The platform evaluates signals such as:
-
--   Feasibility score
--   Realism score
--   Risk score
--   Confidence score
--   Decision status
--   Feasibility status
--   Risk level
--   Passed rules
--   Warnings
--   Violated rules
-
-The goal is not to replace human judgment.
-
-The goal is to make AI-assisted decisions more explainable, auditable,
-and responsible.
-
-------------------------------------------------------------------------
-
-## Example: Hospital Decision Intelligence
-
-InsightFlow has been tested with a real-life hospital-style dataset
-containing operational and financial variables such as:
-
--   Patient visits
--   Staff count
--   Average wait minutes
--   Bed occupancy percentage
--   Average bill
--   Operating cost
--   Total revenue
--   Satisfaction score
--   Readmission rate
--   Emergency cases
--   Department-level information
-
-For example, the analytical layer can reveal relationships such as:
-
-**Patient Visits ↔ Operating Cost**
-
-and identify department-level differences in:
-
--   Average bill
--   Waiting time
--   Bed occupancy
--   Operational performance
-
-Those findings can then feed into predictions, optimization scenarios,
-recommendations, and final decision validation.
-
-------------------------------------------------------------------------
-
-## What Makes InsightFlow Different?
-
-### 1. It does not stop at analytics
-
-Most analytics workflows end at:
-
-``` text
-Dashboard → Insight
+```text
+Upload
+  → Data Quality
+  → Cleaning
+  → Analysis
+  → Insights
+  → Predictions
+  → Optimization
+  → Recommendations
+  → Decisions
+  → Guardrails
 ```
 
-InsightFlow continues:
+Each stage uses the appropriate persisted dataset/artifact from the previous stage.
 
-``` text
-Dashboard
+### Analysis & Intelligence
+
+- Exploratory data analysis
+- Statistical profiling
+- Distribution analysis
+- Correlation analysis
+- Category-level analysis
+- Time-series / trend analysis where appropriate
+- Automated insight extraction
+- Machine-learning prediction workflows
+- Scenario-based optimization
+- Recommendation generation
+
+### Decision Intelligence
+
+InsightFlow includes a dedicated decision workspace with nine complementary views:
+
+1. **Decision** — formalize and understand the selected decision
+2. **Evidence** — explore the evidence chain supporting the decision
+3. **Outcome** — compare expected and actual outcomes
+4. **Performance** — measure decision performance over time
+5. **Learning** — identify persistent deviations and learning signals
+6. **Governance** — review and control decision state transitions
+7. **Execution** — manage the controlled execution lifecycle
+8. **Audit** — inspect the chronological decision history
+9. **Knowledge** — explore connected decision intelligence
+
+These views intentionally use different visual compositions while sharing the same product design system.
+
+---
+
+## Traceability by Design
+
+InsightFlow maintains an evidence chain connecting analytical artifacts to decisions.
+
+```text
+Dataset
+   ↓
+Version
+   ↓
+Analysis Run
    ↓
 Insight
    ↓
 Prediction
    ↓
-Scenario
+Optimization
    ↓
 Recommendation
    ↓
 Decision
    ↓
-Guardrail Validation
+Guardrail
 ```
 
-### 2. Raw data remains immutable
+The evidence graph is designed to answer:
 
-Cleaning is non-destructive.
+> **Why is this recommendation or decision being made, and which persisted evidence supports it?**
 
-The original dataset is preserved and the processed dataset is stored
-separately.
+The platform avoids inventing relationships when an explicit persisted relationship is not available.
 
-### 3. Evidence follows the decision
+---
 
-A recommendation is connected to the analytical and optimization context
-that produced it.
+## Reproducibility
 
-### 4. AI is integrated into the workflow
+Every analytical execution can be tracked as an analysis run with information such as:
 
-AI/ML is used where it creates decision value:
+- Project
+- Dataset
+- Dataset version
+- Processed dataset
+- Run type
+- Configuration
+- Input artifacts
+- Output artifacts
+- Status
+- Error information
+- Start/end timestamps
+- Duration
 
--   Insight generation
--   Predictive analysis
--   Scenario evaluation
--   Recommendation generation
--   Decision reasoning
+This provides a foundation for understanding **which data and configuration produced a particular analytical result**.
 
-### 5. Decisions are validated
+---
 
-The final output is not simply:
+## Decision Outcome Loop
 
-> "AI recommends X."
+InsightFlow extends decision analytics beyond the decision itself:
 
-It is closer to:
+```text
+Decision
+   ↓
+Expected Outcome
+   ↓
+Actual Outcome
+   ↓
+Outcome Comparison
+   ↓
+Performance
+   ↓
+Learning Signal
+```
 
-> "AI recommends X, based on this evidence, under these constraints,
-> with this projected impact, and these validation signals."
+Actual outcomes are only represented when they are backed by persisted application data. The platform does not fabricate outcome observations.
 
-------------------------------------------------------------------------
+---
 
-## Design System
+## Governance & Controlled Execution
 
-InsightFlow uses a cinematic enterprise command-center aesthetic.
+Decision approval and execution are deliberately separated.
 
-### Visual Language
+```text
+APPROVED
+    ≠
+EXECUTED
+```
 
--   Deep navy/near-black environment
--   Cyan, blue, and violet atmospheric lighting
--   Glassmorphism panels
--   Thin technical borders
--   Subtle technical grid
--   Data-flow lines
--   Central Insight Engine
--   Radial architecture nodes
--   Restrained glow
--   Smooth transitions
--   Lightweight ambient animation
+Governance supports controlled states such as:
 
-### Typography
+```text
+DRAFT
+→ UNDER REVIEW
+→ PENDING APPROVAL
+→ APPROVED
+→ EXECUTED
+→ CLOSED
+```
 
--   **Space Grotesk** --- primary display/headings
--   **Inter** --- interface/body text
--   **JetBrains Mono** --- technical labels and system information
+Execution follows its own controlled lifecycle and is not presented as autonomous real-world execution.
 
-### Interaction Principles
+The platform is designed around **human review and explicit control** rather than autonomous approval, rejection, retraining, or decision mutation.
 
-Animations are intended to communicate system activity rather than act
-as decoration.
+---
 
-Examples:
+## AI Insight Memory
 
--   Smooth page transitions
--   Animated analytical states
--   Insight Engine motion
--   Data-flow movement
--   Gauge interpolation
--   Hover/focus feedback
--   Loading and success states
--   Reduced-motion support
+InsightFlow keeps analytical memory across dataset versions and analysis runs.
 
-The visual layer must never replace functional state or backend truth.
+Memory states include:
 
-------------------------------------------------------------------------
+- `NEW`
+- `PERSISTED`
+- `STRENGTHENED`
+- `WEAKENED`
+- `DISAPPEARED`
+
+A deterministic fingerprinting approach is used to identify recurring analytical patterns across versions.
+
+This allows users to distinguish between:
+
+```text
+A new pattern
+        ↓
+A persistent pattern
+        ↓
+A strengthened / weakened pattern
+        ↓
+A disappeared pattern
+```
+
+---
+
+## Decision Performance Intelligence
+
+Decision performance uses persisted outcome observations to calculate useful signals such as:
+
+- Outcome coverage
+- Match rate
+- Material difference rate
+- Average absolute delta
+- Average relative delta
+- Median relative delta
+- Performance by metric
+- Performance by model
+- Performance by scenario
+- Trend-level decision performance
+- Repeated deviations
+
+The platform avoids making strong conclusions when the available observation count is insufficient.
+
+---
+
+## Security
+
+InsightFlow includes application-level authentication and authorization controls.
+
+The current security model includes:
+
+- User authentication
+- Password hashing
+- JWT-based authentication
+- Workspace ownership
+- Workspace/project authorization
+- Protected dataset access
+- Authenticated frontend states
+
+Production security configuration should always be reviewed against the deployment environment and operational requirements.
+
+---
+
+## Technology Stack
+
+### Frontend
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Framer Motion
+- Lucide React
+
+### Backend
+
+- Python
+- FastAPI
+- SQLAlchemy
+- Pydantic
+- Alembic
+
+### Data & Storage
+
+- PostgreSQL
+- Supabase Storage / object storage integration
+- CSV-based dataset artifacts
+
+### Analytics / ML
+
+- Python
+- Pandas
+- NumPy
+- Scikit-learn
+- Statistical and analytical processing modules
+
+### Engineering
+
+- REST APIs
+- Database migrations
+- Automated tests
+- TypeScript build validation
+- Componentized frontend architecture
+
+---
 
 ## Architecture
 
-At a high level:
+High-level architecture:
 
-``` text
-                    ┌─────────────────────┐
-                    │     User / UI       │
-                    └──────────┬──────────┘
+```text
+                    ┌──────────────────────┐
+                    │   InsightFlow Web UI │
+                    │ React + TypeScript   │
+                    └──────────┬───────────┘
                                │
-                               ▼
-                    ┌─────────────────────┐
-                    │      Upload         │
-                    └──────────┬──────────┘
+                          REST / JSON
                                │
-                               ▼
-                    ┌─────────────────────┐
-                    │  Dataset Overview   │
-                    └──────────┬──────────┘
+                    ┌──────────▼───────────┐
+                    │      FastAPI API     │
+                    └──────────┬───────────┘
                                │
-                               ▼
-                    ┌─────────────────────┐
-                    │    Data Quality     │
-                    └──────────┬──────────┘
+             ┌─────────────────┼─────────────────┐
+             │                 │                 │
+             ▼                 ▼                 ▼
+        PostgreSQL       Storage / CSV      Analytics + ML
+             │                 │                 │
+             └─────────────────┼─────────────────┘
                                │
-                               ▼
-                    ┌─────────────────────┐
-                    │  Non-Destructive    │
-                    │      Cleaning       │
-                    └──────────┬──────────┘
+                       Decision Intelligence
                                │
+            ┌──────────────────┼──────────────────┐
+            ▼                  ▼                  ▼
+       Evidence Graph     Outcome Loop       Governance
+            │                  │                  │
+            └──────────────────┼──────────────────┘
                                ▼
-                    ┌─────────────────────┐
-                    │      Analysis       │
-                    │   & Visualization   │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │      Insights       │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │     Predictions     │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │    Optimization     │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   Recommendations   │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │      Decisions      │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │     Guardrails      │
-                    └─────────────────────┘
+                       Controlled Execution
 ```
 
-------------------------------------------------------------------------
+---
 
-## Frontend
+## Frontend Structure
 
-The frontend is a React/TypeScript application built around reusable
-analytical and decision-intelligence components.
+The frontend is organized around reusable product surfaces and analytical views.
 
-Key areas include:
+Representative areas include:
 
-``` text
-src/
-├── components/
-│   ├── DashboardApp.tsx
-│   ├── Header.tsx
-│   ├── Sidebar.tsx
-│   ├── PlatformOverview.tsx
-│   ├── DatasetOverview.tsx
-│   ├── DataQuality.tsx
-│   ├── DataCleaning.tsx
-│   ├── DataAnalysis.tsx
-│   ├── DataInsights.tsx
-│   ├── DataPredictions.tsx
-│   ├── DataOptimization.tsx
-│   ├── DataRecommendations.tsx
-│   ├── DataDecisions.tsx
-│   ├── DataGuardrails.tsx
-│   └── ...
-├── api.ts
-└── index.css
+```text
+frontend/
+└── src/
+    ├── components/
+    │   ├── DatasetOverview
+    │   ├── DataQuality
+    │   ├── DataCleaning
+    │   ├── DataAnalysis
+    │   ├── DataInsights
+    │   ├── DataPredictions
+    │   ├── DataOptimization
+    │   ├── DataRecommendations
+    │   ├── DataDecisions
+    │   ├── DataGuardrails
+    │   ├── EvidenceGraphView
+    │   ├── AnalysisRunHistory
+    │   ├── InsightMemoryView
+    │   ├── DecisionPerformanceView
+    │   ├── DecisionLearningSignalsView
+    │   ├── DecisionGovernanceView
+    │   ├── DecisionExecutionView
+    │   ├── DecisionReportView
+    │   └── ...
+    ├── services/
+    │   └── api.ts
+    ├── types/
+    │   └── index.ts
+    └── ...
 ```
 
-The application uses the existing backend APIs and keeps the frontend
-responsible for presentation, interaction, and workflow state.
+---
 
-------------------------------------------------------------------------
+## Backend Structure
 
-## Backend Integration
+Representative backend areas:
 
-The frontend is connected to real backend endpoints for the decision
-workflow.
-
-Representative API operations include:
-
-``` text
-POST /api/v1/datasets/upload
-
-GET  /api/v1/datasets/{dataset_id}/profile
-GET  /api/v1/datasets/{dataset_id}/quality
-POST /api/v1/datasets/{dataset_id}/clean
-
-GET  /api/v1/datasets/{dataset_id}/eda
-POST /api/v1/datasets/{dataset_id}/eda
-
-GET  /api/v1/datasets/{dataset_id}/insights
-POST /api/v1/datasets/{dataset_id}/insights/generate
-
-GET  /api/v1/datasets/{dataset_id}/ml/tasks
-GET  /api/v1/datasets/{dataset_id}/ml
-POST /api/v1/datasets/{dataset_id}/ml/analyze
-POST /api/v1/datasets/{dataset_id}/ml/{analysis_id}/predict
-
-GET  /api/v1/datasets/{dataset_id}/decision/optimize/options
-POST /api/v1/datasets/{dataset_id}/decision/optimize
-
-POST /api/v1/datasets/{dataset_id}/decision/recommendations
-POST /api/v1/datasets/{dataset_id}/decision/optimize/recommendations
-
-GET  /api/v1/datasets/{dataset_id}/decision/command-center
+```text
+backend/
+└── app/
+    ├── api/
+    │   └── v1/
+    ├── models/
+    ├── schemas/
+    ├── services/
+    └── ...
 ```
 
-The exact API implementation and contracts should be treated as the
-source of truth for backend behavior.
+Major service areas include:
 
-------------------------------------------------------------------------
+- Dataset management
+- Dataset comparison
+- Analysis run lifecycle
+- Insight memory
+- Evidence graph
+- Decision performance
+- Decision learning
+- Governance
+- Controlled execution
+- Decision reporting
+- Authentication / authorization
 
-## Data Integrity Principles
+---
 
-InsightFlow follows several important integrity rules:
+## Design System
 
-### No fake analytical data
+InsightFlow uses a dark, premium analytical visual language.
 
-Frontend values should come from backend responses or clearly represent
-UI state.
+### Typography
 
-### No mutation of raw datasets
+- **Plus Jakarta Sans** — primary UI typography
+- **IBM Plex Mono** — technical metadata, IDs, timestamps and other machine-oriented fields
 
-Raw uploads remain immutable.
+### Visual Language
 
-### Processed dataset lineage
+- Deep navy foundations
+- Cyan / blue intelligence accents
+- Restrained violet accents
+- Glass-like analytical surfaces
+- Technical grid details
+- Smooth motion
+- Subtle 3D depth
+- Data-driven visual emphasis
 
-Cleaning creates a new processed dataset that becomes the source for
-downstream stages.
+The design goal is:
 
-### No fabricated optimization results
+> **luxury professional intelligence software — not a generic AI dashboard**
 
-Scenario values and objectives come from the optimization service.
+Different product phases intentionally have different visual identities while remaining part of the same system.
 
-### No fabricated recommendations
+---
 
-Recommendations are generated from the decision backend.
+## Loading Experience
 
-### Decision traceability
+InsightFlow uses continuous, state-driven loading experiences for real asynchronous operations.
 
-Formalized decisions preserve links to their supporting recommendation,
-optimization, and scenario context.
+The principle is:
 
-------------------------------------------------------------------------
+```text
+REAL REQUEST PENDING
+       ↓
+CONTINUOUS MOTION
+       ↓
+REAL REQUEST COMPLETE
+       ↓
+SETTLE / SUCCESS / ERROR
+```
 
-## Performance & UX
+Loading visuals can use:
 
-The interface is designed to feel cinematic without relying on heavy
-video backgrounds.
+- animated SVG intelligence cores
+- continuously moving signal paths
+- orbiting particles
+- layered rings
+- analytical network motion
+- subtle atmospheric motion
 
-The visual environment uses:
+Importantly, visual animation does **not** determine backend completion.
 
--   CSS gradients
--   SVG geometry
--   Lightweight animation
--   Framer Motion transitions
--   GPU-friendly transforms
--   Opacity-based effects
--   `prefers-reduced-motion` support
+No fake percentage progress should be used unless real progress is provided by the backend.
 
-The goal is a premium visual experience while keeping the analytical
-application responsive.
+---
 
-------------------------------------------------------------------------
+## Local Development
 
-## Development
+### Prerequisites
 
-### Install dependencies
+Install:
 
-``` bash
+- Node.js
+- npm
+- Python
+- PostgreSQL
+- access to the configured object storage / Supabase environment
+
+### Clone the repository
+
+```bash
+git clone <your-repository-url>
+cd insightflow-ai
+```
+
+### Frontend
+
+```bash
 cd frontend
 npm install
-```
-
-### Start the frontend
-
-``` bash
 npm run dev
 ```
 
-### Lint
+The Vite development server will normally expose the frontend on its configured development port.
 
-``` bash
-npm run lint
+### Backend
+
+Create and activate a Python virtual environment:
+
+```bash
+cd backend
+
+python -m venv .venv
 ```
 
-### Production build
+Windows:
 
-``` bash
+```bash
+.venv\Scripts\activate
+```
+
+macOS / Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+Install backend dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Start the FastAPI application using the project's configured ASGI entrypoint.
+
+---
+
+## Environment Configuration
+
+The application requires environment-specific configuration for:
+
+- PostgreSQL connection
+- object storage / Supabase access
+- JWT / authentication secrets
+- API configuration
+- CORS / frontend origin configuration
+- production deployment settings
+
+Do not commit production secrets to source control.
+
+Create local `.env` files according to the variable names used by the backend and frontend configuration already present in the project.
+
+---
+
+## Database Migrations
+
+InsightFlow uses Alembic.
+
+Typical workflow:
+
+```bash
+alembic upgrade head
+```
+
+Create a migration only when the application schema actually changes.
+
+---
+
+## Testing
+
+Backend tests can be run with:
+
+```bash
+pytest
+```
+
+For a focused test file:
+
+```bash
+pytest tests/<test_file>.py -q
+```
+
+Frontend production/build validation:
+
+```bash
 npm run build
 ```
 
-Run the backend according to the project's backend
-environment/configuration before using API-dependent workflow stages.
+The project emphasizes lightweight, deterministic automated verification and avoids using browser automation as a requirement for ordinary development validation.
 
-------------------------------------------------------------------------
+---
 
-## Testing Philosophy
+## API Domains
 
-InsightFlow is designed to be verified using real datasets rather than
-only synthetic UI states.
+The platform exposes REST APIs across several major domains, including:
 
-A recommended manual validation path is:
-
-``` text
-1. Upload real dataset
-2. Verify Overview values
-3. Verify Quality calculations
-4. Verify raw dataset remains unchanged
-5. Verify processed dataset after cleaning
-6. Validate analytical values against independent calculations
-7. Validate insight evidence
-8. Validate prediction target/task
-9. Validate optimization constraints and scenarios
-10. Validate recommendation evidence
-11. Refresh and verify decision persistence
-12. Validate guardrail results
+```text
+/api/v1/workspaces
+/api/v1/projects
+/api/v1/datasets
+/api/v1/runs
+/api/v1/evidence
+/api/v1/decisions
 ```
 
-For analytical correctness, backend output should be independently
-compared against calculations from the source dataset.
+Additional endpoints cover version comparison, insight memory, decision performance, learning signals, governance, execution, and reporting.
 
-------------------------------------------------------------------------
+Refer to the FastAPI application for the current endpoint contract.
 
-## Current Product Vision
+---
 
-InsightFlow AI is being built as a **Decision Intelligence Platform**,
-not simply an analytics dashboard.
+## Example Decision Flow
 
-The long-term product principle is:
+A typical decision workflow looks like:
 
-> **Make every important decision explainable, measurable, and
-> defensible.**
+```text
+1. Upload Dataset
+        ↓
+2. Profile & Quality Audit
+        ↓
+3. Clean Dataset
+        ↓
+4. Run Analysis
+        ↓
+5. Extract Insights
+        ↓
+6. Train / Evaluate Prediction Model
+        ↓
+7. Run Optimization Scenarios
+        ↓
+8. Generate Recommendations
+        ↓
+9. Formalize Decision
+        ↓
+10. Trace Evidence
+        ↓
+11. Validate Guardrails
+        ↓
+12. Govern Decision
+        ↓
+13. Controlled Execution
+        ↓
+14. Observe Outcome
+        ↓
+15. Measure Performance
+        ↓
+16. Generate Learning Signals
+```
 
-The platform should help users move from:
+This produces a complete loop from **data → decision → outcome → learning**.
 
-**Data**
+---
 
-to
+## Data Integrity Principles
 
-**Understanding**
+InsightFlow follows several important principles:
 
-to
+### Raw Data Immutability
 
-**Prediction**
+Raw datasets remain unchanged.
 
-to
+Cleaning creates a separate processed artifact.
 
-**Action**
+### Lineage Awareness
 
-to
+Downstream stages operate against the appropriate dataset/version lineage.
 
-**Validated Decision**
+### Explicit Evidence
 
-------------------------------------------------------------------------
+Evidence relationships should come from persisted application relationships rather than visual inference.
+
+### No Fabricated Outcomes
+
+Actual outcomes must come from real persisted observations.
+
+### Human Governance
+
+Approval, escalation, and execution remain controlled workflows.
+
+### No Autonomous Decision Mutation
+
+Learning signals inform human review; they do not silently change recommendations or decisions.
+
+---
+
+## Current Project Direction
+
+InsightFlow is being developed as a portfolio-quality and enterprise-oriented Decision Intelligence platform with emphasis on:
+
+- analytical depth
+- traceability
+- reproducibility
+- governance
+- decision accountability
+- premium user experience
+- strong visual storytelling
+
+The interface is intentionally evolving toward a **high-end decision intelligence command center**, with phase-specific workspaces rather than a single generic dashboard template.
+
+---
+
+## Roadmap
+
+Potential future improvements include:
+
+- richer enterprise role management
+- refresh scheduling
+- production-grade job orchestration
+- stronger dataset lineage with explicit lineage IDs
+- advanced model monitoring
+- additional data drift intelligence
+- external execution integrations
+- richer decision knowledge exploration
+- report export workflows
+- deeper enterprise observability
+- expanded multi-project analytics
+
+---
 
 ## Project Status
 
-The core end-to-end workflow is implemented:
+InsightFlow AI currently includes the major foundations for:
 
--   [x] Dataset upload
--   [x] Dataset overview
--   [x] Data quality analysis
--   [x] Non-destructive cleaning
--   [x] EDA and visualization
--   [x] AI-generated insights
--   [x] Predictive modeling
--   [x] Scenario optimization
--   [x] Recommendations
--   [x] Decision command center
--   [x] Decision guardrails
--   [x] Cinematic frontend design system
--   [x] Smooth interaction and transition system
--   [x] Frontend/backend workflow integration
+- Workspaces & projects
+- Dataset registry
+- Dataset versioning
+- Analysis run tracking
+- AI insight memory
+- Evidence graph traceability
+- Decision outcomes
+- Decision performance intelligence
+- Decision learning signals
+- Governance
+- Controlled execution
+- Decision reporting
+- Authentication and authorization
+- Premium analytical UI experiences
 
-The project is continuing through visual polish, analytical validation,
-usability refinement, and reliability testing.
+The project is actively evolving, particularly around **visual design, interaction quality, loading experiences, and enterprise-grade decision workflows**.
 
-------------------------------------------------------------------------
+---
 
-## The Big Idea
+## Contributing
 
-**InsightFlow AI does not ask only:**
+When contributing:
 
-> "What does the data say?"
+1. Preserve existing API/data contracts unless the change explicitly requires them.
+2. Avoid introducing fabricated analytical values.
+3. Keep raw data immutable.
+4. Preserve lineage and traceability.
+5. Add focused tests for behavioral changes.
+6. Validate the frontend with `npm run build`.
+7. Keep visual changes accessible and responsive.
+8. Prefer reusable components over duplicated implementations.
 
-It asks:
-
-> **"What does the data tell us to do, why should we do it, what could
-> happen if we do it, and can we trust that decision?"**
-
-------------------------------------------------------------------------
+---
 
 ## License
 
-Add the project's applicable license here before public distribution.
+Add the project's intended license here.
+
+---
+
+## Author
+
+**Nikunj Rathi**
+
+B.Tech Computer Science & Engineering  
+JECRC University, Jaipur
+
+InsightFlow AI is developed as a project focused on **AI, analytics, decision intelligence, and production-oriented software engineering**.
+"""
+
+path = Path("/mnt/data/README.md")
+path.write_text(readme, encoding="utf-8")
+
+print(path)
